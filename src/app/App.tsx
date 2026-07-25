@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { createStarterDocument } from '../domain/document/createDocument';
+import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import type { Page, PageObject, RePageDocument } from '../domain/document/types';
 import { pointsToMillimetres } from '../domain/geometry/units';
 import {
@@ -14,6 +14,7 @@ import { TransactionHistory } from '../editor/history/transactionHistory';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
 import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
+import { DocumentBodyEditor } from '../ui/editor/DocumentBodyEditor';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
@@ -75,7 +76,7 @@ export function App() {
   const [document, setDocumentState] = useState<RePageDocument>(() => createStarterDocument());
   const [activePageId, setActivePageId] = useState(() => document.pageOrder[0]!);
   const [saveState, setSaveState] = useState<SaveState>('Unsaved changes');
-  const [message, setMessage] = useState('RePage Studio Ready');
+  const [_message, setMessage] = useState('RePage Studio Ready');
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [pendingChar, setPendingChar] = useState<string | null>(null);
@@ -336,29 +337,9 @@ export function App() {
 
   // Handle Character Insertion from Visual Keyboard or Keypress
   const handleInsertChar = React.useCallback((char: string) => {
-    let targetObjId = editingObjectId || selectedObjectId;
-
-    // If no text frame is currently active, find the first text frame on the page or create one
-    if (!targetObjId || document.objects[targetObjId]?.type !== 'text-frame') {
-      const firstTextFrame = activePage.objectOrder.find((id) => document.objects[id]?.type === 'text-frame');
-      if (firstTextFrame) {
-        targetObjId = firstTextFrame;
-        setSelectedObjectId(firstTextFrame);
-        setEditingObjectId(firstTextFrame);
-      } else {
-        handleAddTextFrame();
-        return;
-      }
-    }
-
-    if (targetObjId && document.objects[targetObjId]?.type === 'text-frame') {
-      setEditingObjectId(targetObjId);
-      setPendingChar(char);
-      // Reset pendingChar after tick
-      setTimeout(() => setPendingChar(null), 50);
-      setMessage(`Typed character: ${char}`);
-    }
-  }, [activePage.objectOrder, document.objects, editingObjectId, handleAddTextFrame, selectedObjectId]);
+    setPendingChar(char);
+    setTimeout(() => setPendingChar(null), 50);
+  }, []);
 
   return (
     <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
@@ -466,20 +447,62 @@ export function App() {
                 }}
               />
 
-              {/* Fabric Vector Canvas */}
-              <FabricCanvas
-                page={activePage}
-                objects={visibleObjects}
-                stories={document.stories}
-                onObjectModified={handleObjectModified}
-                onSelectionChanged={(id) => {
-                  setSelectedObjectId(id);
-                  if (id && document.objects[id]?.type === 'text-frame') {
-                    setEditingObjectId(id);
-                  }
+              {/* Primary Document Body Editor (Word-Style Typing Surface) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: `${activePage.margins.top}pt`,
+                  right: `${activePage.margins.right}pt`,
+                  bottom: `${activePage.margins.bottom}pt`,
+                  left: `${activePage.margins.left}pt`,
+                  zIndex: 5,
                 }}
-                onObjectDoubleClicked={handleObjectDoubleClicked}
-              />
+              >
+                <DocumentBodyEditor
+                  story={
+                    document.stories[PRIMARY_STORY_ID] || {
+                      id: PRIMARY_STORY_ID,
+                      name: 'Primary Document Story',
+                      content: { type: 'doc', content: [] },
+                    }
+                  }
+                  fontFamily={activeFontFamily}
+                  fontSize={activeFontSize}
+                  color="#172119"
+                  lineHeight={1.8}
+                  pendingChar={!editingObjectId ? pendingChar : null}
+                  onCommit={(updatedContent) => {
+                    setDocumentState((prev) => ({
+                      ...prev,
+                      stories: {
+                        ...prev.stories,
+                        [PRIMARY_STORY_ID]: {
+                          id: PRIMARY_STORY_ID,
+                          name: 'Primary Document Story',
+                          content: updatedContent,
+                        },
+                      },
+                    }));
+                  }}
+                />
+              </div>
+
+              {/* Fabric Vector Canvas for Floating Objects & Text Boxes */}
+              <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: editingObjectId ? 'none' : 'auto' }}>
+                <FabricCanvas
+                  page={activePage}
+                  objects={visibleObjects}
+                  stories={document.stories}
+                  onObjectModified={handleObjectModified}
+                  onSelectionChanged={(id) => {
+                    setSelectedObjectId(id);
+                    if (id && document.objects[id]?.type === 'text-frame') {
+                      setEditingObjectId(id);
+                    }
+                  }}
+                  onObjectDoubleClicked={handleObjectDoubleClicked}
+                />
+              </div>
 
               {/* Interactive In-place Rich Text Editor Overlay */}
               {editingObject && editingObject.type === 'text-frame' && editingStory && (

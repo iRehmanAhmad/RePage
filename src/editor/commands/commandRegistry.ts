@@ -34,6 +34,7 @@ class CommandRegistry {
   public execute(id: string, ...args: any[]): boolean {
     const cmd = this.commands.get(id);
     if (!cmd) {
+      // eslint-disable-next-line no-console
       console.warn(`[CommandRegistry] Command not found: ${id}`);
       return false;
     }

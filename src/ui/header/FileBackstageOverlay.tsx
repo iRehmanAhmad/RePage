@@ -120,7 +120,10 @@ export function FileBackstageOverlay({
 
         <button
           type="button"
-          onClick={() => setActiveSection('open')}
+          onClick={() => {
+            onOpenDocument();
+            onClose();
+          }}
           style={{
             padding: '10px 14px',
             textAlign: 'left',

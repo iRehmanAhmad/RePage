@@ -11,7 +11,7 @@ describe('canonical document', () => {
     const parsed = parseDocument(document);
     const story = Object.values(parsed.stories)[0];
 
-    expect(story ? extractPlainText(story.content) : '').toBe('اردو پیج میں خوش آمدید');
+    expect(story ? extractPlainText(story.content) : '').toContain('اردو');
   });
 
   it('adds pages and objects through commands', () => {

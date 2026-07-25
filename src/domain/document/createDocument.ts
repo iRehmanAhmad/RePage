@@ -25,9 +25,20 @@ export function createBlankPage(name = 'Page 1'): Page {
   };
 }
 
+export const PRIMARY_STORY_ID = 'primary-body-story';
+
 export function createDocument(title = 'Untitled RePage Document'): RePageDocument {
   const now = new Date().toISOString();
   const page = createBlankPage();
+
+  const primaryStory: TextStory = {
+    id: PRIMARY_STORY_ID,
+    name: 'Primary Document Story',
+    content: {
+      type: 'doc',
+      content: [paragraph('', 'rtl')],
+    },
+  };
 
   return {
     schemaVersion: 1,
@@ -42,7 +53,7 @@ export function createDocument(title = 'Untitled RePage Document'): RePageDocume
     pageOrder: [page.id],
     pages: { [page.id]: page },
     objects: {},
-    stories: {},
+    stories: { [PRIMARY_STORY_ID]: primaryStory },
     styles: {},
     assets: {},
   };
@@ -56,12 +67,12 @@ export function createStarterDocument(): RePageDocument {
     return document;
   }
 
-  const story: TextStory = {
-    id: createId('story'),
-    name: 'Welcome story',
+  const primaryStory: TextStory = {
+    id: PRIMARY_STORY_ID,
+    name: 'Primary Document Story',
     content: {
       type: 'doc',
-      content: [paragraph('اردو پیج میں خوش آمدید')],
+      content: [paragraph('اردو میں ٹائپ کریں یا نیا ٹیکسٹ باکس درج کریں...', 'rtl')],
     },
   };
   const frame: TextFrameObject = {
@@ -69,7 +80,7 @@ export function createStarterDocument(): RePageDocument {
     pageId,
     type: 'text-frame',
     name: 'Welcome text',
-    storyId: story.id,
+    storyId: primaryStory.id,
     frame: {
       x: millimetresToPoints(25),
       y: millimetresToPoints(35),
@@ -97,6 +108,6 @@ export function createStarterDocument(): RePageDocument {
       },
     },
     objects: { [frame.id]: frame },
-    stories: { [story.id]: story },
+    stories: { ...document.stories, [primaryStory.id]: primaryStory },
   };
 }

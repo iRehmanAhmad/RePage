@@ -17,6 +17,7 @@
     "check": "npm run check:utf8 && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
+    "@tiptap/extension-underline": "^3.29.0",
     "@tiptap/pm": "^3.29.0",
     "@tiptap/react": "^3.29.0",
     "@tiptap/starter-kit": "^3.29.0",
