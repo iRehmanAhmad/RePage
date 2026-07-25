@@ -25,6 +25,6 @@ describe('ocrCorrection', () => {
     expect(imageFrame.locked).toBe(true); // Source image preserved as background reference
 
     expect(textFrame.type).toBe('text');
-    expect(textFrame.richText.paragraphs.length).toBeGreaterThan(0);
+    expect(textFrame.richText.content.length).toBeGreaterThan(0);
   });
 });
