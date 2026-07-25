@@ -73,20 +73,20 @@ export interface Translations {
 
 export const DICTIONARY: Record<UiLanguage, Translations> = {
   ur: {
-    tabHome: 'اہم (Home)',
-    tabInsert: 'درج کریں (Insert)',
-    tabUrduTools: 'اردو آلات (Urdu Tools)',
-    tabPageLayout: 'صفحہ بندی (Layout)',
-    tabCollab: 'باہمی تعاون (Collab)',
-    tabExportView: 'برآمد و منظر (Export)',
+    tabHome: 'اہم',
+    tabInsert: 'درج کریں',
+    tabUrduTools: 'اردو آلات',
+    tabPageLayout: 'صفحہ بندی',
+    tabCollab: 'باہمی تعاون',
+    tabExportView: 'برآمد و منظر',
 
     open: 'کھولیں',
     save: 'محفوظ',
     saveAs: 'محفوظ کریں',
     recent: 'حالیہ',
     preflight: 'پری فلائٹ',
-    undo: 'منسوخ (Undo)',
-    redo: 'دوبارہ (Redo)',
+    undo: 'منسوخ',
+    redo: 'دوبارہ',
     select: 'انتخاب',
     textFrame: 'متن فریم',
     shape: 'شکل',

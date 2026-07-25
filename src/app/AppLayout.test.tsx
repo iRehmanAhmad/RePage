@@ -15,31 +15,31 @@ vi.mock('../persistence/autosave/database', () => ({
 }));
 
 describe('App Studio Layout with MS Word Ribbon & Theme Engine', () => {
-  it('renders MS Word ribbon tabs, theme dropdown, and language selector', async () => {
+  it('renders MS Word ribbon tabs in English by default and toggles to Urdu', async () => {
     render(<App />);
 
     // Header & Brand
     expect(await screen.findByText('RePage Studio')).toBeInTheDocument();
 
-    // MS Word Ribbon Tabs
-    expect(screen.getByText('اہم (Home)')).toBeInTheDocument();
-    expect(screen.getByText('درج کریں (Insert)')).toBeInTheDocument();
-    expect(screen.getByText('اردو آلات (Urdu Tools)')).toBeInTheDocument();
-    expect(screen.getByText('صفحہ بندی (Layout)')).toBeInTheDocument();
-    expect(screen.getByText('باہمی تعاون (Collab)')).toBeInTheDocument();
-    expect(screen.getByText('برآمد و منظر (Export)')).toBeInTheDocument();
-
-    // Switch Ribbon Tab to Insert
-    fireEvent.click(screen.getByText('درج کریں (Insert)'));
-    expect(screen.getByText('+ ذیلی حاشیہ')).toBeInTheDocument();
-
-    // Switch Menu Language to English
-    const langSelect = screen.getByTitle('Software Menu Language');
-    fireEvent.change(langSelect, { target: { value: 'en' } });
-
-    // Verify translated tab titles
+    // Default English MS Word Ribbon Tabs
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Insert')).toBeInTheDocument();
     expect(screen.getByText('Urdu Tools')).toBeInTheDocument();
+    expect(screen.getByText('Page Layout')).toBeInTheDocument();
+    expect(screen.getByText('Collaboration')).toBeInTheDocument();
+    expect(screen.getByText('Export & View')).toBeInTheDocument();
+
+    // Switch Ribbon Tab to Insert
+    fireEvent.click(screen.getByText('Insert'));
+    expect(screen.getByText('+ Footnote')).toBeInTheDocument();
+
+    // Switch Menu Language to Urdu
+    const langSelect = screen.getByTitle('Software Menu Language');
+    fireEvent.change(langSelect, { target: { value: 'ur' } });
+
+    // Verify translated Urdu tab titles
+    expect(screen.getByText('اہم')).toBeInTheDocument();
+    expect(screen.getByText('درج کریں')).toBeInTheDocument();
+    expect(screen.getByText('اردو آلات')).toBeInTheDocument();
   });
 });

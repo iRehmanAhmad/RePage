@@ -77,7 +77,7 @@ export function App() {
 
   // Theme & Menu Language State
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
-  const [lang, setLang] = useState<UiLanguage>('ur');
+  const [lang, setLang] = useState<UiLanguage>('en');
 
   // Active translation dictionary
   const t = DICTIONARY[lang];
