@@ -1,4 +1,4 @@
-import { InlineNode, ParagraphNode, RichTextDocument, TextMark } from '../../domain/rich-text/types';
+import { InlineNode, ParagraphNode, paragraph, RichTextDocument, TextMark } from '../../domain/rich-text/types';
 import { DEFAULT_RESOURCE_LIMITS, ImportOptions, ImportTextResult, validateResourceLimits } from './importEngine';
 import { detectTextDirection } from './textImporter';
 
@@ -37,7 +37,7 @@ export function importRtf(
     if (isItalic) marks.push({ type: 'italic' });
     if (isUnderline) marks.push({ type: 'underline' });
     if (fontSize !== 12) marks.push({ type: 'fontSize', size: fontSize });
-    if (fontColor !== '#000000') marks.push({ type: 'color', color: fontColor });
+    if (fontColor && fontColor !== '#000000') marks.push({ type: 'color', color: fontColor });
 
     currentInline.push({
       type: 'text',
@@ -152,7 +152,7 @@ export function importRtf(
   }
 
   const fullText = story.content
-    .map((p) => p.content.map((c) => (c.type === 'text' ? c.text : '')).join(''))
+    .map((p) => p.content.map((c: InlineNode) => (c.type === 'text' ? c.text : '')).join(''))
     .join(' ');
   const words = fullText.trim().split(/\s+/).filter(Boolean);
 

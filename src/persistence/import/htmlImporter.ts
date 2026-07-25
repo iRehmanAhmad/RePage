@@ -1,4 +1,4 @@
-import { InlineNode, ParagraphNode, RichTextDocument, TextMark } from '../../domain/rich-text/types';
+import { InlineNode, ParagraphNode, paragraph, RichTextDocument, TextMark } from '../../domain/rich-text/types';
 import { DEFAULT_RESOURCE_LIMITS, ImportOptions, ImportTextResult, validateResourceLimits } from './importEngine';
 import { sanitizeHtmlMarkup } from './sanitizer';
 import { detectTextDirection } from './textImporter';
@@ -110,7 +110,7 @@ export function importHtml(
   };
 
   const fullText = finalParagraphs
-    .map((p) => p.content.map((c) => (c.type === 'text' ? c.text : '')).join(''))
+    .map((p) => p.content.map((c: InlineNode) => (c.type === 'text' ? c.text : '')).join(''))
     .join(' ');
   const words = fullText.trim().split(/\s+/).filter(Boolean);
 
