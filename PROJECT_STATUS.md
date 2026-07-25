@@ -38,6 +38,8 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), and M3.1 Link
 4. Automatic Page Numbering Fields & Urdu Numerals (M3.4 — **Resolved**).
 5. Character & Paragraph Object Style Libraries (M3.5 — **Resolved**).
 6. Pre-flight Verification & Urdu Document Diagnostics (M3.6 — **Resolved**).
+7. Standalone Vector SVG & PDF Prepress Export Engine (M3.7 — **Resolved**).
+8. Table of Contents & Cross-References Engine (M3.8).
 
 ## Foundation & Typography exit gate progress
 
