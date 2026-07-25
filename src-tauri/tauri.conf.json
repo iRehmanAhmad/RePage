@@ -67,5 +67,14 @@
         "role": "Editor"
       }
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IFJFUEFHRV9TRUNVUkVfS0VZ",
+      "endpoints": [
+        "https://releases.repage.org/stable/update.json",
+        "https://releases.repage.org/beta/update.json"
+      ]
+    }
   }
 }
