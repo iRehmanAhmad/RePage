@@ -96,7 +96,7 @@ p {
 
     // Process page text frames
     page.objectOrder.forEach((objId) => {
-      const obj = page.objects[objId];
+      const obj = doc.objects[objId];
       if (obj && obj.type === 'text-frame') {
         const story = doc.stories[obj.storyId];
         if (story && story.content && story.content.content) {
