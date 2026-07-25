@@ -99,7 +99,8 @@ export class FabricCanvasAdapter {
       } else if (obj.type === 'text-frame') {
         const fontDef = getFontDefinition(obj.fontFamily);
         const overflowText = obj.overflow ? ' [+] ⚠️' : '';
-        fabricObj = new fabric.Textbox(`اردو پیج میں خوش آمدید${overflowText}`, {
+        const seqBadge = obj.sequenceIndex !== undefined ? ` [#${obj.sequenceIndex + 1}]` : '';
+        fabricObj = new fabric.Textbox(`اردو پیج میں خوش آمدید${seqBadge}${overflowText}`, {
           left: obj.frame.x,
           top: obj.frame.y,
           width: obj.frame.width,

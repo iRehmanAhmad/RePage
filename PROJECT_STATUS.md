@@ -4,11 +4,11 @@ Last updated: 2026-07-25
 
 ## Current phase
 
-**M2 — Urdu Typography Beta: COMPLETE** (M0 Foundation: COMPLETE, M1 Page-Layout Alpha: in progress)
+**M3 — Document Production Beta: in progress** (M0 Foundation & M2 Urdu Typography Beta: COMPLETE)
 
-The clean strict-TypeScript Foundation and Urdu Typography Beta (M2) are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, Urdu Rich-Text Zod Schema, Tiptap DOM editing overlay, Bidi QA suite, Phonetic Keyboards (CRULP/Navees), and Multi-frame text flow foundations.
+The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), and M3.1 Linked Text Frames Engine are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, Urdu Rich-Text Zod Schema, Tiptap DOM editing overlay, Bidi QA suite, Phonetic Keyboards (CRULP/Navees), Multi-frame story flow, circular-link prevention, and document templates.
 
-## Completed foundation & typography capabilities (M0 & M2 Exit Gates Passed)
+## Completed capabilities (M0 & M2 Exit Gates Passed, M3.1 Active)
 
 - React/Vite application rebuilt in strict TypeScript (`RePage` branding).
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
@@ -25,31 +25,17 @@ The clean strict-TypeScript Foundation and Urdu Typography Beta (M2) are complet
 - Floating Tiptap DOM rich-text editor overlay (`TextEditorOverlay.tsx`) for canvas text frames.
 - 13 verified Urdu Unicode & Bidi test fixtures (`fixtures.ts`) with code-point round-trip verification.
 - CRULP Phonetic, Navees Phonetic, and Visual On-Screen Keyboard toolbar (`VisualKeyboard.tsx`).
-- Multi-frame linked story flow (`textFlow.ts`), sequence ordering, and visual overflow badge rendering.
-- 40 passing automated unit and integration tests (`vitest`).
-
-## Known gaps and risks
-
-| ID | Gap | Severity | Next resolution |
-|---|---|---:|---|
-| F-001 | Interactive Fabric canvas adapter | **Resolved** | Built `FabricCanvasAdapter` & `FabricCanvas` for shapes & frames |
-| F-002 | Urdu rich-text schema & validation | **Resolved** | Built ProseMirror/Tiptap compatible rich-text schema, Zod validator & plain text converter |
-| F-003 | Package assets and hashes | **Resolved** | Implemented SHA-256 Web Crypto hashing, 50MB asset limit, 100MB package limit |
-| F-004 | Package compression-ratio and JSON limits | **Resolved** | Implemented 10x compression ratio limit and hostile package guards |
-| F-005 | No schema migration runner beyond v1 | High | Add migration registry before schema v2 exists |
-| F-006 | Startup recovery prompt | **Resolved** | Implemented `getLatestRecovery` & startup restore/discard banner UX |
-| F-007 | User-visible undo/redo history | **Resolved** | Implemented `TransactionHistory` & `Ctrl+Z` / `Ctrl+Y` shortcuts |
-| F-008 | Approved/self-hosted Urdu font register | **Resolved** | Built `fontRegistry.ts`, Google Fonts web font imports & fallback chains |
-| F-009 | No raster or production export | High | Begin only after canonical layout and fonts are reliable |
-| F-010 | Tauri and collaboration are intentionally absent | Medium | Follow M4/M5 gates; do not pull them forward |
+- Multi-frame linked story flow engine (`textFlowEngine.ts`), circular-link prevention, frame deletion story retention, and visual sequence badges.
+- Urdu paragraph styles (`styles.ts`), multi-column text frames, and Aerab-aware Find & Replace engine (`findReplace.ts`).
+- Urdu document template engine (`documentTemplates.ts`) with Newspaper and Poetry Book presets.
+- 53 passing automated unit and integration tests (`vitest`).
 
 ## Immediate Milestone 3 work queue
 
-1. Urdu Character & Paragraph Styles, Column Layouts & Find/Replace (M2.7 — **Resolved**).
-2. Urdu Document Templates & Preset Layouts (M2.8 — **Resolved**).
-3. Multi-page Workspace Tools (Zoom, Pan, Guides, Multi-Selection — M1.3 / M1.4).
-4. Advanced Master Pages & Section Headers (M3.1 Page Layout Engine).
-5. Grid Systems & Snap Guides (M3.2 Layout & Guides).
+1. Linked text frames, circular link prevention & multi-page reflow (M3.1 — **Resolved**).
+2. Advanced Master Pages & Section Headers (M3.3 Page Layout Engine).
+3. Grid Systems & Snap Guides (M3.2 Layout & Guides).
+4. Automatic Page Numbering Fields & Urdu Numerals (M3.4).
 
 ## Foundation & Typography exit gate progress
 
