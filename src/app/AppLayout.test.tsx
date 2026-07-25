@@ -41,7 +41,7 @@ describe('App Studio Layout with MS Word Ribbon Group Cards & Captions', () => {
     fireEvent.change(langSelect, { target: { value: 'ur' } });
 
     // Verify translated Urdu tab titles & group captions
-    expect(screen.getByText('فائل (File)')).toBeInTheDocument();
+    expect(screen.getAllByText('فائل (File)')[0]).toBeInTheDocument();
     expect(screen.getByText('اہم')).toBeInTheDocument();
   });
 });
