@@ -16,6 +16,8 @@ import { clearRecovery, getLatestRecovery, saveRecovery } from '../persistence/a
 import { createUrdupPackage, readUrdupPackage } from '../persistence/package/urdupPackage';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
+import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
+import type { KeyboardMode } from '../domain/unicode/keyboardLayouts';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -45,6 +47,7 @@ export function App() {
   const [message, setMessage] = useState('Foundation workspace');
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
+  const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [recoveredItem, setRecoveredItem] = useState<{ document: RePageDocument; savedAt: string } | null>(null);
 
   const [, setHistoryVersion] = useState(0);
@@ -395,6 +398,44 @@ export function App() {
           </div>
         </aside>
       </div>
+
+      <VisualKeyboard
+        mode={keyboardMode}
+        onModeChange={setKeyboardMode}
+        onInsertChar={(char) => {
+          if (selectedTextFrame && activeStory) {
+            const currentText = activeStory.content.content[0]?.content[0]?.type === 'text'
+              ? activeStory.content.content[0].content[0].text
+              : '';
+            const nextText = currentText + char;
+            const updatedRichText = {
+              type: 'doc' as const,
+              content: [
+                {
+                  type: 'paragraph' as const,
+                  direction: 'rtl' as const,
+                  alignment: 'start' as const,
+                  content: [{ type: 'text' as const, text: nextText }],
+                },
+              ],
+            };
+            const nextDoc = {
+              ...document,
+              stories: {
+                ...document.stories,
+                [activeStory.id]: {
+                  ...activeStory,
+                  content: updatedRichText,
+                },
+              },
+            };
+            updateDocument(nextDoc, `Insert character ${char}`);
+            setMessage(`Inserted '${char}' into story`);
+          } else {
+            setMessage(`Character '${char}' selected (select a text frame to insert)`);
+          }
+        }}
+      />
 
       <footer className="statusbar">
         <span>{message}</span>
