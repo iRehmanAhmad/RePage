@@ -15,15 +15,10 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Milestone 5 — Collaboration Preview (**Fully Resolved & Audited**).
+- **Current Milestone**: Milestone 6 — Interactive Editing & UI Polish (**In Progress**).
 - **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED (CRDT mapping, awareness isolation, deterministic conflict engine, content-addressed asset transfer, WebRTC networking with STUN/TURN, identity & authorization with high-entropy tokens and audit logs).
-- **M5.6 Collaboration UX**: Live remote cursor/selection overlays (`RemoteCollaboratorOverlay.tsx`), topbar status & active participant list (`CollaborationBar.tsx`), and threaded comments/replies panel (`CommentsPanel.tsx`).
-- **M5.5 Identity & Authorization**: Owner/editor/viewer roles, 256-bit cryptographically secure high-entropy invitation tokens (`authEngine.ts`), token expiration, revocation, participant removal, room lifecycle (`created`, `active`, `archived`, `closed`), schema version compatibility checks, and append-only audit trail logging.
-- **M5.4 Networking**: Production WebRTC signaling (`wss://signaling.repage.org`), STUN/TURN servers, forced-relay policy for enterprise firewalls (`networkProvider.ts`), auto-reconnect backoff on interface switches, small-room limits (Max 4 editors), and connectivity diagnostics.
-- **M5.3 Asset Transfer**: Content-addressed SHA-256 binary hashing (`assetTransferEngine.ts`), separate 64 KB chunked transfer path outside Yjs maps, 50 MB size limit, 5 MB/s rate limit, and missing-asset status tracking.
-- **M5.2 Conflict Policies**: Last-Writer-Wins movement/resize resolution (`conflictEngine.ts`), delete-over-edit precedence, cascading page deletion, default style fallback, linked-story reflow recomputation, and scoped local `Y.UndoManager` (`Ctrl+Z`).
-- **M5.1 CRDT Mapping**: `canonicalToYjsDoc` & `yjsToCanonicalDoc` binding (`crdtDoc.ts`) and ephemeral awareness presence protocol (`awareness.ts`).
-- **Test Suite**: 126 vitest unit tests passing across 35 test suites. 183 UTF-8 files verified without mojibake.
+- **MS Word–Style UI**: Quick Access Toolbar (QAT) with localStorage persistence, centered document title, multi-tabbed MS Word ribbon (File, Home, Insert, Urdu Tools, Page Layout, Collaboration, Export & View) with grouped tool cards and bottom captions (Clipboard, Font, Paragraph, Tools, Pages, Illustrations, Footnotes, Proofing, Page Setup).
+- **Interactive Canvas Editing**: Double-click text frame activation → Tiptap rich-text overlay, Visual Keyboard character insertion into active story, `addTextFrame` document command for creating editable text frames from Ribbon or keyboard.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
@@ -36,6 +31,8 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - IndexedDB/Dexie provides browser autosave and recovery.
 - `.urdup` is a versioned ZIP package with JSON metadata and separate assets.
 - Export is a dedicated layout/rendering pipeline, independent from screenshots of the workspace UI.
+- Left sidebar removed; Properties inspector is the sole right-side dock.
+- `FabricCanvasAdapter` fires `onObjectDoubleClicked` for text frame editing; `TextEditorOverlay` receives `pendingChar` from `VisualKeyboard`.
 
 ## Non-negotiable quality constraints
 
@@ -44,18 +41,16 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - No silent data loss during save, import, migration, undo, or collaboration.
 - User-owned documents remain usable offline.
 - Fonts must have verified redistribution and embedding licences.
-- “Print-ready” requires measurable physical dimensions, embedded fonts, and verified output—not merely a high-resolution screenshot.
+- "Print-ready" requires measurable physical dimensions, embedded fonts, and verified output—not merely a high-resolution screenshot.
 
 ## Present reality
 
 - The application was rebuilt in clean strict-TypeScript under the product name **RePage**.
 - Milestones M0 (Foundation), M1 (Page Layout), M2 (Urdu Typography Beta), M3 (Document Production Beta), M4 (Desktop Release Candidate), and M5 (Collaboration Preview) are COMPLETE.
-- Canonical document schema v1, point-based geometry, stable IDs, referential validation, page/object commands, Dexie recovery, SHA-256 asset storage, and `.urdup` ZIP round trips are implemented.
-- Pinned Urdu Font Register (`fontRegistry.ts`), Google Fonts web font loaders, and system fallbacks are configured.
-- Urdu Rich-Text Zod Schema (`types.ts`), floating Tiptap DOM rich-text overlay (`TextEditorOverlay.tsx`), and CRULP/Navees Phonetic Visual Keyboards (`VisualKeyboard.tsx`) are active.
-- Multi-frame linked text flow (`textFlow.ts`), sequence ordering, and visual overflow indicators (`[+] ⚠️`) are implemented and verified.
-- Preflight diagnostics panel (`PreflightPanel.tsx`), Prepress vector SVG/PDF exporter (`exportEngine.ts`), Tauri 2 desktop integration, signed update manager, and Yjs CRDT real-time collaboration engine are fully operational.
-- 126 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner (183 files), and oxlint linter are enforced in `npm run check`.
+- Interactive canvas editing is wired: double-click text frame opens Tiptap overlay, Visual Keyboard types into active story, Ribbon Text Frame tool auto-creates and activates text frames.
+- MS Word–style UI shell: QAT with 11 configurable tools, 7-tab ribbon with grouped cards and bottom captions, centered document title, dark/light/system themes, English/Urdu menu language toggle.
+- Visual Keyboard: 3-row QWERTY layout, CRULP/Navees/English/Native modes, Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
+- 158 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner (228 files), and oxlint linter are enforced in `npm run check`.
 
 ## Open decisions
 
