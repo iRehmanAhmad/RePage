@@ -99,12 +99,57 @@ export async function saveAsDocumentWorkflow(
     [{ name: 'RePage Document', extensions: ['urdup'] }],
   );
 
-  const pathName = savedPath || defaultName;
-  addRecentFile(doc.metadata.title, pathName);
+  if (savedPath) {
+    addRecentFile(doc.metadata.title, savedPath);
+    return {
+      filePath: savedPath,
+      lastModifiedMs: Date.now(),
+      isDirty: false,
+    };
+  }
 
   return {
-    filePath: pathName,
+    filePath: defaultName,
     lastModifiedMs: Date.now(),
     isDirty: false,
   };
+}
+
+export async function importExternalFileWorkflow(
+  fileData: File | ArrayBuffer,
+  filename: string,
+) {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  let buffer: ArrayBuffer;
+
+  if (fileData instanceof File) {
+    buffer = await fileData.arrayBuffer();
+  } else {
+    buffer = fileData;
+  }
+
+  if (ext === 'txt') {
+    const { importPlainText } = await import('../import/textImporter');
+    return importPlainText(buffer);
+  } else if (ext === 'rtf') {
+    const { importRtf } = await import('../import/rtfImporter');
+    return importRtf(buffer);
+  } else if (ext === 'html' || ext === 'htm') {
+    const { importHtml } = await import('../import/htmlImporter');
+    const text = new TextDecoder('utf-8').decode(buffer);
+    return importHtml(text);
+  } else if (ext === 'docx') {
+    const { importDocxXml } = await import('../import/docxImporter');
+    const text = new TextDecoder('utf-8').decode(buffer);
+    return importDocxXml(text);
+  } else if (ext === 'svg') {
+    const { importSvg } = await import('../import/svgImporter');
+    const text = new TextDecoder('utf-8').decode(buffer);
+    return importSvg(text);
+  } else if (ext === 'pdf') {
+    const { importPdfPage } = await import('../import/pdfImporter');
+    return importPdfPage(buffer);
+  }
+
+  throw new Error(`Unsupported import format for extension .${ext}`);
 }
