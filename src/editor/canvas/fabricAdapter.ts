@@ -98,13 +98,14 @@ export class FabricCanvasAdapter {
         });
       } else if (obj.type === 'text-frame') {
         const fontDef = getFontDefinition(obj.fontFamily);
-        fabricObj = new fabric.Textbox('اردو پیج میں خوش آمدید', {
+        const overflowText = obj.overflow ? ' [+] ⚠️' : '';
+        fabricObj = new fabric.Textbox(`اردو پیج میں خوش آمدید${overflowText}`, {
           left: obj.frame.x,
           top: obj.frame.y,
           width: obj.frame.width,
           height: obj.frame.height,
           angle: obj.frame.rotation,
-          fill: obj.color,
+          fill: obj.overflow ? '#dc2626' : obj.color,
           fontSize: obj.fontSize,
           fontFamily: fontDef.family,
           opacity: obj.opacity,

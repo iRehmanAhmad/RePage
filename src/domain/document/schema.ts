@@ -45,6 +45,10 @@ const textFrameSchema = baseObjectSchema.extend({
   color: z.string().min(1),
   lineHeight: positiveNumber,
   padding: insetsSchema,
+  sequenceIndex: z.number().int().nonnegative().optional(),
+  nextFrameId: z.string().min(1).nullable().optional(),
+  previousFrameId: z.string().min(1).nullable().optional(),
+  overflow: z.boolean().optional(),
 });
 
 const rectangleSchema = baseObjectSchema.extend({

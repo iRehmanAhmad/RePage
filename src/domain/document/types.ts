@@ -57,6 +57,10 @@ export interface TextFrameObject extends BasePageObject {
   color: string;
   lineHeight: number;
   padding: Insets;
+  sequenceIndex?: number | undefined;
+  nextFrameId?: ObjectId | null | undefined;
+  previousFrameId?: ObjectId | null | undefined;
+  overflow?: boolean | undefined;
 }
 
 export interface RectangleObject extends BasePageObject {
