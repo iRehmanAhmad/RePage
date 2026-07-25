@@ -39,12 +39,13 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 
 ## Present reality
 
-- The old JavaScript prototype was removed on 2026-07-25 and replaced with a clean strict-TypeScript Foundation.
-- Canonical document schema v1, point-based geometry, stable IDs, referential validation, page/object commands, Dexie recovery, and baseline `.urdup` ZIP round trips are implemented.
-- The application shell can add/remove pages, add a canonical rectangle, open validated packages, download packages, and display verified Urdu.
-- Fabric is installed for the next canvas-adapter phase but is not allowed to own canonical state.
-- Tiptap, Yjs, WebRTC, jsPDF, and html2canvas are not installed in the clean Foundation.
-- The next implementation work is to complete Foundation persistence defenses and build the Fabric canvas adapter.
+- The application was rebuilt in clean strict-TypeScript under the product name **RePage**.
+- Milestone 0 (Foundation) and Milestone 2 (Urdu Typography Beta) are COMPLETE.
+- Canonical document schema v1, point-based geometry, stable IDs, referential validation, page/object commands, Dexie recovery, SHA-256 asset storage, and baseline `.urdup` ZIP round trips are implemented.
+- Pinned Urdu Font Register (`fontRegistry.ts`), Google Fonts web font loaders, and system fallbacks are configured.
+- Urdu Rich-Text Zod Schema (`types.ts`), floating Tiptap DOM rich-text overlay (`TextEditorOverlay.tsx`), and CRULP/Navees Phonetic Visual Keyboards (`VisualKeyboard.tsx`) are active.
+- Multi-frame linked text flow (`textFlow.ts`), sequence ordering, and visual overflow indicators (`[+] ⚠️`) are implemented and verified.
+- 40 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner, and oxlint linter are enforced in `npm run check`.
 
 ## Open decisions
 

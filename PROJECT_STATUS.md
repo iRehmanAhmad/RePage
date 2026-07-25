@@ -4,11 +4,11 @@ Last updated: 2026-07-25
 
 ## Current phase
 
-**M1 — Local Page-Layout Alpha: in progress** (M0 Foundation & Risk Elimination: COMPLETE)
+**M2 — Urdu Typography Beta: COMPLETE** (M0 Foundation: COMPLETE, M1 Page-Layout Alpha: in progress)
 
-The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Undo/Redo transaction stack, startup recovery UX, and interactive Fabric.js canvas adapter (`F-001`).
+The clean strict-TypeScript Foundation and Urdu Typography Beta (M2) are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, Urdu Rich-Text Zod Schema, Tiptap DOM editing overlay, Bidi QA suite, Phonetic Keyboards (CRULP/Navees), and Multi-frame text flow foundations.
 
-## Completed foundation capabilities (M0 Exit Gate Passed)
+## Completed foundation & typography capabilities (M0 & M2 Exit Gates Passed)
 
 - React/Vite application rebuilt in strict TypeScript (`RePage` branding).
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
@@ -18,9 +18,15 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 - Bounded transaction history (`TransactionHistory`) supporting Undo / Redo (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`).
 - Interactive Fabric.js canvas adapter (`FabricCanvasAdapter` / `FabricCanvas`) for interactive shape rendering, drag, scale, rotate, and selection.
 - IndexedDB/Dexie recovery snapshots and startup restore/discard prompt UX.
-- Baseline `.urdup` ZIP package creation and validated import.
+- Baseline `.urdup` ZIP package creation, SHA-256 asset hashing, size limits, and validated import.
 - Automated strict UTF-8 and mojibake verification scanner (`check:utf8`).
-- 20 passing automated unit and integration tests (`vitest`).
+- Pinned Urdu Font Register (`fontRegistry.ts`), Google Fonts web font loaders, and system fallbacks.
+- Urdu Rich-Text Schema (`types.ts`) with ProseMirror/Tiptap compatible node & mark structures.
+- Floating Tiptap DOM rich-text editor overlay (`TextEditorOverlay.tsx`) for canvas text frames.
+- 13 verified Urdu Unicode & Bidi test fixtures (`fixtures.ts`) with code-point round-trip verification.
+- CRULP Phonetic, Navees Phonetic, and Visual On-Screen Keyboard toolbar (`VisualKeyboard.tsx`).
+- Multi-frame linked story flow (`textFlow.ts`), sequence ordering, and visual overflow badge rendering.
+- 40 passing automated unit and integration tests (`vitest`).
 
 ## Known gaps and risks
 
@@ -28,8 +34,8 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 |---|---|---:|---|
 | F-001 | Interactive Fabric canvas adapter | **Resolved** | Built `FabricCanvasAdapter` & `FabricCanvas` for shapes & frames |
 | F-002 | Urdu rich-text schema & validation | **Resolved** | Built ProseMirror/Tiptap compatible rich-text schema, Zod validator & plain text converter |
-| F-003 | Package assets and hashes are specified but not written/read | Critical | Implement asset store, hash verification, decoded media limits |
-| F-004 | Package compression-ratio and JSON complexity limits are incomplete | High | Add hostile package fixtures and bounded parsing policy |
+| F-003 | Package assets and hashes | **Resolved** | Implemented SHA-256 Web Crypto hashing, 50MB asset limit, 100MB package limit |
+| F-004 | Package compression-ratio and JSON limits | **Resolved** | Implemented 10x compression ratio limit and hostile package guards |
 | F-005 | No schema migration runner beyond v1 | High | Add migration registry before schema v2 exists |
 | F-006 | Startup recovery prompt | **Resolved** | Implemented `getLatestRecovery` & startup restore/discard banner UX |
 | F-007 | User-visible undo/redo history | **Resolved** | Implemented `TransactionHistory` & `Ctrl+Z` / `Ctrl+Y` shortcuts |
@@ -37,24 +43,21 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 | F-009 | No raster or production export | High | Begin only after canonical layout and fonts are reliable |
 | F-010 | Tauri and collaboration are intentionally absent | Medium | Follow M4/M5 gates; do not pull them forward |
 
-## Immediate Milestone 1 & 2 work queue
+## Immediate Milestone 3 work queue
 
-1. Complete package asset storage & limits (M1.6 / F-003, F-004 — **Resolved**).
-2. Establish Pinned Urdu Font Register & Typography Setup (M2.1 / F-008 — **Resolved**).
-3. Urdu Rich-Text Schema & Validation (M2.2 / F-002 — **Resolved**).
-4. Tiptap Rich-Text DOM Editor Overlay (M2.3 — **Resolved**).
-5. Font & Bidi QA Unicode Test Suite (M2.4 — **Resolved**).
-6. Phonetic Keyboard System & Visual On-Screen Keyboard (M2.5 — **Resolved**).
-7. Text Flow Foundations & Linked Story Chain (M2.6 — **Resolved**).
+1. Multi-page Workspace Tools (Zoom, Pan, Guides, Multi-Selection — M1.3 / M1.4).
+2. Advanced Master Pages & Section Headers (M3.1 Page Layout Engine).
+3. Grid Systems & Snap Guides (M3.2 Layout & Guides).
 
-## Foundation exit gate progress
+## Foundation & Typography exit gate progress
 
 - [x] Repository source is strict UTF-8 and verified Urdu renders correctly.
 - [x] Canonical strict-TypeScript document model exists with schema versioning.
 - [x] A two-page document can be edited through commands and `.urdup` round-tripped without semantic loss.
-- [ ] Text, image, and shape assets all round-trip through the package format.
+- [x] Text, image, and shape assets all round-trip through the package format.
 - [x] Autosave recovery restore/discard is tested end to end.
 - [x] Undo/redo transaction behavior is implemented and tested.
+- [x] Urdu typography register, Tiptap rich-text overlay, Bidi QA, Phonetic keyboards, and Linked text flow are complete.
 - [x] `npm run check` (strict UTF-8 scanner + `oxlint` + `vitest` + `tsc` + `vite build`) passes.
 
 ## Verification baseline
