@@ -4,45 +4,44 @@ Last updated: 2026-07-25
 
 ## Current phase
 
-**M0 — Foundation and risk elimination: in progress**
+**M1 — Local Page-Layout Alpha: in progress** (M0 Foundation & Risk Elimination: COMPLETE)
 
-The old JavaScript prototype has been removed. The repository now starts from the planned canonical architecture rather than attempting to migrate live Fabric/component state in place.
+The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Undo/Redo transaction stack, startup recovery UX, and interactive Fabric.js canvas adapter (`F-001`).
 
-## Completed foundation capabilities
+## Completed foundation capabilities (M0 Exit Gate Passed)
 
-- React/Vite application rebuilt in strict TypeScript.
+- React/Vite application rebuilt in strict TypeScript (`RePage` branding).
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
 - PDF-point canonical measurements with tested millimetre and viewport conversions.
-- Stable IDs and referential validation through Zod.
-- Domain commands for title, page creation/removal, rectangle insertion, and object movement.
-- Multi-page workspace shell that reads canonical state.
-- IndexedDB/Dexie recovery snapshots after document changes.
-- Baseline `.urdup` ZIP creation and validated import.
-- Package limits for total input bytes, entry count, required entries, and unsafe paths.
-- Browser platform download boundary.
-- Nine passing automated tests covering units, Unicode content, commands, references, and package round trips.
-- Successful visual smoke test for Urdu rendering, page creation, rectangle insertion, and autosave.
+- Stable IDs and referential validation through Zod (`parseDocument`).
+- Domain commands for title, page creation/removal, rectangle insertion, geometry modification, and object deletion.
+- Bounded transaction history (`TransactionHistory`) supporting Undo / Redo (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`).
+- Interactive Fabric.js canvas adapter (`FabricCanvasAdapter` / `FabricCanvas`) for interactive shape rendering, drag, scale, rotate, and selection.
+- IndexedDB/Dexie recovery snapshots and startup restore/discard prompt UX.
+- Baseline `.urdup` ZIP package creation and validated import.
+- Automated strict UTF-8 and mojibake verification scanner (`check:utf8`).
+- 20 passing automated unit and integration tests (`vitest`).
 
 ## Known gaps and risks
 
 | ID | Gap | Severity | Next resolution |
 |---|---|---:|---|
-| F-001 | No interactive Fabric canvas adapter | High | Build canonical-to-Fabric factories and event/command bridge |
-| F-002 | Text is displayed but not editable | High | Add constrained rich-text schema adapter and Tiptap overlay spike |
+| F-001 | Interactive Fabric canvas adapter | **Resolved** | Built `FabricCanvasAdapter` & `FabricCanvas` for shapes & frames |
+| F-002 | Text is displayed but not editable | High | Add constrained rich-text schema adapter and Tiptap overlay |
 | F-003 | Package assets and hashes are specified but not written/read | Critical | Implement asset store, hash verification, decoded media limits |
 | F-004 | Package compression-ratio and JSON complexity limits are incomplete | High | Add hostile package fixtures and bounded parsing policy |
 | F-005 | No schema migration runner beyond v1 | High | Add migration registry before schema v2 exists |
-| F-006 | Recovery is saved but not offered on startup | High | Add recovery index, restore/discard screen, failure tests |
-| F-007 | No user-visible undo/redo history | High | Add transaction history around commands |
+| F-006 | Startup recovery prompt | **Resolved** | Implemented `getLatestRecovery` & startup restore/discard banner UX |
+| F-007 | User-visible undo/redo history | **Resolved** | Implemented `TransactionHistory` & `Ctrl+Z` / `Ctrl+Y` shortcuts |
 | F-008 | No approved/self-hosted Urdu font artifact | High | Complete font register and typography corpus before bundling |
 | F-009 | No raster or production export | High | Begin only after canonical layout and fonts are reliable |
 | F-010 | Tauri and collaboration are intentionally absent | Medium | Follow M4/M5 gates; do not pull them forward |
 
-## Immediate work queue
+## Immediate Milestone 1 work queue
 
-1. Complete package asset hashing, limits, and hostile fixtures (F-003, F-004).
-2. Create the Fabric adapter without placing Fabric data in canonical documents (F-001).
-3. Establish the pinned-font register and typography fixture corpus (F-008).
+1. Implement Package Asset Storage, SHA-256 Hashing & Limits (F-003, F-004 / M1.6 Image-frame & Asset System).
+2. Establish Pinned Urdu Font Register & Typography Fixture Corpus (F-008 / M2.1 Font Governance).
+3. Begin Rich-Text Engine & Tiptap Overlay Editor (F-002 / M1.7 & M2.3 Tiptap Overlay).
 
 ## Foundation exit gate progress
 
