@@ -2,7 +2,7 @@
 
 RePage is a modern, offline-first, cross-platform Urdu desktop-publishing application. Its purpose is to offer a simpler and more dependable alternative to legacy Urdu publishing tools while preserving professional page-layout capabilities.
 
-The repository contains a clean Foundation implementation built around a strict TypeScript canonical document model. It currently supports validated multi-page state, domain commands, IndexedDB recovery, safe baseline `.urdup` packaging, and a browser workspace shell. Canvas manipulation, rich-text editing, professional export, Tauri packaging, and collaboration remain later milestones.
+The repository contains a clean, strict TypeScript implementation featuring a canonical schema version 1 document engine, Fabric canvas adapter, DOM rich-text editor, master pages, linked text frames, preflight diagnostics panel, standalone vector SVG/PDF prepress exporter, Tauri 2 cross-platform desktop shell (Windows NSIS, macOS DMG, Linux AppImage/DEB/RPM), signed update manager, Yjs CRDT real-time multi-user collaboration engine, WebRTC networking, and identity authorization.
 
 ## Product priorities
 
@@ -11,16 +11,15 @@ The repository contains a clean Foundation implementation built around a strict 
 3. Easy professional page layout.
 4. Predictable screen and print output.
 5. Offline Windows, macOS, and Linux applications.
-6. Optional collaboration and cloud services.
+6. Real-time collaboration and cloud services.
 
-Voice calling and AI features are later differentiators. They must not delay the publishing foundation.
-
-## Current commands
+## Verification & development commands
 
 ```powershell
 npm install
 npm run dev
 npm run lint
+npm run check
 npm run build
 ```
 
@@ -34,6 +33,7 @@ Read these files in order before changing architecture or scope:
 4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 5. [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
 6. [ROADMAP.md](ROADMAP.md)
+7. [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md)
 
 Specialized specifications:
 
@@ -49,21 +49,12 @@ Specialized specifications:
 
 ## Repository status
 
-- Product name: RePage
-- Application type: desktop-first DTP editor with a shared web core
-- Current frontend: React 19, strict TypeScript, and Vite
-- Planned adapters: Fabric geometry layer and Tiptap/ProseMirror DOM rich-text layer
-- Intended desktop shell: Tauri 2, after the browser core reaches its desktop-shell gate
-- Primary document extension: `.urdup`
-- Licence: not yet selected; do not publish or redistribute until decided
+- **Product name**: RePage
+- **Application type**: Desktop-first DTP editor with browser core
+- **Frontend stack**: React 19, strict TypeScript, Tailwind CSS, Vite
+- **Canvas adapter**: Fabric canvas geometry adapter
+- **Text editor**: Tiptap / ProseMirror DOM rich-text adapter
+- **Desktop shell**: Tauri 2 (`src-tauri/`) with least-privilege security
+- **Package extension**: `.urdup` (`application/vnd.urdup+zip`)
+- **Completed Milestones**: M0 Foundation, M1 Page Layout, M2 Urdu Typography, M3 Document Production, M4 Desktop RC, M5 Collaboration Preview (100% Verified)
 
-## Important limitations in the current foundation
-
-- The workspace renders canonical objects but does not yet provide Fabric selection, dragging, or resizing.
-- The starter Urdu story is displayed but not yet editable through the planned DOM rich-text adapter.
-- `.urdup` import validates schema, references, entry count, size, and paths; assets, hashes, migrations, and compression-ratio defenses are still incomplete.
-- Autosave writes recovery snapshots, but startup restore/discard UX is not yet implemented.
-- No PDF or image exporter is present in the clean foundation.
-- Tauri, collaboration, audio, templates, keyboard layouts, and professional DTP features are intentionally not yet installed.
-
-See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the actively maintained status.

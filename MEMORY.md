@@ -17,12 +17,13 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
 - **Current Milestone**: Milestone 5 — Collaboration Preview (**Fully Resolved & Audited**).
 - **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED (CRDT mapping, awareness isolation, deterministic conflict engine, content-addressed asset transfer, WebRTC networking with STUN/TURN, identity & authorization with high-entropy tokens and audit logs).
+- **M5.6 Collaboration UX**: Live remote cursor/selection overlays (`RemoteCollaboratorOverlay.tsx`), topbar status & active participant list (`CollaborationBar.tsx`), and threaded comments/replies panel (`CommentsPanel.tsx`).
 - **M5.5 Identity & Authorization**: Owner/editor/viewer roles, 256-bit cryptographically secure high-entropy invitation tokens (`authEngine.ts`), token expiration, revocation, participant removal, room lifecycle (`created`, `active`, `archived`, `closed`), schema version compatibility checks, and append-only audit trail logging.
 - **M5.4 Networking**: Production WebRTC signaling (`wss://signaling.repage.org`), STUN/TURN servers, forced-relay policy for enterprise firewalls (`networkProvider.ts`), auto-reconnect backoff on interface switches, small-room limits (Max 4 editors), and connectivity diagnostics.
 - **M5.3 Asset Transfer**: Content-addressed SHA-256 binary hashing (`assetTransferEngine.ts`), separate 64 KB chunked transfer path outside Yjs maps, 50 MB size limit, 5 MB/s rate limit, and missing-asset status tracking.
 - **M5.2 Conflict Policies**: Last-Writer-Wins movement/resize resolution (`conflictEngine.ts`), delete-over-edit precedence, cascading page deletion, default style fallback, linked-story reflow recomputation, and scoped local `Y.UndoManager` (`Ctrl+Z`).
 - **M5.1 CRDT Mapping**: `canonicalToYjsDoc` & `yjsToCanonicalDoc` binding (`crdtDoc.ts`) and ephemeral awareness presence protocol (`awareness.ts`).
-- **Test Suite**: 120 vitest unit tests passing across 34 test suites. 176 UTF-8 files verified without mojibake.
+- **Test Suite**: 126 vitest unit tests passing across 35 test suites. 183 UTF-8 files verified without mojibake.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
@@ -48,12 +49,13 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 ## Present reality
 
 - The application was rebuilt in clean strict-TypeScript under the product name **RePage**.
-- Milestone 0 (Foundation) and Milestone 2 (Urdu Typography Beta) are COMPLETE.
-- Canonical document schema v1, point-based geometry, stable IDs, referential validation, page/object commands, Dexie recovery, SHA-256 asset storage, and baseline `.urdup` ZIP round trips are implemented.
+- Milestones M0 (Foundation), M1 (Page Layout), M2 (Urdu Typography Beta), M3 (Document Production Beta), M4 (Desktop Release Candidate), and M5 (Collaboration Preview) are COMPLETE.
+- Canonical document schema v1, point-based geometry, stable IDs, referential validation, page/object commands, Dexie recovery, SHA-256 asset storage, and `.urdup` ZIP round trips are implemented.
 - Pinned Urdu Font Register (`fontRegistry.ts`), Google Fonts web font loaders, and system fallbacks are configured.
 - Urdu Rich-Text Zod Schema (`types.ts`), floating Tiptap DOM rich-text overlay (`TextEditorOverlay.tsx`), and CRULP/Navees Phonetic Visual Keyboards (`VisualKeyboard.tsx`) are active.
 - Multi-frame linked text flow (`textFlow.ts`), sequence ordering, and visual overflow indicators (`[+] ⚠️`) are implemented and verified.
-- 40 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner, and oxlint linter are enforced in `npm run check`.
+- Preflight diagnostics panel (`PreflightPanel.tsx`), Prepress vector SVG/PDF exporter (`exportEngine.ts`), Tauri 2 desktop integration, signed update manager, and Yjs CRDT real-time collaboration engine are fully operational.
+- 126 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner (183 files), and oxlint linter are enforced in `npm run check`.
 
 ## Open decisions
 

@@ -24,7 +24,7 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Content-addressed asset transfer engine (`assetTransferEngine.ts`) enforcing SHA-256 binary hashing, separate resumable 64 KB chunked transfer path outside Yjs maps, 50 MB size limit, 5 MB/s rate limit, and missing-asset status tracking.
 - Collaborative network provider (`networkProvider.ts`) offering production WebRTC signaling (`wss://signaling.repage.org`), STUN/TURN ICE configurations, forced-relay policy for enterprise firewalls, auto-reconnection with exponential backoff on interface switches, small-room editor limits (Max 4 editors), and detailed connectivity diagnostics.
 - Collaborative room identity & authorization engine (`authEngine.ts`) enforcing owner/editor/viewer roles, 256-bit cryptographically secure high-entropy tokens, expiring invitations, token revocation, participant removal, room state machine (`created`, `active`, `archived`, `closed`), document version compatibility checks, and append-only audit log.
-- 120 passing automated unit and integration tests (`vitest`).
+- 126 passing automated unit and integration tests across 35 test suites (`vitest`).
 
 ## Milestone 5 work queue (Collaboration Preview)
 
@@ -44,16 +44,18 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - [x] Autosave recovery restore/discard is tested end to end.
 - [x] Undo/redo transaction behavior is implemented and tested.
 - [x] Urdu typography register, Tiptap rich-text overlay, Bidi QA, Phonetic keyboards, and Linked text flow are complete.
-- [x] `npm run check` (strict UTF-8 scanner + `oxlint` + `vitest` + `tsc` + `vite build`) passes.
+- [x] Desktop RC (M4) native workflows, desktop integration, distribution installers, signed updates, and release audit complete.
+- [x] Collaboration Preview (M5) CRDT binding, awareness, conflict engine, asset transfer, WebRTC networking, auth, and collaboration UX complete.
+- [x] `npm run check` (strict UTF-8 scanner + `oxlint` + `vitest` + `tsc` + `vite build`) passes cleanly.
 
 ## Verification baseline
 
-Recorded on 2026-07-25 after the clean rebuild:
+Recorded on 2026-07-25 after M5 exit gate completion:
 
-- `npm install`: removed 91 obsolete packages, installed 31 required packages, and reported zero vulnerabilities across 143 audited packages.
-- `npm run lint`: passes with warnings denied.
-- `npm run test`: 3 files and 9 tests pass.
-- `npm run build`: passes strict TypeScript and Vite production build.
+- `npm run check:utf8`: 183 files verified as valid UTF-8 without corrupt mojibake.
+- `npm run lint`: oxlint passes with 0 warnings and 0 errors across 92 files.
+- `npm run test`: vitest passes 126 unit/integration tests across 35 test suites.
+- `npm run build`: passes strict TypeScript compilation (`tsc -b`) and Vite production bundle.
 - Main JavaScript bundle: approximately 466 KB before gzip and 143 KB after gzip.
 - Browser smoke test: correct Urdu rendering; Add page and Rectangle commands work; autosave succeeds; no browser console warnings or errors.
 

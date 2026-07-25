@@ -1,6 +1,6 @@
 # Detailed Implementation Plan
 
-Status: approved sequencing baseline
+Status: Approved sequencing baseline (Phases 0 through 9 / Milestones M0 through M5 COMPLETE)
 
 The plan is gate-driven. A later phase may be researched early, but production feature work must not bypass unresolved data-loss, typography, or export gates.
 
