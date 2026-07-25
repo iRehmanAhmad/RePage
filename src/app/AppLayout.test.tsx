@@ -31,7 +31,7 @@ describe('App Studio Layout with MS Word Ribbon & Theme Engine', () => {
 
     // Switch Ribbon Tab to Insert
     fireEvent.click(screen.getByText('درج کریں (Insert)'));
-    expect(screen.getByText('ذیلی حاشیہ')).toBeInTheDocument();
+    expect(screen.getByText('+ ذیلی حاشیہ')).toBeInTheDocument();
 
     // Switch Menu Language to English
     const langSelect = screen.getByTitle('Software Menu Language');
