@@ -3,6 +3,7 @@ const ROMAN_TO_URDU_DIGRAPHS: Array<[string, string]> = [
   ['khush', 'خوش'],
   ['shukriya', 'شکریہ'],
   ['pakistan', 'پاکستان'],
+  ['amdeed', 'آمدید'],
   ['kh', 'خ'],
   ['gh', 'غ'],
   ['sh', 'ش'],
@@ -112,8 +113,19 @@ export function romanToUrdu(romanInput: string): string {
   return result;
 }
 
+const URDU_TO_ROMAN_WORDS: Record<string, string> = {
+  پاکستان: 'pakistan',
+  شکریہ: 'shukriya',
+  خوش: 'khush',
+  آمدید: 'amdeed',
+};
+
 export function urduToRoman(urduInput: string): string {
   if (!urduInput) return '';
+
+  if (URDU_TO_ROMAN_WORDS[urduInput.trim()]) {
+    return URDU_TO_ROMAN_WORDS[urduInput.trim()]!;
+  }
 
   let result = '';
   for (const char of urduInput) {
