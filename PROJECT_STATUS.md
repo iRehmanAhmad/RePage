@@ -23,17 +23,16 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - **Interactive canvas text editing**: Double-click text frame → Tiptap rich-text overlay (`TextEditorOverlay.tsx`) with `pendingChar` prop for Visual Keyboard character insertion, `onObjectDoubleClicked` callback in `FabricCanvasAdapter`, `addTextFrame` document command (`documentCommands.ts`), auto-creation and activation of text frames from Ribbon Text tool.
 - **Visual Keyboard**: 3-row QWERTY layout (`VisualKeyboard.tsx`), CRULP Phonetic / Navees Phonetic / English / Native OS modes (`keyboardLayouts.ts`), Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
 - **Theme & i18n**: Dark/light/system theme engine (`themeEngine.ts`), English/Urdu menu language toggle (`menuTranslation.ts`) with full dictionary.
-- **Streamlined workspace**: Left sidebar removed; right-side Properties inspector dock (`InspectorDock.tsx`) with X, Y, W, H, Rotation, Z-Index fields.
+- **RePage UX/UI Modernization Shell**: Word-style Urdu word processor direction. CommandRegistry dispatcher (`commandRegistry.ts`), File Backstage Overlay (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), "Text Frame" renamed to "Text Box" across UI, `addTextBox` command, status bar centered keyboard button and zoom slider.
 - 158 passing automated unit and integration tests across 52 test suites (`vitest`).
 
-## Milestone 6 work queue (Interactive Editing & UI Polish)
+## RePage UX Modernization Roadmap Progress
 
-1. MS Word Quick Access Toolbar & Ribbon UI (M6.1 — **Resolved**).
-2. Streamlined Workspace Layout (M6.2 — **Resolved**).
-3. Visual Keyboard Compact Layout & Minimize Toggle (M6.3 — **Resolved**).
-4. Interactive Canvas Text Editing Pipeline (M6.4 — **Resolved**).
-5. Hardware keyboard input routing to active text frame (M6.5 — **Pending**).
-6. Rich-text formatting toolbar in TextEditorOverlay (M6.6 — **Pending**).
+1. Phase UX-0: Product Interaction Spec & Command Registry Bus (**COMPLETE**).
+2. Phase UX-1: Application Shell & Responsive Ribbon (File Backstage, Navigation Pane, Status bar, Contextual Inspector) (**COMPLETE**).
+3. Phase UX-2: Word-Style Primary Authoring Surface (**IN PROGRESS**).
+4. Phase UX-3: Automatic Pagination & Print Layout (**Scheduled**).
+5. Phase UX-4: Floating Layout Objects & Text Boxes (**Scheduled**).
 
 ## Foundation & Typography exit gate progress
 

@@ -9,16 +9,16 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 ## Product decisions
 
 - The product name is **RePage**.
-- The product is a frame-oriented DTP editor first, not a complete flowing word processor.
+- **Product Direction**: Word-style Urdu word processor first, InPage-style professional layout second. Blank documents open with immediate document body typing; text boxes are inserted deliberately for floating text.
 - Desktop publishing on Windows, macOS, and Linux is the primary target.
 - A shared browser core is desirable; Tauri is the intended desktop shell after the core architecture stabilizes.
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Milestone 6 — Interactive Editing & UI Polish (**In Progress**).
-- **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED (CRDT mapping, awareness isolation, deterministic conflict engine, content-addressed asset transfer, WebRTC networking with STUN/TURN, identity & authorization with high-entropy tokens and audit logs).
-- **MS Word–Style UI**: Quick Access Toolbar (QAT) with localStorage persistence, centered document title, multi-tabbed MS Word ribbon (File, Home, Insert, Urdu Tools, Page Layout, Collaboration, Export & View) with grouped tool cards and bottom captions (Clipboard, Font, Paragraph, Tools, Pages, Illustrations, Footnotes, Proofing, Page Setup).
-- **Interactive Canvas Editing**: Double-click text frame activation → Tiptap rich-text overlay, Visual Keyboard character insertion into active story, `addTextFrame` document command for creating editable text frames from Ribbon or keyboard.
+- **Current Milestone**: RePage UX/UI Modernization (Phases UX-0 & UX-1 **Complete**, UX-2 In Progress).
+- **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED.
+- **MS Word–Style UI**: Quick Access Toolbar (QAT), centered document title, Backstage File menu (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), statusbar with centered keyboard toggle & zoom slider, 7-tab MS Word ribbon.
+- **Interactive Canvas & Word Editing**: Immediate caret placement, "Text Frame" renamed to **"Text Box"**, `addTextBox` command, unified `CommandRegistry` dispatcher.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
