@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 
 export type ActiveTool = 'select' | 'text' | 'rectangle' | 'image' | 'pan';
@@ -13,6 +13,10 @@ export interface MsWordRibbonProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  onOpenDocument: (file: File) => void;
+  onSaveDocument: () => void;
+  onSaveAsDocument: () => void;
+  onShowRecentFiles: () => void;
   activeFontFamily: string;
   onFontFamilyChange: (font: string) => void;
   activeFontSize: number;
@@ -41,6 +45,10 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onRedo,
   canUndo,
   canRedo,
+  onOpenDocument,
+  onSaveDocument,
+  onSaveAsDocument,
+  onShowRecentFiles,
   activeFontFamily,
   onFontFamilyChange,
   activeFontSize,
@@ -61,9 +69,22 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onToggleCollab,
 }) => {
   const [activeTab, setActiveTab] = useState<RibbonTab>('home');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <div className="ms-word-ribbon-container">
+      {/* Hidden File Input for Ribbon Open action */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".urdup,.inp,.txt,.docx,.html,.rtf,.svg,.pdf"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onOpenDocument(file);
+        }}
+      />
+
       {/* Ribbon Top Tab Header Navigation */}
       <div className="ribbon-tabs-header">
         <button
@@ -109,7 +130,33 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {/* Tab 1: HOME */}
         {activeTab === 'home' && (
           <div className="ribbon-group-row">
-            {/* History */}
+            {/* File Operations Chunk */}
+            <div className="ribbon-chunk">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="ribbon-action-btn"
+                title={t.open}
+              >
+                <span>📂</span>
+                <span>{t.open}</span>
+              </button>
+              <button onClick={onSaveDocument} className="ribbon-action-btn" title={t.save}>
+                <span>💾</span>
+                <span>{t.save}</span>
+              </button>
+              <button onClick={onSaveAsDocument} className="ribbon-action-btn gold" title={t.saveAs}>
+                <span>💾</span>
+                <span>{t.saveAs}</span>
+              </button>
+              <button onClick={onShowRecentFiles} className="ribbon-action-btn" title={t.recent}>
+                <span>📜</span>
+                <span>{t.recent}</span>
+              </button>
+            </div>
+
+            <div className="ribbon-v-divider" />
+
+            {/* History Chunk */}
             <div className="ribbon-chunk">
               <button
                 onClick={onUndo}
@@ -133,7 +180,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
 
             <div className="ribbon-v-divider" />
 
-            {/* Tools */}
+            {/* Selection & Drawing Tools */}
             <div className="ribbon-chunk">
               <button
                 onClick={() => onSelectTool('select')}

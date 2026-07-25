@@ -30,7 +30,7 @@ html[data-theme='light'],
   --paper-bg: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --btn-bg: #f1f5f9;
+  --btn-bg: #ffffff;
   --btn-hover: #e2e8f0;
   --emerald-accent: #059669;
   --emerald-glow: rgba(5, 150, 105, 0.2);
@@ -80,80 +80,191 @@ button, input, select, textarea {
 .app-shell {
   height: 100vh;
   display: grid;
-  grid-template-rows: 52px auto minmax(0, 1fr) auto 26px;
+  grid-template-rows: 44px auto minmax(0, 1fr) auto 26px;
   background: var(--bg-studio);
 }
 
-/* Studio Header */
+/* Studio Header (MS Word Style: QAT Left, Title Center, Settings Right) */
 .studio-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 12px;
   background: var(--panel-header);
   border-bottom: 1px solid var(--panel-border);
   z-index: 30;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .brand-block {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 6px;
   background: linear-gradient(135deg, #10b981 0%, #047857 100%);
   color: #ffffff;
   font-family: serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
-  box-shadow: 0 0 12px var(--emerald-glow);
+  box-shadow: 0 0 10px var(--emerald-glow);
 }
 
 .brand-info {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .brand-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-main);
 }
 
 .brand-version {
-  font-size: 9px;
+  font-size: 8px;
   color: var(--emerald-accent);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.title-field {
+/* Quick Access Toolbar (QAT) */
+.qat-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2px;
+  padding: 2px 4px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
 }
 
-.title-field input {
-  width: 260px;
+.qat-btn {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.qat-btn:hover {
+  background: var(--btn-hover);
+}
+
+.qat-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qat-btn.customize-btn {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* QAT Customize Dropdown Menu */
+.relative {
+  position: relative;
+}
+
+.qat-dropdown-menu {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  width: 220px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qat-dropdown-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--panel-border);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.qat-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--text-main);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.qat-dropdown-item:hover {
+  background: var(--btn-hover);
+}
+
+.qat-dropdown-item input[type='checkbox'] {
+  accent-color: var(--emerald-accent);
+}
+
+/* Centered Document Title Field */
+.title-field-centered {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-field-centered input {
+  width: 280px;
   border: 1px solid var(--panel-border);
   border-radius: 6px;
   background: var(--panel-bg);
   color: var(--text-main);
-  padding: 5px 12px;
+  padding: 4px 12px;
   text-align: center;
   font-size: 12px;
+  font-weight: 600;
   outline: none;
   transition: all 0.2s ease;
 }
 
-.title-field input:focus {
+.title-field-centered input:focus {
   border-color: var(--emerald-accent);
   box-shadow: 0 0 0 3px var(--emerald-glow);
 }
@@ -168,13 +279,6 @@ button, input, select, textarea {
   font-family: monospace;
 }
 
-/* Header Action Buttons & Selects */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .header-select {
   background: var(--panel-bg);
   color: var(--text-main);
@@ -184,37 +288,6 @@ button, input, select, textarea {
   border-radius: 6px;
   outline: none;
   cursor: pointer;
-}
-
-.btn-studio {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 6px;
-  border: 1px solid var(--panel-border);
-  background: var(--btn-bg);
-  color: var(--text-main);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-studio:hover {
-  background: var(--btn-hover);
-}
-
-.btn-studio.primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: none;
-  color: #ffffff;
-}
-
-.btn-studio.gold {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  border: none;
-  color: #ffffff;
 }
 
 /* MS Word Multi-Tabbed Ribbon Architecture */

@@ -14,12 +14,26 @@ vi.mock('../persistence/autosave/database', () => ({
   saveRecovery: vi.fn().mockResolvedValue(undefined),
 }));
 
-describe('App Studio Layout with MS Word Ribbon & Theme Engine', () => {
-  it('renders MS Word ribbon tabs in English by default and toggles to Urdu', async () => {
+describe('App Studio Layout with Quick Access Toolbar & MS Word Header', () => {
+  it('renders Quick Access Toolbar on left, centered title in middle, and ribbon tabs', async () => {
     render(<App />);
 
     // Header & Brand
     expect(await screen.findByText('RePage Studio')).toBeInTheDocument();
+
+    // Quick Access Toolbar (QAT) Shortcuts
+    expect(screen.getByTitle('Quick Access: Save')).toBeInTheDocument();
+    expect(screen.getByTitle('Quick Access: Undo')).toBeInTheDocument();
+    expect(screen.getByTitle('Quick Access: Redo')).toBeInTheDocument();
+    expect(screen.getByTitle('Quick Access: Open')).toBeInTheDocument();
+
+    // QAT Customize Dropdown Button
+    const qatDropdownBtn = screen.getByTitle('Customize Quick Access Toolbar');
+    expect(qatDropdownBtn).toBeInTheDocument();
+
+    // Toggle QAT Customize Dropdown
+    fireEvent.click(qatDropdownBtn);
+    expect(screen.getByText('Customize Quick Access Toolbar')).toBeInTheDocument();
 
     // Default English MS Word Ribbon Tabs
     expect(screen.getByText('Home')).toBeInTheDocument();

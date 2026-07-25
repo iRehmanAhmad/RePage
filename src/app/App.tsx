@@ -32,9 +32,10 @@ import { runUrduOcr, OcrPageResult } from '../domain/ocr/ocrEngine';
 import { convertOcrResultToDocumentObjects } from '../domain/ocr/ocrCorrection';
 import { exportDocumentToPdfMetadata, exportDocumentToEpub } from '../export/exportEngine';
 
-// Theme & i18n
+// Theme, i18n & QAT
 import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
 import { UiLanguage, DICTIONARY } from '../ui/i18n/menuTranslation';
+import { QatItemKey, getInitialQatItems, saveQatItems } from '../ui/header/qatEngine';
 
 // Studio Layout & MS Word Ribbon Components
 import { StudioHeader } from '../ui/common/StudioHeader';
@@ -79,6 +80,9 @@ export function App() {
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
   const [lang, setLang] = useState<UiLanguage>('en');
 
+  // Quick Access Toolbar State
+  const [qatItems, setQatItems] = useState<QatItemKey[]>(() => getInitialQatItems());
+
   // Active translation dictionary
   const t = DICTIONARY[lang];
 
@@ -86,6 +90,14 @@ export function App() {
   useEffect(() => {
     applyThemeToDocument(themeMode);
   }, [themeMode]);
+
+  const handleToggleQatItem = (key: QatItemKey) => {
+    setQatItems((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      saveQatItems(next);
+      return next;
+    });
+  };
 
   // Modal Panel Toggles
   const [showPreflight, setShowPreflight] = useState(false);
@@ -126,6 +138,22 @@ export function App() {
     },
     [document],
   );
+
+  const handleUndo = React.useCallback(() => {
+    const prev = history.undo(document);
+    if (prev) {
+      setDocumentState(prev);
+      setHistoryVersion((v) => v + 1);
+    }
+  }, [document]);
+
+  const handleRedo = React.useCallback(() => {
+    const next = history.redo(document);
+    if (next) {
+      setDocumentState(next);
+      setHistoryVersion((v) => v + 1);
+    }
+  }, [document]);
 
   const handleObjectModified = React.useCallback(
     (objectId: string, frameProps: Partial<import('../domain/document/types').Rect>) => {
@@ -262,7 +290,7 @@ export function App() {
   return (
     <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
       <div className="app-shell">
-        {/* Top Studio Header with Theme & Language Selection */}
+        {/* MS Word Header: QAT Top-Left, Centered Document Title Top-Center, Theme & Language Top-Right */}
         <StudioHeader
           t={t}
           lang={lang}
@@ -281,7 +309,13 @@ export function App() {
           onOpenOcr={() => void handleTriggerOcr()}
           onExportPdf={handleExportPdf}
           onExportEpub={() => void handleExportEpub()}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={history.canUndo()}
+          canRedo={history.canRedo()}
           saveState={saveState}
+          qatItems={qatItems}
+          onToggleQatItem={handleToggleQatItem}
         />
 
         {/* MS Word 6-Tab Ribbon Toolbar */}
@@ -293,22 +327,14 @@ export function App() {
             setActiveTool(tool);
             if (tool === 'rectangle') handleAddRectangle();
           }}
-          onUndo={() => {
-            const prev = history.undo(document);
-            if (prev) {
-              setDocumentState(prev);
-              setHistoryVersion((v) => v + 1);
-            }
-          }}
-          onRedo={() => {
-            const next = history.redo(document);
-            if (next) {
-              setDocumentState(next);
-              setHistoryVersion((v) => v + 1);
-            }
-          }}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
           canUndo={history.canUndo()}
           canRedo={history.canRedo()}
+          onOpenDocument={(file) => void handleOpenImportFile(file)}
+          onSaveDocument={() => void handleSaveNative()}
+          onSaveAsDocument={() => void handleSaveAsNative()}
+          onShowRecentFiles={() => setShowRecent(!showRecent)}
           activeFontFamily={activeFontFamily}
           onFontFamilyChange={setActiveFontFamily}
           activeFontSize={activeFontSize}
