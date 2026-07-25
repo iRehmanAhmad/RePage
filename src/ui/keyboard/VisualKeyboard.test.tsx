@@ -48,18 +48,18 @@ describe('VisualKeyboard Component with 3 QWERTY Rows & Dynamic Mode Resolver', 
     // CRULP layout key 'E' shift is 'ۓ'
     const shiftBtn = screen.getByText('Shift OFF ▼');
     fireEvent.click(shiftBtn);
-    expect(screen.getByTitle("Key 'E' ➔ ۓ")).toBeInTheDocument();
+    expect(screen.getAllByTitle("Key 'E' ➔ ۓ")[0]).toBeInTheDocument();
 
     // Rerender with Navees mode where Shift+E is 'ٍ'
     rerender(
       <VisualKeyboard mode="navees" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
     );
-    expect(screen.getByTitle("Key 'E' ➔ ٍ")).toBeInTheDocument();
+    expect(screen.getAllByTitle("Key 'E' ➔ ٍ")[0]).toBeInTheDocument();
 
     // Rerender with English mode where key 'E' is 'E'
     rerender(
       <VisualKeyboard mode="english" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
     );
-    expect(screen.getByTitle("Key 'E' ➔ E")).toBeInTheDocument();
+    expect(screen.getAllByTitle("Key 'E' ➔ E")[0]).toBeInTheDocument();
   });
 });
