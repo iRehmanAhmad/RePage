@@ -116,7 +116,10 @@ export function addRectangle(document: RePageDocument, pageId: PageId): RePageDo
   });
 }
 
-export function addTextFrame(document: RePageDocument, pageId: PageId): RePageDocument {
+export function addTextBox(
+  document: RePageDocument,
+  pageId: PageId,
+): { document: RePageDocument; objectId: ObjectId } {
   const page = document.pages[pageId];
   if (!page) {
     throw new Error(`Page ${pageId} does not exist.`);
@@ -127,7 +130,7 @@ export function addTextFrame(document: RePageDocument, pageId: PageId): RePageDo
 
   const story: TextStory = {
     id: storyId,
-    name: 'New Text Frame',
+    name: 'New Text Box',
     content: {
       type: 'doc',
       content: [paragraph('', 'rtl')],
@@ -138,7 +141,7 @@ export function addTextFrame(document: RePageDocument, pageId: PageId): RePageDo
     id: objectId,
     pageId,
     type: 'text-frame',
-    name: 'Text Frame',
+    name: 'Text Box',
     frame: { x: 72, y: 200, width: 360, height: 120, rotation: 0 },
     locked: false,
     hidden: false,
@@ -151,7 +154,7 @@ export function addTextFrame(document: RePageDocument, pageId: PageId): RePageDo
     padding: { top: 8, right: 8, bottom: 8, left: 8 },
   };
 
-  return touch({
+  const updatedDoc = touch({
     ...document,
     pageOrder: document.pageOrder,
     pages: {
@@ -161,6 +164,15 @@ export function addTextFrame(document: RePageDocument, pageId: PageId): RePageDo
     objects: { ...document.objects, [objectId]: textFrame },
     stories: { ...document.stories, [storyId]: story },
   });
+
+  return { document: updatedDoc, objectId };
+}
+
+export function addTextFrame(
+  document: RePageDocument,
+  pageId: PageId,
+): RePageDocument {
+  return addTextBox(document, pageId).document;
 }
 
 export function moveObject(

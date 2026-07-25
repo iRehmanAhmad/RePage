@@ -115,7 +115,7 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     undo: 'منسوخ',
     redo: 'دوبارہ',
     select: 'انتخاب',
-    textFrame: 'متن فریم',
+    textFrame: 'ٹیکسٹ باکس',
     shape: 'شکل',
     imageFrame: 'تصویر فریم',
 
@@ -191,7 +191,7 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     undo: 'Undo',
     redo: 'Redo',
     select: 'Select',
-    textFrame: 'Text Frame',
+    textFrame: 'Text Box',
     shape: 'Shape',
     imageFrame: 'Image Frame',
 

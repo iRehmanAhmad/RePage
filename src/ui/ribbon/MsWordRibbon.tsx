@@ -35,6 +35,8 @@ export interface MsWordRibbonProps {
   onExportEpub: () => void;
   onRunPreflight: () => void;
   onToggleCollab: () => void;
+  onOpenFileBackstage?: () => void;
+  onToggleNavigationPane?: () => void;
 }
 
 export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
@@ -67,6 +69,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onExportEpub,
   onRunPreflight,
   onToggleCollab,
+  onOpenFileBackstage,
+  onToggleNavigationPane,
 }) => {
   const [activeTab, setActiveTab] = useState<RibbonTab>('home');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -89,7 +93,13 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
       <div className="ribbon-tabs-header">
         {/* Special MS Word File Button */}
         <button
-          onClick={() => setActiveTab('file')}
+          onClick={() => {
+            if (onOpenFileBackstage) {
+              onOpenFileBackstage();
+            } else {
+              setActiveTab('file');
+            }
+          }}
           className={`ribbon-file-btn ${activeTab === 'file' ? 'active' : ''}`}
         >
           <span>📁</span> {t.tabFile}
@@ -454,6 +464,12 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
                   <span>📚</span>
                   <span>{t.exportEpub}</span>
                 </button>
+                {onToggleNavigationPane && (
+                  <button onClick={onToggleNavigationPane} className="ribbon-action-btn">
+                    <span>🔍</span>
+                    <span>Navigation Pane (Ctrl+F)</span>
+                  </button>
+                )}
               </div>
               <div className="ribbon-group-caption">{t.tabExportView}</div>
             </div>

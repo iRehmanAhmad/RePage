@@ -39,10 +39,12 @@ import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
 import { UiLanguage, DICTIONARY } from '../ui/i18n/menuTranslation';
 import { QatItemKey, getInitialQatItems, saveQatItems } from '../ui/header/qatEngine';
 
-// Studio Layout & MS Word Ribbon Components
+// Studio Layout, MS Word Ribbon & Navigation Components
 import { StudioHeader } from '../ui/common/StudioHeader';
 import { MsWordRibbon, ActiveTool } from '../ui/ribbon/MsWordRibbon';
 import { InspectorDock } from '../ui/common/InspectorDock';
+import { FileBackstageOverlay } from '../ui/header/FileBackstageOverlay';
+import { NavigationPane } from '../ui/navigation/NavigationPane';
 import { insertFootnote, insertEndnote } from '../domain/rich-text/notesEngine';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
@@ -105,12 +107,14 @@ export function App() {
     });
   };
 
-  // Modal Panel Toggles
+  // Modal & Panel Toggles
   const [showPreflight, setShowPreflight] = useState(false);
   const [showLanguageTools, setShowLanguageTools] = useState(false);
   const [showOcrPanel, setShowOcrPanel] = useState(false);
   const [ocrResult, setOcrResult] = useState<OcrPageResult | null>(null);
   const [showRecent, setShowRecent] = useState(false);
+  const [isFileBackstageOpen, setIsFileBackstageOpen] = useState(false);
+  const [isNavigationPaneOpen, setIsNavigationPaneOpen] = useState(false);
 
   // Zoom & Viewport state
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -277,6 +281,17 @@ export function App() {
     setMessage('ePUB 3.0 exported successfully');
   }, [document]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setIsNavigationPaneOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleTriggerOcr = React.useCallback(async () => {
     const dummyBuffer = new ArrayBuffer(2048);
     const res = await runUrduOcr(dummyBuffer, 'Urdu_Scan_Page1.png');
@@ -412,10 +427,22 @@ export function App() {
           onExportEpub={() => void handleExportEpub()}
           onRunPreflight={() => setShowPreflight(true)}
           onToggleCollab={() => setMessage('Live collaboration room active')}
+          onOpenFileBackstage={() => setIsFileBackstageOpen(true)}
+          onToggleNavigationPane={() => setIsNavigationPaneOpen((prev) => !prev)}
         />
 
-        {/* Streamlined MS Word Workspace (Canvas Viewport + Format Properties Panel) */}
-        <div className="studio-layout">
+        {/* Streamlined MS Word Workspace (Navigation Pane + Canvas Viewport + Contextual Properties Panel) */}
+        <div className="studio-layout" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Left Navigation Pane */}
+          <NavigationPane
+            isOpen={isNavigationPaneOpen}
+            onClose={() => setIsNavigationPaneOpen(false)}
+            document={document}
+            activePageId={activePageId}
+            onSelectPage={setActivePageId}
+            lang={lang}
+          />
+
           {/* Center Studio Viewport */}
           <main className="studio-viewport">
             <div
@@ -439,7 +466,7 @@ export function App() {
                 }}
               />
 
-              {/* Fabric Canvas */}
+              {/* Fabric Vector Canvas */}
               <FabricCanvas
                 page={activePage}
                 objects={visibleObjects}
@@ -479,7 +506,6 @@ export function App() {
                 />
               )}
             </div>
-
           </main>
 
           {/* Right Properties Inspector Dock */}
@@ -554,7 +580,7 @@ export function App() {
           </div>
         </footer>
 
-        {/* Modal Panels */}
+        {/* Modal Panels & Overlays */}
         {showLanguageTools && (
           <LanguageToolsPanel
             initialText="پاکستان کا قومی ترانہ"
@@ -576,6 +602,28 @@ export function App() {
             onClose={() => setShowPreflight(false)}
           />
         )}
+
+        {/* Full-screen File Backstage View */}
+        <FileBackstageOverlay
+          isOpen={isFileBackstageOpen}
+          onClose={() => setIsFileBackstageOpen(false)}
+          document={document}
+          lang={lang}
+          saveState={saveState}
+          onNewDocument={() => {
+            const starter = createStarterDocument();
+            setDocumentState(starter);
+            setActivePageId(starter.pageOrder[0]!);
+            setMessage('New blank document created');
+          }}
+          onOpenDocument={() => {
+            // open file picker via ribbon input
+          }}
+          onSaveDocument={() => void handleSaveNative()}
+          onSaveAsDocument={() => void handleSaveAsNative()}
+          onExportPdf={handleExportPdf}
+          onPrint={triggerNativePrintDialog}
+        />
       </div>
     </DragAndDropOverlay>
   );
