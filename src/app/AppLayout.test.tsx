@@ -14,14 +14,14 @@ vi.mock('../persistence/autosave/database', () => ({
   saveRecovery: vi.fn().mockResolvedValue(undefined),
 }));
 
-describe('App Studio Layout with MS Word Ribbon Group Cards & Captions', () => {
-  it('renders File menu button, MS Word Ribbon group cards, and captions', async () => {
+describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspector', () => {
+  it('renders File menu button, MS Word Ribbon, centered title, and Properties inspector panel', async () => {
     render(<App />);
 
     // Header & Brand
     expect(await screen.findByText('RePage Studio')).toBeInTheDocument();
 
-    // MS Word File Button & Tabs
+    // MS Word File Button & Ribbon Tabs
     expect(screen.getByText('File')).toBeInTheDocument();
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Insert')).toBeInTheDocument();
@@ -31,7 +31,9 @@ describe('App Studio Layout with MS Word Ribbon Group Cards & Captions', () => {
     expect(screen.getByText('Clipboard')).toBeInTheDocument();
     expect(screen.getByText('Font')).toBeInTheDocument();
     expect(screen.getByText('Paragraph')).toBeInTheDocument();
-    expect(screen.getAllByText('Tools')[0]).toBeInTheDocument();
+
+    // Right Sidebar Properties Inspector Header
+    expect(screen.getByText('⚙ Properties')).toBeInTheDocument();
 
     // Click File menu button
     fireEvent.click(screen.getByText('File'));
@@ -40,8 +42,9 @@ describe('App Studio Layout with MS Word Ribbon Group Cards & Captions', () => {
     const langSelect = screen.getByTitle('Software Menu Language');
     fireEvent.change(langSelect, { target: { value: 'ur' } });
 
-    // Verify translated Urdu tab titles & group captions
+    // Verify translated Urdu tab titles & properties inspector header
     expect(screen.getAllByText('فائل (File)')[0]).toBeInTheDocument();
     expect(screen.getByText('اہم')).toBeInTheDocument();
+    expect(screen.getByText('⚙ خواص')).toBeInTheDocument();
   });
 });

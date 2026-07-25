@@ -355,57 +355,8 @@ export function App() {
           onToggleCollab={() => setMessage('Live collaboration room active')}
         />
 
-        {/* Main Editor Grid Layout */}
+        {/* Streamlined MS Word Workspace (Canvas Viewport + Format Properties Panel) */}
         <div className="studio-layout">
-          {/* Left Panel: Pages & Layers */}
-          <aside className="studio-sidebar">
-            <div className="sidebar-header">
-              <span>{t.pageCount}</span>
-              <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 rounded-full text-[10px] font-bold">
-                {document.pageOrder.length}
-              </span>
-            </div>
-
-            <div className="p-3 border-b border-slate-800 flex gap-2">
-              <button
-                onClick={handleAddPage}
-                className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded shadow"
-              >
-                {t.addPage}
-              </button>
-              <button
-                onClick={handleRemovePage}
-                disabled={document.pageOrder.length <= 1}
-                className={`px-3 py-1.5 border border-slate-700 text-slate-300 text-xs rounded ${
-                  document.pageOrder.length <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-800'
-                }`}
-              >
-                {t.removePage}
-              </button>
-            </div>
-
-            <ul className="p-2 space-y-2 overflow-y-auto flex-1 dir-rtl">
-              {document.pageOrder.map((pageId, idx) => {
-                const isSelected = pageId === activePageId;
-                return (
-                  <li key={pageId}>
-                    <button
-                      onClick={() => setActivePageId(pageId)}
-                      className={`w-full p-2.5 rounded-lg border text-right transition flex items-center justify-between ${
-                        isSelected
-                          ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 font-bold shadow-lg ring-1 ring-emerald-500/50'
-                          : 'bg-slate-900/60 hover:bg-slate-800/80 border-slate-800 text-slate-300'
-                      }`}
-                    >
-                      <span>صفحہ نمبر {idx + 1}</span>
-                      <span className="w-3 h-4 bg-slate-700 rounded border border-slate-600 block"></span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </aside>
-
           {/* Center Studio Viewport */}
           <main className="studio-viewport">
             <div
@@ -453,16 +404,12 @@ export function App() {
             </div>
           </main>
 
-          {/* Right Inspector Dock */}
+          {/* Right Properties Inspector Dock */}
           <InspectorDock
             t={t}
             document={document}
             selectedObject={selectedObject ?? null}
             onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}
-            onOpenLanguageTools={() => setShowLanguageTools(true)}
-            onOpenOcr={() => void handleTriggerOcr()}
-            onExportPdf={handleExportPdf}
-            onExportEpub={() => void handleExportEpub()}
           />
         </div>
 
