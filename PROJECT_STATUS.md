@@ -20,11 +20,13 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Signed application update manager (`updateManager.ts`), release channels (`stable`/`beta`), Ed25519 signature verification, failed-update rollback policy, and explicit user-driven document migration policy.
 - Collaboration CRDT document mapping (`crdtDoc.ts`) translating canonical document entities to Yjs shared maps (`yPageOrder`, `yPages`, `yObjects`, `yStories`, `yStyles`, `yComments`) with binary asset isolation.
 - Ephemeral collaborator awareness manager (`awareness.ts`) isolating user ID, display name, user color, active page, selection, and canvas cursor.
-- 101 passing automated unit and integration tests (`vitest`).
+- Collaborative conflict resolution engine (`conflictEngine.ts`) defining Last-Writer-Wins movement/resize resolution, delete-over-edit precedence, cascading page deletion, default style fallback, linked-story reflow recomputation, and scoped local `Y.UndoManager` (`Ctrl+Z`).
+- 108 passing automated unit and integration tests (`vitest`).
 
 ## Milestone 5 work queue (Collaboration Preview)
 
 1. Map canonical concepts to Yjs & Awareness separation (M5.1 — **Resolved**).
+2. Collaborative Conflict Policies & Undo Invariants (M5.2 — **Resolved**).
 
 ## Foundation & Typography exit gate progress
 
