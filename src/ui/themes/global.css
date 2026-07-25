@@ -574,7 +574,7 @@ button, input, select, textarea {
   pointer-events: none;
 }
 
-/* Statusbar Zoom Controls (MS Word style - bottom right) */
+/* Statusbar Layout (MS Word style) */
 .statusbar-left {
   display: flex;
   align-items: center;
@@ -582,6 +582,13 @@ button, input, select, textarea {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+
+.statusbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 .statusbar-separator {
@@ -593,7 +600,9 @@ button, input, select, textarea {
 .statusbar-zoom {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
+  flex: 1;
   flex-shrink: 0;
 }
 
@@ -636,6 +645,7 @@ button, input, select, textarea {
   align-items: center;
   justify-content: space-between;
   padding: 0 14px;
+  height: 32px;
   background: var(--panel-header);
   border-top: 1px solid var(--panel-border);
   font-size: 11px;

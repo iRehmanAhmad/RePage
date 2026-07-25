@@ -12,11 +12,29 @@ export interface VisualKeyboardProps {
   mode: KeyboardMode;
   onModeChange: (mode: KeyboardMode) => void;
   onInsertChar: (char: string) => void;
+  isMinimized?: boolean;
+  onToggleMinimize?: () => void;
 }
 
-export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeyboardProps) {
+export function VisualKeyboard({
+  mode,
+  onModeChange,
+  onInsertChar,
+  isMinimized: externalMinimized,
+  onToggleMinimize,
+}: VisualKeyboardProps) {
   const [isShift, setIsShift] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [internalMinimized, setInternalMinimized] = useState(false);
+
+  const isMinimized = externalMinimized ?? internalMinimized;
+
+  const handleToggleMinimize = () => {
+    if (onToggleMinimize) {
+      onToggleMinimize();
+    } else {
+      setInternalMinimized((prev) => !prev);
+    }
+  };
 
   const currentLayout = getLayoutMapForMode(mode);
 
@@ -81,47 +99,61 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
     </div>
   );
 
+  if (isMinimized) {
+    if (onToggleMinimize) {
+      return null;
+    }
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          padding: '2px 12px',
+          backgroundColor: '#0f172a',
+          color: '#f8fafc',
+          borderTop: '1px solid #1e293b',
+          fontSize: '11px',
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleToggleMinimize}
+          style={{
+            backgroundColor: '#1e293b',
+            color: '#38bdf8',
+            border: '1px solid #334155',
+            borderRadius: '5px',
+            padding: '2px 14px',
+            fontSize: '10px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+          title="Expand Visual Keyboard"
+        >
+          <span>⌨</span>
+          <span>Expand Keyboard ▲</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: isMinimized ? '0px' : '6px',
-        padding: isMinimized ? '2px 12px' : '6px 12px',
+        gap: '6px',
+        padding: '6px 12px',
         backgroundColor: '#0f172a',
         color: '#f8fafc',
         borderTop: '1px solid #1e293b',
         fontSize: '11px',
       }}
     >
-      {isMinimized ? (
-        /* Minimized: single centered expand button */
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <button
-            type="button"
-            onClick={() => setIsMinimized(false)}
-            style={{
-              backgroundColor: '#1e293b',
-              color: '#38bdf8',
-              border: '1px solid #334155',
-              borderRadius: '5px',
-              padding: '2px 14px',
-              fontSize: '10px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-            title="Expand Visual Keyboard"
-          >
-            <span>⌨</span>
-            <span>Expand Keyboard ▲</span>
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Consolidated Top Header Bar */}
+      {/* Consolidated Top Header Bar */}
           <div
             style={{
               display: 'flex',
@@ -202,7 +234,7 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
             {/* Minimize Toggle */}
             <button
               type="button"
-              onClick={() => setIsMinimized(true)}
+              onClick={handleToggleMinimize}
               style={{
                 backgroundColor: '#1e293b',
                 color: '#38bdf8',
@@ -250,8 +282,6 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
               </button>
             </div>
           </div>
-        </>
-      )}
     </div>
   );
 }

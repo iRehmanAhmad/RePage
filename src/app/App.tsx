@@ -79,6 +79,7 @@ export function App() {
   const [pendingChar, setPendingChar] = useState<string | null>(null);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
+  const [isKeyboardMinimized, setIsKeyboardMinimized] = useState(true);
   const [activeTool, setActiveTool] = useState<ActiveTool>('select');
 
   // Theme & Menu Language State
@@ -491,27 +492,50 @@ export function App() {
         </div>
 
         {/* Bottom Urdu Visual Keyboard Dock */}
-        <div className="border-t border-slate-800 bg-slate-950">
-          <VisualKeyboard
-            mode={keyboardMode}
-            onModeChange={setKeyboardMode}
-            onInsertChar={handleInsertChar}
-          />
-        </div>
+        {!isKeyboardMinimized && (
+          <div className="border-t border-slate-800 bg-slate-950">
+            <VisualKeyboard
+              mode={keyboardMode}
+              onModeChange={setKeyboardMode}
+              onInsertChar={handleInsertChar}
+              isMinimized={isKeyboardMinimized}
+              onToggleMinimize={() => setIsKeyboardMinimized((prev) => !prev)}
+            />
+          </div>
+        )}
 
-        {/* Bottom Studio Statusbar (MS Word layout: page info left, zoom right) */}
+        {/* Bottom Studio Statusbar (MS Word layout: page info left, keyboard toggle center, zoom right) */}
         <footer className="studio-statusbar">
           <div className="statusbar-left">
-            <div className="status-indicator">
-              <span className="status-dot" />
-              <span>{message}</span>
-            </div>
-            <span className="statusbar-separator">|</span>
             <span>صفحہ {document.pageOrder.indexOf(activePageId) + 1} از {document.pageOrder.length}</span>
             <span className="statusbar-separator">|</span>
             <span>{Math.round(pointsToMillimetres(activePage.width))} × {Math.round(pointsToMillimetres(activePage.height))} mm</span>
             <span className="statusbar-separator">|</span>
             <span>{saveState}</span>
+          </div>
+
+          <div className="statusbar-center">
+            <button
+              type="button"
+              onClick={() => setIsKeyboardMinimized((prev) => !prev)}
+              style={{
+                backgroundColor: '#1e293b',
+                color: '#38bdf8',
+                border: '1px solid #334155',
+                borderRadius: '5px',
+                padding: '2px 14px',
+                fontSize: '10px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              title={isKeyboardMinimized ? 'Expand Visual Keyboard' : 'Minimize Visual Keyboard'}
+            >
+              <span>⌨</span>
+              <span>{isKeyboardMinimized ? 'Expand Keyboard ▲' : 'Minimize Keyboard ▼'}</span>
+            </button>
           </div>
 
           <div className="statusbar-zoom">
