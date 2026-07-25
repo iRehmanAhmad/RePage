@@ -60,7 +60,9 @@ export async function createUrdupPackage(
           `Asset ${assetRef.originalName} SHA-256 mismatch (expected ${assetRef.sha256}, got ${actualHash}).`
         );
       }
-      zip.file(assetRef.packageEntry, rawData);
+      const globalBuffer = (globalThis as unknown as { Buffer?: { from: (b: Uint8Array) => unknown } }).Buffer;
+      const zipInput = globalBuffer ? globalBuffer.from(rawData) : new Uint8Array(rawData);
+      zip.file(assetRef.packageEntry, zipInput as Uint8Array);
     }
   }
 

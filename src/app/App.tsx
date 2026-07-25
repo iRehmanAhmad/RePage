@@ -15,6 +15,7 @@ import { browserPlatform } from '../platform/browser/browserPlatform';
 import { clearRecovery, getLatestRecovery, saveRecovery } from '../persistence/autosave/database';
 import { createUrdupPackage, readUrdupPackage } from '../persistence/package/urdupPackage';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
+import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -43,6 +44,7 @@ export function App() {
   const [saveState, setSaveState] = useState<SaveState>('Unsaved changes');
   const [message, setMessage] = useState('Foundation workspace');
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
+  const [isEditingText, setIsEditingText] = useState(false);
   const [recoveredItem, setRecoveredItem] = useState<{ document: RePageDocument; savedAt: string } | null>(null);
 
   const [, setHistoryVersion] = useState(0);
@@ -55,6 +57,10 @@ export function App() {
         .filter((object): object is PageObject => Boolean(object && !object.hidden)),
     [activePage.objectOrder, document.objects],
   );
+
+  const selectedObject = selectedObjectId ? document.objects[selectedObjectId] : null;
+  const selectedTextFrame = selectedObject?.type === 'text-frame' ? selectedObject : null;
+  const activeStory = selectedTextFrame ? document.stories[selectedTextFrame.storyId] : null;
 
   const initialDocumentIdRef = React.useRef(document.id);
   const initialDocumentId = initialDocumentIdRef.current;
@@ -276,12 +282,21 @@ export function App() {
         <button type="button" onClick={handleRemovePage}>Remove page</button>
         <span className="command-separator" />
         <button type="button" onClick={handleAddRectangle}>Rectangle</button>
+        {selectedTextFrame && (
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => setIsEditingText((prev) => !prev)}
+          >
+            {isEditingText ? 'Done editing' : 'Edit text'}
+          </button>
+        )}
         {selectedObjectId && (
           <button type="button" className="button danger" onClick={handleDeleteSelected}>
             Delete selected
           </button>
         )}
-        <span className="phase-chip">Canvas adapter: Fabric (F-001)</span>
+        <span className="phase-chip">Urdu Rich-Text: Tiptap (M2.3)</span>
       </nav>
 
       <div className="editor-layout">
@@ -320,15 +335,47 @@ export function App() {
           <section
             className="page-surface"
             aria-label={`${activePage.name} document canvas`}
-            style={{ aspectRatio: `${activePage.width} / ${activePage.height}` }}
+            style={{ aspectRatio: `${activePage.width} / ${activePage.height}`, position: 'relative' }}
           >
             <div className="margin-guide" aria-hidden="true" />
             <FabricCanvas
               page={activePage}
               objects={visibleObjects}
               onObjectModified={handleObjectModified}
-              onSelectionChanged={setSelectedObjectId}
+              onSelectionChanged={(id) => {
+                setSelectedObjectId(id);
+                const obj = id ? document.objects[id] : null;
+                if (obj?.type === 'text-frame') {
+                  setIsEditingText(true);
+                } else {
+                  setIsEditingText(false);
+                }
+              }}
             />
+            {isEditingText && selectedTextFrame && activeStory && (
+              <TextEditorOverlay
+                frame={selectedTextFrame.frame}
+                story={activeStory}
+                fontFamily={selectedTextFrame.fontFamily}
+                fontSize={selectedTextFrame.fontSize}
+                color={selectedTextFrame.color}
+                lineHeight={selectedTextFrame.lineHeight}
+                onCommit={(updatedContent) => {
+                  const nextDoc: RePageDocument = {
+                    ...document,
+                    stories: {
+                      ...document.stories,
+                      [activeStory.id]: {
+                        ...activeStory,
+                        content: updatedContent,
+                      },
+                    },
+                  };
+                  updateDocument(nextDoc, 'Update Urdu story text');
+                }}
+                onClose={() => setIsEditingText(false)}
+              />
+            )}
           </section>
         </main>
 

@@ -37,11 +37,12 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 | F-009 | No raster or production export | High | Begin only after canonical layout and fonts are reliable |
 | F-010 | Tauri and collaboration are intentionally absent | Medium | Follow M4/M5 gates; do not pull them forward |
 
-## Immediate Milestone 1 work queue
+## Immediate Milestone 1 & 2 work queue
 
-1. Implement Package Asset Storage, SHA-256 Hashing & Limits (F-003, F-004 / M1.6 Image-frame & Asset System).
-2. Establish Pinned Urdu Font Register & Typography Fixture Corpus (F-008 / M2.1 Font Governance).
-3. Begin Rich-Text Engine & Tiptap Overlay Editor (F-002 / M1.7 & M2.3 Tiptap Overlay).
+1. Complete package asset storage & limits (M1.6 / F-003, F-004 — **Resolved**).
+2. Establish Pinned Urdu Font Register & Typography Setup (M2.1 / F-008 — **Resolved**).
+3. Urdu Rich-Text Schema & Validation (M2.2 / F-002 — **Resolved**).
+4. Tiptap Rich-Text DOM Editor Overlay (M2.3 — **Resolved**).
 
 ## Foundation exit gate progress
 

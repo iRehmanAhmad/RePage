@@ -41,7 +41,7 @@ describe('.urdup package', () => {
 
     const result = await readUrdupPackageWithAssets(pkgBytes);
     expect(result.document.assets[assetId]?.sha256).toBe(hash);
-    expect(result.assets.get(assetId)).toEqual(assetData);
+    expect(Array.from(result.assets.get(assetId)!)).toEqual(Array.from(assetData));
   });
 
   it('rejects package reading when an asset SHA-256 hash does not match', async () => {
