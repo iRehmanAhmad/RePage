@@ -16,11 +16,12 @@ export interface VisualKeyboardProps {
 
 export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeyboardProps) {
   const [isShift, setIsShift] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const currentLayout = getLayoutMapForMode(mode);
 
   const renderRow = (rowKeys: string[]) => (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: '5px' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
       {rowKeys.map((latinKey) => {
         const entry = currentLayout[latinKey];
         const char = entry ? (isShift ? entry.shift : entry.normal) : latinKey;
@@ -39,10 +40,10 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
               backgroundColor: '#1e293b',
               color: '#e2e8f0',
               border: '1px solid #334155',
-              borderRadius: '6px',
-              padding: '3px 8px',
-              minWidth: '42px',
-              height: '42px',
+              borderRadius: '5px',
+              padding: '2px 6px',
+              minWidth: '40px',
+              height: '40px',
               cursor: 'pointer',
               boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
               position: 'relative',
@@ -86,17 +87,26 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
         display: 'flex',
         flexDirection: 'column',
         gap: '6px',
-        padding: '10px 16px',
+        padding: '6px 12px',
         backgroundColor: '#0f172a',
         color: '#f8fafc',
         borderTop: '1px solid #1e293b',
-        fontSize: '12px',
+        fontSize: '11px',
       }}
     >
-      {/* Keyboard Header & Mode Selector */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {/* Consolidated Top Header Bar: Title, Mode, Marks, Shift, Minimize Toggle */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, color: '#10b981' }}>اردو کی بورڈ (Keyboard Mode):</span>
+
           <select
             value={mode}
             onChange={(e) => onModeChange(e.target.value as KeyboardMode)}
@@ -104,8 +114,8 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
               backgroundColor: '#1e293b',
               color: '#f8fafc',
               border: '1px solid #334155',
-              borderRadius: '6px',
-              padding: '3px 10px',
+              borderRadius: '5px',
+              padding: '2px 8px',
               fontWeight: 600,
               fontSize: '11px',
               outline: 'none',
@@ -118,80 +128,106 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
             <option value="native">Native OS Pass-through</option>
           </select>
 
-          {mode === 'native' && (
-            <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
-              (Using System OS Windows Urdu IME)
-            </span>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsShift((prev) => !prev)}
-          style={{
-            backgroundColor: isShift ? '#059669' : '#334155',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            padding: '4px 14px',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '11px',
-            boxShadow: isShift ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none',
-          }}
-        >
-          Shift {isShift ? 'ON ▲' : 'OFF ▼'}
-        </button>
-      </div>
-
-      {/* 3 Realistic QWERTY Rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', margin: '4px 0' }}>
-        {renderRow(QWERTY_ROW_1)}
-        {renderRow(QWERTY_ROW_2)}
-        {renderRow(QWERTY_ROW_3)}
-      </div>
-
-      {/* Special Urdu Characters & Controls Row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>خاص علامتیں (Marks):</span>
-        {SPECIAL_URDU_CHARACTERS.map((item) => (
+          {/* Shift Toggle */}
           <button
-            key={item.label}
             type="button"
-            onClick={() => onInsertChar(item.char)}
+            onClick={() => setIsShift((prev) => !prev)}
             style={{
-              backgroundColor: '#0f766e',
+              backgroundColor: isShift ? '#059669' : '#334155',
               color: '#fff',
               border: 'none',
-              borderRadius: '4px',
-              padding: '3px 8px',
-              fontSize: '11px',
-              fontWeight: 600,
+              borderRadius: '5px',
+              padding: '3px 10px',
               cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '10px',
+              boxShadow: isShift ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none',
             }}
-            title={item.description}
           >
-            {item.label}
+            Shift {isShift ? 'ON ▲' : 'OFF ▼'}
           </button>
-        ))}
 
+          {/* Special Urdu Marks in top row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>خاص علامتیں:</span>
+            {SPECIAL_URDU_CHARACTERS.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => onInsertChar(item.char)}
+                style={{
+                  backgroundColor: '#0f766e',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                title={item.description}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Minimize / Expand Toggle Button */}
         <button
           type="button"
-          onClick={() => onInsertChar(' ')}
+          onClick={() => setIsMinimized((prev) => !prev)}
           style={{
-            backgroundColor: '#334155',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '3px 16px',
-            fontSize: '11px',
-            fontWeight: 600,
+            backgroundColor: '#1e293b',
+            color: '#38bdf8',
+            border: '1px solid #334155',
+            borderRadius: '5px',
+            padding: '3px 10px',
+            fontSize: '10px',
+            fontWeight: 700,
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
           }}
+          title={isMinimized ? 'Expand Visual Keyboard' : 'Minimize Visual Keyboard'}
         >
-          Space (وقفہ)
+          <span>⌨</span>
+          <span>{isMinimized ? 'Expand Keyboard ▲' : 'Minimize Keyboard ▼'}</span>
         </button>
       </div>
+
+      {/* Keyboard Keys Section (Hidden when minimized) */}
+      {!isMinimized && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+          {renderRow(QWERTY_ROW_1)}
+          {renderRow(QWERTY_ROW_2)}
+          {renderRow(QWERTY_ROW_3)}
+
+          {/* Centered Spacebar Row */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2px' }}>
+            <button
+              type="button"
+              onClick={() => onInsertChar(' ')}
+              style={{
+                backgroundColor: '#334155',
+                color: '#f8fafc',
+                border: '1px solid #475569',
+                borderRadius: '5px',
+                padding: '4px 32px',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                minWidth: '220px',
+                textAlign: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              }}
+            >
+              Space (وقفہ)
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

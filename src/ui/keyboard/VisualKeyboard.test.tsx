@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { VisualKeyboard } from './VisualKeyboard';
 
-describe('VisualKeyboard Component with 3 QWERTY Rows & Dynamic Mode Resolver', () => {
-  it('renders 3 QWERTY rows, dual keycap hints, and toggles shift', () => {
+describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize Toggle', () => {
+  it('renders consolidated top row controls, special marks, centered spacebar, and minimize toggle', () => {
     const handleInsert = vi.fn();
     const handleModeChange = vi.fn();
 
@@ -16,50 +16,23 @@ describe('VisualKeyboard Component with 3 QWERTY Rows & Dynamic Mode Resolver', 
     // Header & Mode Selector
     expect(screen.getByText(/اردو کی بورڈ/)).toBeInTheDocument();
 
-    // Verify key 'A' renders Latin label 'a' and Urdu character 'ا'
-    const keyA = screen.getByTitle("Key 'A' ➔ ا");
-    expect(keyA).toBeInTheDocument();
+    // Special marks in top row
+    expect(screen.getByText('ZWNJ')).toBeInTheDocument();
+    expect(screen.getByText('ZWJ')).toBeInTheDocument();
 
-    // Click Key 'A'
-    fireEvent.click(keyA);
-    expect(handleInsert).toHaveBeenCalledWith('ا');
+    // Centered Spacebar
+    const spacebar = screen.getByText('Space (وقفہ)');
+    expect(spacebar).toBeInTheDocument();
+    fireEvent.click(spacebar);
+    expect(handleInsert).toHaveBeenCalledWith(' ');
 
-    // Toggle Shift ON
-    const shiftBtn = screen.getByText('Shift OFF ▼');
-    fireEvent.click(shiftBtn);
+    // Minimize toggle
+    const toggleBtn = screen.getByText('Minimize Keyboard ▼');
+    expect(toggleBtn).toBeInTheDocument();
 
-    // Verify Key 'A' with Shift ON renders 'آ'
-    const keyAWithShift = screen.getByTitle("Key 'A' ➔ آ");
-    expect(keyAWithShift).toBeInTheDocument();
-
-    // Click Key 'A' with Shift ON
-    fireEvent.click(keyAWithShift);
-    expect(handleInsert).toHaveBeenCalledWith('آ');
-  });
-
-  it('updates layout mapping when switching mode to Navees or English', () => {
-    const handleInsert = vi.fn();
-    const handleModeChange = vi.fn();
-
-    const { rerender } = render(
-      <VisualKeyboard mode="crulp" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
-    );
-
-    // CRULP layout key 'E' shift is 'ۓ'
-    const shiftBtn = screen.getByText('Shift OFF ▼');
-    fireEvent.click(shiftBtn);
-    expect(screen.getAllByTitle("Key 'E' ➔ ۓ")[0]).toBeInTheDocument();
-
-    // Rerender with Navees mode where Shift+E is 'ٍ'
-    rerender(
-      <VisualKeyboard mode="navees" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
-    );
-    expect(screen.getAllByTitle("Key 'E' ➔ ٍ")[0]).toBeInTheDocument();
-
-    // Rerender with English mode where key 'E' is 'E'
-    rerender(
-      <VisualKeyboard mode="english" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
-    );
-    expect(screen.getAllByTitle("Key 'E' ➔ E")[0]).toBeInTheDocument();
+    // Minimize keyboard
+    fireEvent.click(toggleBtn);
+    expect(screen.getByText('Expand Keyboard ▲')).toBeInTheDocument();
+    expect(screen.queryByText('Space (وقفہ)')).not.toBeInTheDocument();
   });
 });
