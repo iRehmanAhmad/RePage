@@ -33,7 +33,7 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 | F-005 | No schema migration runner beyond v1 | High | Add migration registry before schema v2 exists |
 | F-006 | Startup recovery prompt | **Resolved** | Implemented `getLatestRecovery` & startup restore/discard banner UX |
 | F-007 | User-visible undo/redo history | **Resolved** | Implemented `TransactionHistory` & `Ctrl+Z` / `Ctrl+Y` shortcuts |
-| F-008 | No approved/self-hosted Urdu font artifact | High | Complete font register and typography corpus before bundling |
+| F-008 | Approved/self-hosted Urdu font register | **Resolved** | Built `fontRegistry.ts`, Google Fonts web font imports & fallback chains |
 | F-009 | No raster or production export | High | Begin only after canonical layout and fonts are reliable |
 | F-010 | Tauri and collaboration are intentionally absent | Medium | Follow M4/M5 gates; do not pull them forward |
 

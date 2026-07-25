@@ -1,5 +1,6 @@
 import * as fabric from 'fabric';
 import type { PageObject, Rect } from '../../domain/document/types';
+import { getFontDefinition } from '../../domain/unicode/fontRegistry';
 
 export interface AdapterCallbacks {
   onObjectModified?: (objectId: string, frame: Partial<Rect>) => void;
@@ -96,7 +97,8 @@ export class FabricCanvasAdapter {
           selectable: !obj.locked,
         });
       } else if (obj.type === 'text-frame') {
-        fabricObj = new fabric.Textbox('Urdu Text', {
+        const fontDef = getFontDefinition(obj.fontFamily);
+        fabricObj = new fabric.Textbox('اردو پیج میں خوش آمدید', {
           left: obj.frame.x,
           top: obj.frame.y,
           width: obj.frame.width,
@@ -104,7 +106,7 @@ export class FabricCanvasAdapter {
           angle: obj.frame.rotation,
           fill: obj.color,
           fontSize: obj.fontSize,
-          fontFamily: obj.fontFamily,
+          fontFamily: fontDef.family,
           opacity: obj.opacity,
           selectable: !obj.locked,
           editable: false, // Rich text DOM overlay handles editing
