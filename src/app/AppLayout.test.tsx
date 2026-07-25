@@ -7,12 +7,18 @@ vi.mock('../ui/canvas/FabricCanvas', () => ({
   FabricCanvas: () => <div data-testid="fabric-canvas-mock" />,
 }));
 
+vi.mock('../persistence/autosave/database', () => ({
+  getLatestRecovery: vi.fn().mockResolvedValue(null),
+  clearRecovery: vi.fn().mockResolvedValue(undefined),
+  saveRecovery: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('App Studio Layout', () => {
-  it('renders flagship studio header, ribbon bar, page sidebar, and right inspector dock', () => {
+  it('renders flagship studio header, ribbon bar, page sidebar, and right inspector dock', async () => {
     render(<App />);
 
     // Header & Brand
-    expect(screen.getByText('RePage Studio')).toBeInTheDocument();
+    expect(await screen.findByText('RePage Studio')).toBeInTheDocument();
     expect(screen.getByText('Urdu Publishing 1.0')).toBeInTheDocument();
 
     // Studio Ribbon Tools
