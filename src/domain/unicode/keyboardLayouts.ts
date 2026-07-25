@@ -5,6 +5,11 @@ export interface KeyMapEntry {
   shift: string;
 }
 
+// Standard QWERTY Key Rows for realistic keyboard rendering
+export const QWERTY_ROW_1 = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
+export const QWERTY_ROW_2 = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'];
+export const QWERTY_ROW_3 = ['z', 'x', 'c', 'v', 'b', 'n', 'm'];
+
 // CRULP Phonetic Layout Mapping
 export const CRULP_PHONETIC_MAP: Record<string, KeyMapEntry> = {
   a: { normal: 'ا', shift: 'آ' },
@@ -43,6 +48,27 @@ export const NAVEES_PHONETIC_MAP: Record<string, KeyMapEntry> = {
   u: { normal: 'ء', shift: 'ُ' },
 };
 
+// English Latin Layout Mapping
+export const ENGLISH_LATIN_MAP: Record<string, KeyMapEntry> = Object.fromEntries(
+  [...QWERTY_ROW_1, ...QWERTY_ROW_2, ...QWERTY_ROW_3].map((char) => [
+    char,
+    { normal: char, shift: char.toUpperCase() },
+  ]),
+);
+
+export function getLayoutMapForMode(mode: KeyboardMode): Record<string, KeyMapEntry> {
+  switch (mode) {
+    case 'navees':
+      return NAVEES_PHONETIC_MAP;
+    case 'english':
+      return ENGLISH_LATIN_MAP;
+    case 'native':
+    case 'crulp':
+    default:
+      return CRULP_PHONETIC_MAP;
+  }
+}
+
 export const SPECIAL_URDU_CHARACTERS = [
   { label: 'ZWNJ', char: '\u200C', description: 'Zero-Width Non-Joiner' },
   { label: 'ZWJ', char: '\u200D', description: 'Zero-Width Joiner' },
@@ -63,7 +89,7 @@ export function mapKeyToUrduCharacter(
   }
 
   const lowerKey = key.toLowerCase();
-  const layout = mode === 'crulp' ? CRULP_PHONETIC_MAP : NAVEES_PHONETIC_MAP;
+  const layout = getLayoutMapForMode(mode);
   const entry = layout[lowerKey];
 
   if (!entry) return null;

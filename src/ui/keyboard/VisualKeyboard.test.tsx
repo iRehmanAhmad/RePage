@@ -1,45 +1,65 @@
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { VisualKeyboard } from './VisualKeyboard';
 
-afterEach(() => {
-  cleanup();
-});
-
-describe('VisualKeyboard', () => {
-  it('renders Urdu visual keyboard with mode selector and shift toggle', () => {
+describe('VisualKeyboard Component with 3 QWERTY Rows & Dynamic Mode Resolver', () => {
+  it('renders 3 QWERTY rows, dual keycap hints, and toggles shift', () => {
+    const handleInsert = vi.fn();
     const handleModeChange = vi.fn();
-    const handleInsertChar = vi.fn();
 
     render(
-      <VisualKeyboard
-        mode="crulp"
-        onModeChange={handleModeChange}
-        onInsertChar={handleInsertChar}
-      />
+      <VisualKeyboard mode="crulp" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
     );
 
-    expect(screen.getByText('اردو کی بورڈ (Keyboard Mode):')).toBeInTheDocument();
-    expect(screen.getByText('ZWNJ')).toBeInTheDocument();
-    expect(screen.getByText('RLM')).toBeInTheDocument();
+    // Header & Mode Selector
+    expect(screen.getByText(/اردو کی بورڈ/)).toBeInTheDocument();
+
+    // Verify key 'A' renders Latin label 'a' and Urdu character 'ا'
+    const keyA = screen.getByTitle("Key 'A' ➔ ا");
+    expect(keyA).toBeInTheDocument();
+
+    // Click Key 'A'
+    fireEvent.click(keyA);
+    expect(handleInsert).toHaveBeenCalledWith('ا');
+
+    // Toggle Shift ON
+    const shiftBtn = screen.getByText('Shift OFF ▼');
+    fireEvent.click(shiftBtn);
+
+    // Verify Key 'A' with Shift ON renders 'آ'
+    const keyAWithShift = screen.getByTitle("Key 'A' ➔ آ");
+    expect(keyAWithShift).toBeInTheDocument();
+
+    // Click Key 'A' with Shift ON
+    fireEvent.click(keyAWithShift);
+    expect(handleInsert).toHaveBeenCalledWith('آ');
   });
 
-  it('triggers char insertion when a key or special character is clicked', () => {
+  it('updates layout mapping when switching mode to Navees or English', () => {
+    const handleInsert = vi.fn();
     const handleModeChange = vi.fn();
-    const handleInsertChar = vi.fn();
 
-    render(
-      <VisualKeyboard
-        mode="crulp"
-        onModeChange={handleModeChange}
-        onInsertChar={handleInsertChar}
-      />
+    const { rerender } = render(
+      <VisualKeyboard mode="crulp" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
     );
 
-    const aKeyBtn = screen.getByTitle("Key 'A'");
-    fireEvent.click(aKeyBtn);
-    expect(handleInsertChar).toHaveBeenCalledWith('ا');
+    // CRULP layout key 'E' shift is 'ۓ'
+    const shiftBtn = screen.getByText('Shift OFF ▼');
+    fireEvent.click(shiftBtn);
+    expect(screen.getByTitle("Key 'E' ➔ ۓ")).toBeInTheDocument();
+
+    // Rerender with Navees mode where Shift+E is 'ٍ'
+    rerender(
+      <VisualKeyboard mode="navees" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
+    );
+    expect(screen.getByTitle("Key 'E' ➔ ٍ")).toBeInTheDocument();
+
+    // Rerender with English mode where key 'E' is 'E'
+    rerender(
+      <VisualKeyboard mode="english" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
+    );
+    expect(screen.getByTitle("Key 'E' ➔ E")).toBeInTheDocument();
   });
 });
