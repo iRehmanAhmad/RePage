@@ -28,6 +28,18 @@ export interface DocumentMetadata {
   locale: 'ur-PK' | 'en';
 }
 
+export type MasterPageId = string;
+
+export interface MasterPage {
+  id: MasterPageId;
+  name: string;
+  width: number;
+  height: number;
+  margins: Insets;
+  objectOrder: ObjectId[];
+  objects: Record<ObjectId, PageObject>;
+}
+
 export interface Page {
   id: PageId;
   name: string;
@@ -37,6 +49,8 @@ export interface Page {
   bleed: Insets;
   background: string;
   objectOrder: ObjectId[];
+  masterPageId?: MasterPageId | null | undefined;
+  masterOverrides?: Record<ObjectId, Partial<PageObject>> | undefined;
 }
 
 interface BasePageObject {
@@ -111,6 +125,7 @@ export interface RePageDocument {
   stories: Record<StoryId, TextStory>;
   styles: Record<string, unknown>;
   assets: Record<AssetId, AssetReference>;
+  masterPages?: Record<MasterPageId, MasterPage> | undefined;
 }
 
 export type UrduPageDocument = RePageDocument;

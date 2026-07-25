@@ -93,6 +93,8 @@ export const documentSchema = z.object({
       bleed: insetsSchema,
       background: z.string().min(1),
       objectOrder: z.array(z.string().min(1)),
+      masterPageId: z.string().min(1).nullable().optional(),
+      masterOverrides: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
     }),
   ),
   objects: z.record(
@@ -112,6 +114,21 @@ export const documentSchema = z.object({
       packageEntry: z.string().min(1),
     }),
   ),
+  masterPages: z.record(
+    z.string(),
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      width: positiveNumber,
+      height: positiveNumber,
+      margins: insetsSchema,
+      objectOrder: z.array(z.string().min(1)),
+      objects: z.record(
+        z.string(),
+        z.discriminatedUnion('type', [textFrameSchema, rectangleSchema, imageFrameSchema]),
+      ),
+    }),
+  ).optional(),
 });
 
 export function validateDocumentReferences(value: z.infer<typeof documentSchema>): string[] {
