@@ -40,6 +40,12 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), and M3.1 Link
 6. Pre-flight Verification & Urdu Document Diagnostics (M3.6 — **Resolved**).
 7. Standalone Vector SVG & PDF Prepress Export Engine (M3.7 — **Resolved**).
 8. Table of Contents & Cross-References Engine (M3.8 — **Resolved**).
+9. Milestone 3 Exit Gate Audit & Handoff (M3.9 — **Resolved**).
+
+## Milestone 4 work queue (Advanced Typography & Prepress Production)
+
+1. Advanced Kashida Justification & Calligraphic Extensions (M4.1).
+2. WebAssembly PDF/X-1a Prepress Compiler (M4.2).
 
 ## Foundation & Typography exit gate progress
 

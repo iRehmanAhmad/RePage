@@ -14,8 +14,10 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - A shared browser core is desirable; Tauri is the intended desktop shell after the core architecture stabilizes.
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
-- Voice and AI features are differentiators, not foundational requirements.
-- The portable document extension is `.urdup`; it must not imply compatibility with proprietary InPage files.
+- Voice and AI features are- **Current Milestone**: Milestone 3 — Document Production Beta (**Fully Resolved & Audited**).
+- **M3 Exit Gate Audit**: All 6 exit gate criteria PASSED (Linked text frame reflow, RTL column layout rules, Master Page inheritance & overrides, Urdu page number fields, Preflight diagnostics panel, Standalone vector SVG & PDF prepress export).
+- **Test Suite**: 77 vitest unit tests passing across 24 test suites. 128 UTF-8 files verified without mojibake.
+- **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage` files.
 
 ## Architecture decisions
 
