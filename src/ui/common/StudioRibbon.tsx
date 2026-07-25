@@ -42,7 +42,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
         <button
           onClick={onUndo}
           disabled={!canUndo}
-          className={`ribbon-tool-btn ${!canUndo ? 'opacity-40 cursor-not-allowed' : ''}`}
+          className={`ribbon-tool-btn ${!canUndo ? 'disabled' : ''}`}
           title="منسوخ کریں (Undo Ctrl+Z)"
         >
           <span>↩</span>
@@ -52,7 +52,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
         <button
           onClick={onRedo}
           disabled={!canRedo}
-          className={`ribbon-tool-btn ${!canRedo ? 'opacity-40 cursor-not-allowed' : ''}`}
+          className={`ribbon-tool-btn ${!canRedo ? 'disabled' : ''}`}
           title="دوبارہ کریں (Redo Ctrl+Y)"
         >
           <span>↪</span>
@@ -105,7 +105,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
         <select
           value={activeFontFamily}
           onChange={(e) => onFontFamilyChange(e.target.value)}
-          className="bg-slate-800 text-slate-100 text-xs px-2 py-1 border border-slate-700 rounded focus:outline-none focus:border-emerald-500"
+          className="ribbon-select"
           title="اردو رسم الخط (Urdu Font Family)"
         >
           <option value="Noto Nastaliq Urdu">نستعلیق (Noto Nastaliq)</option>
@@ -120,7 +120,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           type="number"
           value={activeFontSize}
           onChange={(e) => onFontSizeChange(Number(e.target.value))}
-          className="w-14 bg-slate-800 text-slate-100 text-xs px-2 py-1 border border-slate-700 rounded text-center focus:outline-none focus:border-emerald-500"
+          className="ribbon-number-input"
           min={8}
           max={144}
           title="فونٹ کا سائز (Font Size pt)"
@@ -137,24 +137,24 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
         </button>
 
         {/* Alignment Controls */}
-        <div className="flex bg-slate-800 p-0.5 rounded border border-slate-700">
+        <div className="ribbon-align-group">
           <button
             onClick={() => onAlignmentChange('start')}
-            className={`px-2 py-0.5 text-xs rounded ${activeAlignment === 'start' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400'}`}
+            className={`ribbon-align-btn ${activeAlignment === 'start' ? 'active' : ''}`}
             title="دائیں (Right Alignment)"
           >
             Right
           </button>
           <button
             onClick={() => onAlignmentChange('center')}
-            className={`px-2 py-0.5 text-xs rounded ${activeAlignment === 'center' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400'}`}
+            className={`ribbon-align-btn ${activeAlignment === 'center' ? 'active' : ''}`}
             title="مرکز (Center Alignment)"
           >
             Center
           </button>
           <button
             onClick={() => onAlignmentChange('justify')}
-            className={`px-2 py-0.5 text-xs rounded ${activeAlignment === 'justify' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400'}`}
+            className={`ribbon-align-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
             title="برابر (Justify)"
           >
             Justify

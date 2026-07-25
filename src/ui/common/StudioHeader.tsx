@@ -45,8 +45,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
       </div>
 
-      {/* Center Editable Document Title */}
-      <div className="title-field flex items-center gap-2">
+      {/* Center Editable Document Title & Save State */}
+      <div className="title-field">
         <input
           type="text"
           value={documentTitle}
@@ -54,9 +54,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           placeholder="میری پہلی اردو دستاویز..."
           dir="rtl"
         />
-        <span className="text-[10px] px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full font-mono">
-          {saveState}
-        </span>
+        <span className="save-badge">{saveState}</span>
       </div>
 
       {/* Header Quick Actions */}
@@ -72,7 +70,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             ref={fileInputRef}
             type="file"
             accept=".urdup,.inp,.txt,.docx,.html,.rtf,.svg,.pdf"
-            className="hidden"
+            style={{ display: 'none' }}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) onOpenDocument(file);
