@@ -63,6 +63,8 @@ export interface TextFrameObject extends BasePageObject {
   overflow?: boolean | undefined;
   columns?: number | undefined;
   columnGap?: number | undefined;
+  verticalAlignment?: 'top' | 'middle' | 'bottom' | undefined;
+  rtlColumnOrder?: boolean | undefined;
 }
 
 export interface RectangleObject extends BasePageObject {

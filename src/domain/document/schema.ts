@@ -51,6 +51,8 @@ const textFrameSchema = baseObjectSchema.extend({
   overflow: z.boolean().optional(),
   columns: z.number().int().positive().optional(),
   columnGap: nonNegativeNumber.optional(),
+  verticalAlignment: z.enum(['top', 'middle', 'bottom']).optional(),
+  rtlColumnOrder: z.boolean().optional(),
 });
 
 const rectangleSchema = baseObjectSchema.extend({

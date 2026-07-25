@@ -33,8 +33,8 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), and M3.1 Link
 ## Immediate Milestone 3 work queue
 
 1. Linked text frames, circular link prevention & multi-page reflow (M3.1 — **Resolved**).
-2. Advanced Master Pages & Section Headers (M3.3 Page Layout Engine).
-3. Grid Systems & Snap Guides (M3.2 Layout & Guides).
+2. Multi-column text frames & RTL column layout engine (M3.2 — **Resolved**).
+3. Advanced Master Pages & Section Headers (M3.3 Page Layout Engine).
 4. Automatic Page Numbering Fields & Urdu Numerals (M3.4).
 
 ## Foundation & Typography exit gate progress
