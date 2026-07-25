@@ -1,9 +1,15 @@
 import React from 'react';
+import type { ThemeMode } from '../theme/themeEngine';
+import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 
 export interface StudioHeaderProps {
+  t: Translations;
+  lang: UiLanguage;
+  onLanguageChange: (lang: UiLanguage) => void;
+  themeMode: ThemeMode;
+  onThemeModeChange: (mode: ThemeMode) => void;
   documentTitle: string;
   onTitleChange: (newTitle: string) => void;
-  onNewDocument?: () => void;
   onOpenDocument: (file: File) => void;
   onSaveDocument: () => void;
   onSaveAsDocument: () => void;
@@ -18,6 +24,11 @@ export interface StudioHeaderProps {
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
+  t,
+  lang,
+  onLanguageChange,
+  themeMode,
+  onThemeModeChange,
   documentTitle,
   onTitleChange,
   onOpenDocument,
@@ -52,20 +63,45 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           value={documentTitle}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="میری پہلی اردو دستاویز..."
-          dir="rtl"
+          dir={lang === 'ur' ? 'rtl' : 'ltr'}
         />
         <span className="save-badge">{saveState}</span>
       </div>
 
       {/* Header Quick Actions */}
       <div className="header-actions">
+        {/* Language Selector */}
+        <select
+          value={lang}
+          onChange={(e) => onLanguageChange(e.target.value as UiLanguage)}
+          className="header-select"
+          title="Software Menu Language"
+        >
+          <option value="ur">اردو</option>
+          <option value="en">English</option>
+        </select>
+
+        {/* Theme Selector */}
+        <select
+          value={themeMode}
+          onChange={(e) => onThemeModeChange(e.target.value as ThemeMode)}
+          className="header-select"
+          title="Color Theme Mode"
+        >
+          <option value="dark">🌙 {t.themeDark}</option>
+          <option value="light">☀️ {t.themeLight}</option>
+          <option value="system">💻 {t.themeSystem}</option>
+        </select>
+
+        <div className="ribbon-divider" />
+
         <button
           onClick={() => fileInputRef.current?.click()}
           className="btn-studio"
-          title="فائل کھولیں (Open File)"
+          title={t.open}
         >
           <span>📂</span>
-          <span>کھولیں</span>
+          <span>{t.open}</span>
           <input
             ref={fileInputRef}
             type="file"
@@ -78,44 +114,44 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           />
         </button>
 
-        <button onClick={onSaveDocument} className="btn-studio" title="محفوظ کریں (Save)">
+        <button onClick={onSaveDocument} className="btn-studio" title={t.save}>
           <span>💾</span>
-          <span>محفوظ</span>
+          <span>{t.save}</span>
         </button>
 
-        <button onClick={onSaveAsDocument} className="btn-studio gold" title="نام سے محفوظ کریں (Save As)">
+        <button onClick={onSaveAsDocument} className="btn-studio gold" title={t.saveAs}>
           <span>💾</span>
-          <span>محفوظ کریں</span>
+          <span>{t.saveAs}</span>
         </button>
 
-        <button onClick={onShowRecentFiles} className="btn-studio" title="حالیہ فائلیں (Recent Files)">
+        <button onClick={onShowRecentFiles} className="btn-studio" title={t.recent}>
           <span>📜</span>
         </button>
 
-        <button onClick={onRunPreflight} className="btn-studio" title="پری فلائٹ رپورٹس">
+        <button onClick={onRunPreflight} className="btn-studio" title={t.preflight}>
           <span>🔍</span>
         </button>
 
-        <button onClick={onOpenLanguageTools} className="btn-studio" title="اردو آلات (Language Tools)">
+        <button onClick={onOpenLanguageTools} className="btn-studio" title={t.tabUrduTools}>
           <span>🌐</span>
         </button>
 
-        <button onClick={onOpenOcr} className="btn-studio" title="تصویر متن شناسی (Urdu OCR)">
+        <button onClick={onOpenOcr} className="btn-studio" title={t.ocr}>
           <span>📷</span>
         </button>
 
-        <button onClick={onToggleCollab} className="btn-studio" title="لائیو باہمی تعاون (Live Collaboration)">
+        <button onClick={onToggleCollab} className="btn-studio" title={t.collabRoom}>
           <span>👥</span>
         </button>
 
         <div className="ribbon-divider" />
 
-        <button onClick={onExportPdf} className="btn-studio primary" title="برآمد پی ڈی ایف (Export PDF)">
+        <button onClick={onExportPdf} className="btn-studio primary" title={t.exportPdf}>
           <span>📄</span>
           <span>PDF</span>
         </button>
 
-        <button onClick={onExportEpub} className="btn-studio primary" title="برآمد ای پب (Export ePUB)">
+        <button onClick={onExportEpub} className="btn-studio primary" title={t.exportEpub}>
           <span>📚</span>
           <span>ePUB</span>
         </button>

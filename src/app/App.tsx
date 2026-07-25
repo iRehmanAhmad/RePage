@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { createStarterDocument } from '../domain/document/createDocument';
 import type { Page, PageObject, RePageDocument } from '../domain/document/types';
 import { pointsToMillimetres } from '../domain/geometry/units';
@@ -32,10 +32,15 @@ import { runUrduOcr, OcrPageResult } from '../domain/ocr/ocrEngine';
 import { convertOcrResultToDocumentObjects } from '../domain/ocr/ocrCorrection';
 import { exportDocumentToPdfMetadata, exportDocumentToEpub } from '../export/exportEngine';
 
-// Studio Layout Components
+// Theme & i18n
+import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
+import { UiLanguage, DICTIONARY } from '../ui/i18n/menuTranslation';
+
+// Studio Layout & MS Word Ribbon Components
 import { StudioHeader } from '../ui/common/StudioHeader';
-import { StudioRibbon, ActiveTool } from '../ui/common/StudioRibbon';
+import { MsWordRibbon, ActiveTool } from '../ui/ribbon/MsWordRibbon';
 import { InspectorDock } from '../ui/common/InspectorDock';
+import { insertFootnote, insertEndnote } from '../domain/rich-text/notesEngine';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -49,6 +54,17 @@ function resolveActivePage(document: RePageDocument, activePageId: string): Page
   return page;
 }
 
+function extractDocumentFromImport(res: unknown): RePageDocument | null {
+  if (!res || typeof res !== 'object') return null;
+  if ('document' in res && res.document && typeof res.document === 'object' && 'pageOrder' in (res.document as object)) {
+    return (res as { document: RePageDocument }).document;
+  }
+  if ('pageOrder' in res && Array.isArray((res as RePageDocument).pageOrder)) {
+    return res as RePageDocument;
+  }
+  return null;
+}
+
 export function App() {
   void React;
   const [document, setDocumentState] = useState<RePageDocument>(() => createStarterDocument());
@@ -58,6 +74,18 @@ export function App() {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [activeTool, setActiveTool] = useState<ActiveTool>('select');
+
+  // Theme & Menu Language State
+  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
+  const [lang, setLang] = useState<UiLanguage>('ur');
+
+  // Active translation dictionary
+  const t = DICTIONARY[lang];
+
+  // Apply theme on mode change
+  useEffect(() => {
+    applyThemeToDocument(themeMode);
+  }, [themeMode]);
 
   // Modal Panel Toggles
   const [showPreflight, setShowPreflight] = useState(false);
@@ -128,6 +156,18 @@ export function App() {
     setMessage('Rectangle shape added');
   }, [activePageId, document, updateDocument]);
 
+  const handleAddFootnote = React.useCallback(() => {
+    const storyId = selectedObject && selectedObject.type === 'text-frame' ? selectedObject.storyId : 'story-1';
+    insertFootnote(document.id, storyId, 'نیا حاشیہ (New Footnote)');
+    setMessage('Footnote added');
+  }, [document.id, selectedObject]);
+
+  const handleAddEndnote = React.useCallback(() => {
+    const storyId = selectedObject && selectedObject.type === 'text-frame' ? selectedObject.storyId : 'story-1';
+    insertEndnote(document.id, storyId, 'نئی تعلیق (New Endnote)');
+    setMessage('Endnote added');
+  }, [document.id, selectedObject]);
+
   // File Workflows
   const handleSaveNative = React.useCallback(async () => {
     setSaveState('Saving…');
@@ -154,17 +194,6 @@ export function App() {
       setMessage('Save failed');
     }
   }, [document]);
-
-function extractDocumentFromImport(res: unknown): RePageDocument | null {
-  if (!res || typeof res !== 'object') return null;
-  if ('document' in res && res.document && typeof res.document === 'object' && 'pageOrder' in (res.document as object)) {
-    return (res as { document: RePageDocument }).document;
-  }
-  if ('pageOrder' in res && Array.isArray((res as RePageDocument).pageOrder)) {
-    return res as RePageDocument;
-  }
-  return null;
-}
 
   const handleOpenImportFile = React.useCallback(async (file: File) => {
     try {
@@ -233,8 +262,13 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
   return (
     <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
       <div className="app-shell">
-        {/* Top Studio Glassmorphic Header */}
+        {/* Top Studio Header with Theme & Language Selection */}
         <StudioHeader
+          t={t}
+          lang={lang}
+          onLanguageChange={setLang}
+          themeMode={themeMode}
+          onThemeModeChange={setThemeMode}
           documentTitle={document.metadata.title}
           onTitleChange={(newTitle) => updateDocument(renameDocument(document, newTitle), 'Rename document')}
           onOpenDocument={(file) => void handleOpenImportFile(file)}
@@ -250,8 +284,10 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
           saveState={saveState}
         />
 
-        {/* Studio Control Ribbon */}
-        <StudioRibbon
+        {/* MS Word 6-Tab Ribbon Toolbar */}
+        <MsWordRibbon
+          t={t}
+          lang={lang}
           activeTool={activeTool}
           onSelectTool={(tool) => {
             setActiveTool(tool);
@@ -281,6 +317,16 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
           onToggleKashida={() => setIsKashidaEnabled(!isKashidaEnabled)}
           activeAlignment={activeAlignment}
           onAlignmentChange={setActiveAlignment}
+          onAddPage={handleAddPage}
+          onRemovePage={handleRemovePage}
+          onAddFootnote={handleAddFootnote}
+          onAddEndnote={handleAddEndnote}
+          onOpenLanguageTools={() => setShowLanguageTools(true)}
+          onOpenOcr={() => void handleTriggerOcr()}
+          onExportPdf={handleExportPdf}
+          onExportEpub={() => void handleExportEpub()}
+          onRunPreflight={() => setShowPreflight(true)}
+          onToggleCollab={() => setMessage('Live collaboration room active')}
         />
 
         {/* Main Editor Grid Layout */}
@@ -288,7 +334,7 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
           {/* Left Panel: Pages & Layers */}
           <aside className="studio-sidebar">
             <div className="sidebar-header">
-              <span>صفحات (Pages)</span>
+              <span>{t.pageCount}</span>
               <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 rounded-full text-[10px] font-bold">
                 {document.pageOrder.length}
               </span>
@@ -299,7 +345,7 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
                 onClick={handleAddPage}
                 className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded shadow"
               >
-                + نیا صفحہ
+                {t.addPage}
               </button>
               <button
                 onClick={handleRemovePage}
@@ -308,7 +354,7 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
                   document.pageOrder.length <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-800'
                 }`}
               >
-                حذف
+                {t.removePage}
               </button>
             </div>
 
@@ -383,6 +429,7 @@ function extractDocumentFromImport(res: unknown): RePageDocument | null {
 
           {/* Right Inspector Dock */}
           <InspectorDock
+            t={t}
             document={document}
             selectedObject={selectedObject ?? null}
             onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}

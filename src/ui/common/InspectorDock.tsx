@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { PageObject, RePageDocument } from '../../domain/document/types';
 import { getDocumentNotes, insertFootnote, insertEndnote, convertFootnotesToEndnotes, convertEndnotesToFootnotes } from '../../domain/rich-text/notesEngine';
+import type { Translations } from '../i18n/menuTranslation';
 
 export interface InspectorDockProps {
+  t: Translations;
   document: RePageDocument;
   selectedObject: PageObject | null;
   onUpdateGeometry?: (objectId: string, coords: { x?: number; y?: number; width?: number; height?: number }) => void;
@@ -13,6 +15,7 @@ export interface InspectorDockProps {
 }
 
 export const InspectorDock: React.FC<InspectorDockProps> = ({
+  t,
   document,
   selectedObject,
   onUpdateGeometry,
@@ -48,25 +51,25 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           onClick={() => setActiveTab('properties')}
           className={`tab-btn ${activeTab === 'properties' ? 'active' : ''}`}
         >
-          خواص
+          {t.inspectorProps}
         </button>
         <button
           onClick={() => setActiveTab('typography')}
           className={`tab-btn ${activeTab === 'typography' ? 'active' : ''}`}
         >
-          خطاطی
+          {t.inspectorType}
         </button>
         <button
           onClick={() => setActiveTab('tools')}
           className={`tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
         >
-          آلات
+          {t.inspectorTools}
         </button>
         <button
           onClick={() => setActiveTab('export')}
           className={`tab-btn ${activeTab === 'export' ? 'active' : ''}`}
         >
-          برآمد
+          {t.inspectorExport}
         </button>
       </div>
 
@@ -187,7 +190,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               <div className="card-flex">
                 <span className="icon">🌐</span>
                 <div>
-                  <div className="title">اردو زبان کے آلات</div>
+                  <div className="title">{t.tabUrduTools}</div>
                   <div className="desc">املاء، لغت، رومن اردو، نرمائلائزیشن</div>
                 </div>
               </div>
@@ -198,7 +201,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               <div className="card-flex">
                 <span className="icon">📷</span>
                 <div>
-                  <div className="title">تصویر / PDF متن شناسی (OCR)</div>
+                  <div className="title">{t.ocr}</div>
                   <div className="desc">اعتماد اور ساتھ ساتھ تصحیح</div>
                 </div>
               </div>
@@ -226,10 +229,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               />
               <div className="btn-row">
                 <button onClick={handleAddFootnote} className="action-btn primary">
-                  + ذیلی حاشیہ
+                  {t.addFootnote}
                 </button>
                 <button onClick={handleAddEndnote} className="action-btn secondary">
-                  + تعلیق
+                  {t.addEndnote}
                 </button>
               </div>
 
@@ -247,12 +250,12 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 
             {/* Export Section */}
             <div className="inspector-card space-y-card">
-              <div className="card-title">فائل برآمد کریں (Export):</div>
+              <div className="card-title">{t.tabExportView}:</div>
               <button onClick={onExportPdf} className="export-btn pdf">
-                <span>📄</span> Vector PDF (1200 DPI)
+                <span>📄</span> {t.exportPdf} (1200 DPI)
               </button>
               <button onClick={onExportEpub} className="export-btn epub">
-                <span>📚</span> ePUB 3.0 Mobile Reader
+                <span>📚</span> {t.exportEpub}
               </button>
             </div>
           </div>
