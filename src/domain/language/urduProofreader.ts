@@ -69,7 +69,7 @@ export function proofreadUrduText(text: string): ProofreadIssue[] {
       index: match.index,
       length: match[0].length,
       originalSnippet: match[0],
-      replacementSuggestion: match[1],
+      replacementSuggestion: match[1]!,
     });
   }
 

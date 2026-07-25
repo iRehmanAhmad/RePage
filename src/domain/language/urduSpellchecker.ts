@@ -13,26 +13,30 @@ export function computeEditDistance(s1: string, s2: string): number {
   const n = s2.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 0; i <= m; i++) (dp[i]!)[0] = i;
+  for (let j = 0; j <= n; j++) (dp[0]!)[j] = j;
 
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1, // Deletion
-        dp[i][j - 1] + 1, // Insertion
-        dp[i - 1][j - 1] + cost, // Substitution
+      const prevRow = dp[i - 1]!;
+      const currRow = dp[i]!;
+
+      currRow[j] = Math.min(
+        prevRow[j]! + 1, // Deletion
+        currRow[j - 1]! + 1, // Insertion
+        prevRow[j - 1]! + cost, // Substitution
       );
 
       // Transposition check
       if (i > 1 && j > 1 && s1[i - 1] === s2[j - 2] && s1[i - 2] === s2[j - 1]) {
-        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + cost);
+        const prevPrevRow = dp[i - 2]!;
+        currRow[j] = Math.min(currRow[j]!, prevPrevRow[j - 2]! + cost);
       }
     }
   }
 
-  return dp[m][n];
+  return dp[m]![n]!;
 }
 
 const COMMON_URDU_VOCAB = [
