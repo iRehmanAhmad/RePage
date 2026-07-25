@@ -16,7 +16,7 @@ import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
 import { triggerNativePrintDialog } from '../platform/printService';
-import { defaultPlatformServices } from '../platform/platformServices';
+import { browserPlatform } from '../platform/browser/browserPlatform';
 import {
   importExternalFileWorkflow,
   saveAsDocumentWorkflow,
@@ -132,7 +132,7 @@ export function App() {
   const handleSaveNative = React.useCallback(async () => {
     setSaveState('Saving…');
     try {
-      const updatedRef = await saveDocumentWorkflow(document, fileRef, defaultPlatformServices);
+      const updatedRef = await saveDocumentWorkflow(document, fileRef, browserPlatform);
       setFileRef(updatedRef);
       setSaveState('Saved locally');
       setMessage('Saved successfully');
@@ -145,7 +145,7 @@ export function App() {
   const handleSaveAsNative = React.useCallback(async () => {
     setSaveState('Saving…');
     try {
-      const updatedRef = await saveAsDocumentWorkflow(document, defaultPlatformServices);
+      const updatedRef = await saveAsDocumentWorkflow(document, browserPlatform);
       setFileRef(updatedRef);
       setSaveState('Saved locally');
       setMessage('Saved successfully');
@@ -158,7 +158,7 @@ export function App() {
   const handleOpenImportFile = React.useCallback(async (file: File) => {
     try {
       const res = await importExternalFileWorkflow(file, file.name);
-      if (res && res.document) {
+      if (res && 'document' in res && res.document) {
         setDocumentState(res.document);
         setActivePageId(res.document.pageOrder[0]!);
         setMessage(`Imported file: ${file.name}`);
