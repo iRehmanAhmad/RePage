@@ -31,7 +31,7 @@ describe('App Studio Layout with MS Word Ribbon Group Cards & Captions', () => {
     expect(screen.getByText('Clipboard')).toBeInTheDocument();
     expect(screen.getByText('Font')).toBeInTheDocument();
     expect(screen.getByText('Paragraph')).toBeInTheDocument();
-    expect(screen.getByText('Tools')).toBeInTheDocument();
+    expect(screen.getAllByText('Tools')[0]).toBeInTheDocument();
 
     // Click File menu button
     fireEvent.click(screen.getByText('File'));
