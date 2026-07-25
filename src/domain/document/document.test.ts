@@ -3,13 +3,15 @@ import { addPage, addRectangle, deleteObject, removePage, updateObjectGeometry }
 import { createDocument, createStarterDocument } from './createDocument';
 import { parseDocument } from './schema';
 
+import { extractPlainText } from '../rich-text/types';
+
 describe('canonical document', () => {
   it('creates a valid UTF-8 starter document', () => {
     const document = createStarterDocument();
     const parsed = parseDocument(document);
     const story = Object.values(parsed.stories)[0];
 
-    expect(story?.content.content[0]?.content[0]?.text).toBe('اردو پیج میں خوش آمدید');
+    expect(story ? extractPlainText(story.content) : '').toBe('اردو پیج میں خوش آمدید');
   });
 
   it('adds pages and objects through commands', () => {

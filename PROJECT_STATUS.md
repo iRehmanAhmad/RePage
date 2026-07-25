@@ -27,7 +27,7 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 | ID | Gap | Severity | Next resolution |
 |---|---|---:|---|
 | F-001 | Interactive Fabric canvas adapter | **Resolved** | Built `FabricCanvasAdapter` & `FabricCanvas` for shapes & frames |
-| F-002 | Text is displayed but not editable | High | Add constrained rich-text schema adapter and Tiptap overlay |
+| F-002 | Urdu rich-text schema & validation | **Resolved** | Built ProseMirror/Tiptap compatible rich-text schema, Zod validator & plain text converter |
 | F-003 | Package assets and hashes are specified but not written/read | Critical | Implement asset store, hash verification, decoded media limits |
 | F-004 | Package compression-ratio and JSON complexity limits are incomplete | High | Add hostile package fixtures and bounded parsing policy |
 | F-005 | No schema migration runner beyond v1 | High | Add migration registry before schema v2 exists |

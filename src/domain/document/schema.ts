@@ -19,17 +19,12 @@ const frameSchema = z.object({
   rotation: finiteNumber,
 });
 
-const textRunSchema = z.object({
-  type: z.literal('text'),
-  text: z.string(),
-  marks: z.array(z.enum(['bold', 'italic', 'underline'])).optional(),
-});
+import { richTextDocumentSchema } from '../rich-text/types';
 
-const paragraphSchema = z.object({
-  type: z.literal('paragraph'),
-  direction: z.enum(['rtl', 'ltr', 'auto']),
-  alignment: z.enum(['start', 'center', 'end', 'justify']),
-  content: z.array(textRunSchema),
+const storySchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  content: richTextDocumentSchema,
 });
 
 const baseObjectSchema = z.object({
@@ -96,17 +91,7 @@ export const documentSchema = z.object({
     z.string(),
     z.discriminatedUnion('type', [textFrameSchema, rectangleSchema, imageFrameSchema]),
   ),
-  stories: z.record(
-    z.string(),
-    z.object({
-      id: z.string().min(1),
-      name: z.string(),
-      content: z.object({
-        type: z.literal('doc'),
-        content: z.array(paragraphSchema),
-      }),
-    }),
-  ),
+  stories: z.record(z.string(), storySchema),
   styles: z.record(z.string(), z.unknown()),
   assets: z.record(
     z.string(),
