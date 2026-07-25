@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
-import { createMinimalDocument } from '../domain/document/document';
+import { createMinimalDocument } from '../domain/document/createDocument';
 import { insertFootnote } from '../domain/rich-text/notesEngine';
 import { exportDocumentToEpub } from './epubExporter';
 
