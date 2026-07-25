@@ -14,12 +14,13 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
 - PlatformServices abstraction layer (`platformServices.ts`, `browserPlatform.ts`, `tauriPlatform.ts`) supporting both web browser and Tauri 2 desktop runtime without coupling domain core.
 - Tauri 2 desktop shell configuration (`src-tauri/tauri.conf.json`, `Cargo.toml`, `lib.rs`, `main.rs`) with least-privilege security capabilities.
-- 80 passing automated unit and integration tests (`vitest`).
+- Native file workflow engine (`fileWorkflowEngine.ts`, `recentFiles.ts`, `conflictDetector.ts`) supporting Open, Save, Save As, atomic file replacement, recent files history, file associations for `.urdup`, drag-and-drop document opening (`DragAndDropOverlay.tsx`), and external file modification conflict detection.
+- 85 passing automated unit and integration tests (`vitest`).
 
 ## Milestone 4 work queue (Cross-Platform Desktop Release Candidate)
 
 1. Introduce Tauri 2 & PlatformServices Architecture (M4.1 — **Resolved**).
-2. Desktop native file associations & IPC commands (M4.2).
+2. Desktop native file associations & IPC commands (M4.2 — **Resolved**).
 3. System font enumerator & native font loader (M4.3).
 4. Milestone 4 Exit Gate Audit (M4.4).
 

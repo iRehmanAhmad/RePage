@@ -11,27 +11,26 @@ import {
   updateObjectGeometry,
 } from '../editor/commands/documentCommands';
 import { TransactionHistory } from '../editor/history/transactionHistory';
-import { browserPlatform } from '../platform/browser/browserPlatform';
 import { clearRecovery, getLatestRecovery, saveRecovery } from '../persistence/autosave/database';
-import { createUrdupPackage, readUrdupPackage } from '../persistence/package/urdupPackage';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
+import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
+import { tauriPlatform } from '../platform/tauri/tauriPlatform';
+import {
+  openDocumentWorkflow,
+  saveAsDocumentWorkflow,
+  saveDocumentWorkflow,
+  type DocumentFileRef,
+} from '../persistence/package/fileWorkflowEngine';
+import { getRecentFiles } from '../persistence/package/recentFiles';
 import type { KeyboardMode } from '../domain/unicode/keyboardLayouts';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
 const history = new TransactionHistory();
-
-function safeFilename(title: string): string {
-  const printableTitle = Array.from(title)
-    .filter((character) => character.charCodeAt(0) >= 32)
-    .join('');
-  const name = printableTitle.replace(/[<>:"/\\|?*]/g, '-').trim();
-  return `${name || 'RePage-Document'}.urdup`;
-}
 
 function resolveActivePage(document: RePageDocument, activePageId: string): Page {
   const page = document.pages[activePageId] ?? document.pages[document.pageOrder[0]!];
@@ -51,6 +50,8 @@ export function App() {
   const [isEditingText, setIsEditingText] = useState(false);
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [showPreflight, setShowPreflight] = useState(false);
+  const [fileRef, setFileRef] = useState<DocumentFileRef>({ isDirty: false });
+  const [showRecent, setShowRecent] = useState(false);
   const [recoveredItem, setRecoveredItem] = useState<{ document: RePageDocument; savedAt: string } | null>(null);
 
   const [, setHistoryVersion] = useState(0);
@@ -193,26 +194,41 @@ export function App() {
     setMessage('Rectangle added through domain command');
   }
 
-  async function handleSavePackage() {
+  async function handleOpenNative(inputData?: ArrayBuffer | File) {
     try {
-      const bytes = await createUrdupPackage(document);
-      browserPlatform.download(bytes, safeFilename(document.metadata.title), 'application/vnd.urdup+zip');
-      setMessage('Portable .urdup package created');
+      const activePlatform = tauriPlatform;
+      const opened = await openDocumentWorkflow(activePlatform, inputData);
+      if (opened) {
+        history.clear();
+        setDocumentState(opened.document);
+        setActivePageId(opened.document.pageOrder[0]!);
+        setFileRef(opened.fileRef);
+        setMessage(`Opened ${opened.fileRef.filePath || opened.document.metadata.title}`);
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to create package.');
+      setMessage(error instanceof Error ? error.message : 'Unable to open file.');
     }
   }
 
-  async function handleOpenPackage(file: File | undefined) {
-    if (!file) return;
+  async function handleSaveNative() {
     try {
-      const opened = await readUrdupPackage(await file.arrayBuffer());
-      history.clear();
-      setDocumentState(opened);
-      setActivePageId(opened.pageOrder[0]!);
-      setMessage(`${file.name} opened and validated`);
+      const activePlatform = tauriPlatform;
+      const updatedRef = await saveDocumentWorkflow(document, fileRef, activePlatform);
+      setFileRef(updatedRef);
+      setMessage(`Saved to ${updatedRef.filePath || 'package'}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to open package.');
+      setMessage(error instanceof Error ? error.message : 'Unable to save file.');
+    }
+  }
+
+  async function handleSaveAsNative() {
+    try {
+      const activePlatform = tauriPlatform;
+      const updatedRef = await saveAsDocumentWorkflow(document, activePlatform);
+      setFileRef(updatedRef);
+      setMessage(`Saved as ${updatedRef.filePath}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to save file as.');
     }
   }
 
@@ -233,6 +249,7 @@ export function App() {
 
   return (
     <div className="app-shell">
+      <DragAndDropOverlay onFileDrop={(file) => void handleOpenNative(file)} />
       {recoveredItem && (
         <div className="recovery-banner" role="alert" style={{ background: '#2d3748', color: '#fff', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>Unsaved session found from {new Date(recoveredItem.savedAt).toLocaleTimeString()} ({recoveredItem.document.metadata.title})</span>
@@ -265,18 +282,72 @@ export function App() {
           />
         </label>
 
-        <div className="top-actions">
-          <label className="button secondary file-button">
+        <div className="top-actions" style={{ position: 'relative' }}>
+          <button className="button secondary" type="button" onClick={() => void handleOpenNative()}>
             Open
-            <input
-              type="file"
-              accept=".urdup,application/zip"
-              onChange={(event) => void handleOpenPackage(event.target.files?.[0])}
-            />
-          </label>
-          <button className="button primary" type="button" onClick={() => void handleSavePackage()}>
-            Save package
           </button>
+          <button className="button secondary" type="button" onClick={() => void handleSaveNative()}>
+            Save
+          </button>
+          <button className="button primary" type="button" onClick={() => void handleSaveAsNative()}>
+            Save As
+          </button>
+          <button
+            className="button secondary"
+            type="button"
+            onClick={() => setShowRecent((prev) => !prev)}
+            title="Recent Documents"
+          >
+            📋 Recent
+          </button>
+          {showRecent && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: '#1e293b',
+                color: '#fff',
+                border: '1px solid #475569',
+                borderRadius: '6px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                minWidth: '220px',
+                zIndex: 1000,
+                padding: '8px 0',
+              }}
+            >
+              <div style={{ padding: '4px 12px', fontSize: '11px', textTransform: 'uppercase', opacity: 0.6 }}>
+                Recent Documents
+              </div>
+              {getRecentFiles().length === 0 ? (
+                <div style={{ padding: '8px 12px', fontSize: '13px', opacity: 0.7 }}>No recent files</div>
+              ) : (
+                getRecentFiles().map((item) => (
+                  <button
+                    key={item.pathOrName}
+                    type="button"
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '6px 12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#38bdf8',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                    }}
+                    onClick={() => {
+                      setShowRecent(false);
+                      setMessage(`Selected recent file ${item.title}`);
+                    }}
+                  >
+                    {item.title} <small style={{ color: '#94a3b8' }}>({item.pathOrName})</small>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </header>
 
