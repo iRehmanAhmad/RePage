@@ -36,7 +36,8 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), and M3.1 Link
 2. Multi-column text frames & RTL column layout engine (M3.2 — **Resolved**).
 3. Advanced Master Pages & Running Elements Engine (M3.3 — **Resolved**).
 4. Automatic Page Numbering Fields & Urdu Numerals (M3.4 — **Resolved**).
-5. Character & Paragraph Object Style Libraries (M3.5).
+5. Character & Paragraph Object Style Libraries (M3.5 — **Resolved**).
+6. Pre-flight Verification & Urdu Document Diagnostics (M3.6).
 
 ## Foundation & Typography exit gate progress
 

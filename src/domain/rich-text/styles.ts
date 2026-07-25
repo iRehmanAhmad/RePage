@@ -88,3 +88,23 @@ export const BUILTIN_URDU_PARAGRAPH_STYLES: Record<string, ParagraphStyle> = {
     direction: 'rtl',
   },
 };
+
+export const BUILTIN_URDU_CHARACTER_STYLES: Record<string, CharacterStyle> = {
+  emphasis: {
+    id: 'emphasis',
+    name: 'تاکید (Emphasis)',
+    bold: true,
+    color: '#0f766e',
+  },
+  title_lead: {
+    id: 'title_lead',
+    name: 'سرخی کا پہلا حرف',
+    fontSize: 24,
+    bold: true,
+  },
+};
+
+export const URDU_TYPOGRAPHY_PRESETS = {
+  characterStyles: BUILTIN_URDU_CHARACTER_STYLES,
+  paragraphStyles: BUILTIN_URDU_PARAGRAPH_STYLES,
+};
