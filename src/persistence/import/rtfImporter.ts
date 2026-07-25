@@ -72,7 +72,7 @@ export function importRtf(
       // Control word or symbol
       i++;
       let controlWord = '';
-      while (i < rawText.length && /[a-zA-Z]/.test(rawText[i])) {
+      while (i < rawText.length && /[a-zA-Z]/.test(rawText[i]!)) {
         controlWord += rawText[i];
         i++;
       }
@@ -84,7 +84,7 @@ export function importRtf(
         isNegative = true;
         i++;
       }
-      while (i < rawText.length && /[0-9]/.test(rawText[i])) {
+      while (i < rawText.length && /[0-9]/.test(rawText[i]!)) {
         paramStr += rawText[i];
         i++;
       }
