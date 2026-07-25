@@ -4,11 +4,11 @@ Last updated: 2026-07-25
 
 ## Current phase
 
-**M4 — Cross-Platform Desktop Release Candidate: COMPLETE (All Exit Gates Passed)** (M0 Foundation, M2 Urdu Typography Beta, M3 Document Production Beta, M4 Desktop Release Candidate: COMPLETE)
+**M5 — Collaboration Preview: COMPLETE (All Exit Gates Passed)** (M0 Foundation, M2 Urdu Typography Beta, M3 Document Production Beta, M4 Desktop Release Candidate, M5 Collaboration Preview: COMPLETE)
 
-The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, and Milestone 4 Cross-Platform Desktop Release Candidate are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, PlatformServices abstraction layer, Tauri 2 configuration (`src-tauri/`), native file workflow engine, desktop OS integration, multi-platform installers (NSIS, DMG, DEB, AppImage, RPM), and registered `.urdup` file associations.
+The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, Milestone 4 Desktop Release Candidate, and Milestone 5 Collaboration Preview are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, PlatformServices abstraction layer, Tauri 2 configuration (`src-tauri/`), native file workflow engine, desktop OS integration, multi-platform installers (NSIS, DMG, DEB, AppImage, RPM), Yjs CRDT mapping, ephemeral awareness isolation, deterministic conflict engine, content-addressed asset transfer, WebRTC networking (STUN/TURN/forced-relay), identity authorization, high-entropy tokens, and append-only audit trail.
 
-## Completed capabilities (M0, M2, M3, & M4 Exit Gates Passed)
+## Completed capabilities (M0, M2, M3, M4, & M5 Exit Gates Passed)
 
 - React/Vite application rebuilt in strict TypeScript (`RePage` branding).
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
@@ -23,7 +23,8 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Collaborative conflict resolution engine (`conflictEngine.ts`) defining Last-Writer-Wins movement/resize resolution, delete-over-edit precedence, cascading page deletion, default style fallback, linked-story reflow recomputation, and scoped local `Y.UndoManager` (`Ctrl+Z`).
 - Content-addressed asset transfer engine (`assetTransferEngine.ts`) enforcing SHA-256 binary hashing, separate resumable 64 KB chunked transfer path outside Yjs maps, 50 MB size limit, 5 MB/s rate limit, and missing-asset status tracking.
 - Collaborative network provider (`networkProvider.ts`) offering production WebRTC signaling (`wss://signaling.repage.org`), STUN/TURN ICE configurations, forced-relay policy for enterprise firewalls, auto-reconnection with exponential backoff on interface switches, small-room editor limits (Max 4 editors), and detailed connectivity diagnostics.
-- 116 passing automated unit and integration tests (`vitest`).
+- Collaborative room identity & authorization engine (`authEngine.ts`) enforcing owner/editor/viewer roles, 256-bit cryptographically secure high-entropy tokens, expiring invitations, token revocation, participant removal, room state machine (`created`, `active`, `archived`, `closed`), document version compatibility checks, and append-only audit log.
+- 120 passing automated unit and integration tests (`vitest`).
 
 ## Milestone 5 work queue (Collaboration Preview)
 
@@ -31,6 +32,8 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 2. Collaborative Conflict Policies & Undo Invariants (M5.2 — **Resolved**).
 3. Resumable Asset Transfer Pipeline & Storage Decision (M5.3 — **Resolved**).
 4. Collaborative Networking & Connectivity Diagnostics (M5.4 — **Resolved**).
+5. Identity, Authorization & Room Lifecycle (M5.5 — **Resolved**).
+6. Milestone 5 Exit Gate Audit (M5.6 — **Resolved**).
 
 ## Foundation & Typography exit gate progress
 

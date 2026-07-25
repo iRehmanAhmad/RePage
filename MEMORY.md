@@ -15,13 +15,14 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Milestone 4 — Cross-Platform Desktop Release Candidate (**Fully Resolved & Audited**).
-- **M4 Exit Gate Audit**: All 5 exit gate criteria PASSED (Tauri 2 shell & least-privilege security, native file workflows & atomic save, desktop OS integration & shortcuts, multi-platform installers NSIS/DMG/DEB/AppImage/RPM, CI/CD workflow & test integrity).
-- **M4.4 Distribution & Packaging**: Multi-platform installers (`tauri.conf.json`), distribution guide (`DISTRIBUTION.md`), automated verification script (`verify-distribution.js`), and GitHub Actions release workflow (`release-distribution.yml`).
-- **M4.3 Desktop Integration**: Window title dirty indicator (`windowIntegration.ts`), native clipboard (`clipboard.ts`), print dialog (`printService.ts`), OS dark/light theme listeners (`themeIntegration.ts`), High-DPI scaling, and ARIA live regions (`accessibility.ts`).
-- **M4.2 Native File Workflows**: Open, Save, Save As, atomic file replacement (`.urdup.tmp` -> target), recent files store (`recentFiles.ts`), file associations for `.urdup` in `tauri.conf.json`, drag-and-drop overlay (`DragAndDropOverlay.tsx`), and conflict detection (`conflictDetector.ts`).
-- **M4.1 Introduce Tauri 2**: `PlatformServices` abstraction layer (`src/platform/platformServices.ts`, `browserPlatform.ts`, `tauriPlatform.ts`) and Tauri 2 desktop shell configuration (`src-tauri/`) implemented.
-- **Test Suite**: 94 vitest unit tests passing across 28 test suites. 155 UTF-8 files verified without mojibake.
+- **Current Milestone**: Milestone 5 — Collaboration Preview (**Fully Resolved & Audited**).
+- **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED (CRDT mapping, awareness isolation, deterministic conflict engine, content-addressed asset transfer, WebRTC networking with STUN/TURN, identity & authorization with high-entropy tokens and audit logs).
+- **M5.5 Identity & Authorization**: Owner/editor/viewer roles, 256-bit cryptographically secure high-entropy invitation tokens (`authEngine.ts`), token expiration, revocation, participant removal, room lifecycle (`created`, `active`, `archived`, `closed`), schema version compatibility checks, and append-only audit trail logging.
+- **M5.4 Networking**: Production WebRTC signaling (`wss://signaling.repage.org`), STUN/TURN servers, forced-relay policy for enterprise firewalls (`networkProvider.ts`), auto-reconnect backoff on interface switches, small-room limits (Max 4 editors), and connectivity diagnostics.
+- **M5.3 Asset Transfer**: Content-addressed SHA-256 binary hashing (`assetTransferEngine.ts`), separate 64 KB chunked transfer path outside Yjs maps, 50 MB size limit, 5 MB/s rate limit, and missing-asset status tracking.
+- **M5.2 Conflict Policies**: Last-Writer-Wins movement/resize resolution (`conflictEngine.ts`), delete-over-edit precedence, cascading page deletion, default style fallback, linked-story reflow recomputation, and scoped local `Y.UndoManager` (`Ctrl+Z`).
+- **M5.1 CRDT Mapping**: `canonicalToYjsDoc` & `yjsToCanonicalDoc` binding (`crdtDoc.ts`) and ephemeral awareness presence protocol (`awareness.ts`).
+- **Test Suite**: 120 vitest unit tests passing across 34 test suites. 176 UTF-8 files verified without mojibake.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
