@@ -49,6 +49,8 @@ const textFrameSchema = baseObjectSchema.extend({
   nextFrameId: z.string().min(1).nullable().optional(),
   previousFrameId: z.string().min(1).nullable().optional(),
   overflow: z.boolean().optional(),
+  columns: z.number().int().positive().optional(),
+  columnGap: nonNegativeNumber.optional(),
 });
 
 const rectangleSchema = baseObjectSchema.extend({

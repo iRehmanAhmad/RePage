@@ -45,9 +45,10 @@ The clean strict-TypeScript Foundation and Urdu Typography Beta (M2) are complet
 
 ## Immediate Milestone 3 work queue
 
-1. Multi-page Workspace Tools (Zoom, Pan, Guides, Multi-Selection — M1.3 / M1.4).
-2. Advanced Master Pages & Section Headers (M3.1 Page Layout Engine).
-3. Grid Systems & Snap Guides (M3.2 Layout & Guides).
+1. Urdu Character & Paragraph Styles, Column Layouts & Find/Replace (M2.7 — **Resolved**).
+2. Multi-page Workspace Tools (Zoom, Pan, Guides, Multi-Selection — M1.3 / M1.4).
+3. Advanced Master Pages & Section Headers (M3.1 Page Layout Engine).
+4. Grid Systems & Snap Guides (M3.2 Layout & Guides).
 
 ## Foundation & Typography exit gate progress
 

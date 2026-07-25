@@ -61,6 +61,8 @@ export interface TextFrameObject extends BasePageObject {
   nextFrameId?: ObjectId | null | undefined;
   previousFrameId?: ObjectId | null | undefined;
   overflow?: boolean | undefined;
+  columns?: number | undefined;
+  columnGap?: number | undefined;
 }
 
 export interface RectangleObject extends BasePageObject {
