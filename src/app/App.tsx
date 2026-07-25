@@ -19,6 +19,9 @@ import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
 import { tauriPlatform } from '../platform/tauri/tauriPlatform';
+import { updateWindowTitle } from '../platform/tauri/windowIntegration';
+import { announceToScreenReader } from '../ui/common/accessibility';
+import { triggerNativePrintDialog } from '../platform/printService';
 import {
   openDocumentWorkflow,
   saveAsDocumentWorkflow,
@@ -130,10 +133,56 @@ export function App() {
     }
   }, [document]);
 
-  // Global keybindings for Undo/Redo & Delete
+  const handleOpenNative = React.useCallback(async (inputData?: ArrayBuffer | File) => {
+    try {
+      const activePlatform = tauriPlatform;
+      const opened = await openDocumentWorkflow(activePlatform, inputData);
+      if (opened) {
+        history.clear();
+        setDocumentState(opened.document);
+        setActivePageId(opened.document.pageOrder[0]!);
+        setFileRef(opened.fileRef);
+        setMessage(`Opened ${opened.fileRef.filePath || opened.document.metadata.title}`);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to open file.');
+    }
+  }, []);
+
+  const handleSaveNative = React.useCallback(async () => {
+    try {
+      const activePlatform = tauriPlatform;
+      const updatedRef = await saveDocumentWorkflow(document, fileRef, activePlatform);
+      setFileRef(updatedRef);
+      setMessage(`Saved to ${updatedRef.filePath || 'package'}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to save file.');
+    }
+  }, [document, fileRef]);
+
+  const handleSaveAsNative = React.useCallback(async () => {
+    try {
+      const activePlatform = tauriPlatform;
+      const updatedRef = await saveAsDocumentWorkflow(document, activePlatform);
+      setFileRef(updatedRef);
+      setMessage(`Saved as ${updatedRef.filePath}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to save file as.');
+    }
+  }, [document]);
+
+  // Sync OS Window Title and Dirty State
+  useEffect(() => {
+    void updateWindowTitle(document.metadata.title, fileRef.isDirty);
+  }, [document.metadata.title, fileRef.isDirty]);
+
+  // Global keybindings for Undo/Redo, Delete, Open, Save, Print
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+      const isCmdOrCtrl = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+
+      if (isCmdOrCtrl && key === 'z') {
         if (event.shiftKey) {
           event.preventDefault();
           handleRedo();
@@ -141,9 +190,23 @@ export function App() {
           event.preventDefault();
           handleUndo();
         }
-      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+      } else if (isCmdOrCtrl && key === 'y') {
         event.preventDefault();
         handleRedo();
+      } else if (isCmdOrCtrl && key === 's') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          void handleSaveAsNative();
+        } else {
+          void handleSaveNative();
+        }
+      } else if (isCmdOrCtrl && key === 'o') {
+        event.preventDefault();
+        void handleOpenNative();
+      } else if (isCmdOrCtrl && key === 'p') {
+        event.preventDefault();
+        triggerNativePrintDialog();
+        announceToScreenReader('Print dialog opened');
       } else if (
         (event.key === 'Delete' || event.key === 'Backspace') &&
         !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
@@ -157,7 +220,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleDeleteSelected, selectedObjectId]);
+  }, [handleUndo, handleRedo, handleDeleteSelected, selectedObjectId, fileRef, document, handleSaveAsNative, handleSaveNative, handleOpenNative]);
 
   useEffect(() => {
     setSaveState('Unsaved changes');
@@ -192,44 +255,6 @@ export function App() {
   function handleAddRectangle() {
     updateDocument(addRectangle(document, activePageId), 'Add rectangle');
     setMessage('Rectangle added through domain command');
-  }
-
-  async function handleOpenNative(inputData?: ArrayBuffer | File) {
-    try {
-      const activePlatform = tauriPlatform;
-      const opened = await openDocumentWorkflow(activePlatform, inputData);
-      if (opened) {
-        history.clear();
-        setDocumentState(opened.document);
-        setActivePageId(opened.document.pageOrder[0]!);
-        setFileRef(opened.fileRef);
-        setMessage(`Opened ${opened.fileRef.filePath || opened.document.metadata.title}`);
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to open file.');
-    }
-  }
-
-  async function handleSaveNative() {
-    try {
-      const activePlatform = tauriPlatform;
-      const updatedRef = await saveDocumentWorkflow(document, fileRef, activePlatform);
-      setFileRef(updatedRef);
-      setMessage(`Saved to ${updatedRef.filePath || 'package'}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to save file.');
-    }
-  }
-
-  async function handleSaveAsNative() {
-    try {
-      const activePlatform = tauriPlatform;
-      const updatedRef = await saveAsDocumentWorkflow(document, activePlatform);
-      setFileRef(updatedRef);
-      setMessage(`Saved as ${updatedRef.filePath}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to save file as.');
-    }
   }
 
   function handleRestoreRecovery() {
