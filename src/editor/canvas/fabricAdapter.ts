@@ -69,7 +69,7 @@ export class FabricCanvasAdapter {
     this.callbacks.onSelectionChanged(objectId);
   }
 
-  public syncObjects(objects: PageObject[]): void {
+  public syncObjects(objects: PageObject[], stories?: Record<string, import('../../domain/document/types').TextStory>): void {
     if (!this.canvas) return;
 
     // Clear existing objects
@@ -100,7 +100,15 @@ export class FabricCanvasAdapter {
         const fontDef = getFontDefinition(obj.fontFamily);
         const overflowText = obj.overflow ? ' [+] ⚠️' : '';
         const seqBadge = obj.sequenceIndex !== undefined ? ` [#${obj.sequenceIndex + 1}]` : '';
-        fabricObj = new fabric.Textbox(`اردو پیج میں خوش آمدید${seqBadge}${overflowText}`, {
+        
+        let displayContent = 'اردو متن';
+        if (stories && stories[obj.storyId]?.content?.content) {
+          displayContent = stories[obj.storyId]!.content.content
+            .map((p) => p.content.map((run) => (run.type === 'text' ? run.text : '')).join(''))
+            .join('\n');
+        }
+
+        fabricObj = new fabric.Textbox(`${displayContent}${seqBadge}${overflowText}`, {
           left: obj.frame.x,
           top: obj.frame.y,
           width: obj.frame.width,
@@ -109,6 +117,7 @@ export class FabricCanvasAdapter {
           fill: obj.overflow ? '#dc2626' : obj.color,
           fontSize: obj.fontSize,
           fontFamily: fontDef.family,
+          textAlign: 'right',
           opacity: obj.opacity,
           selectable: !obj.locked,
           editable: false, // Rich text DOM overlay handles editing

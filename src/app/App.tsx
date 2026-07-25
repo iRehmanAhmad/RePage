@@ -17,6 +17,8 @@ import { createUrdupPackage, readUrdupPackage } from '../persistence/package/urd
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
+import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
+import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import type { KeyboardMode } from '../domain/unicode/keyboardLayouts';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
@@ -48,6 +50,7 @@ export function App() {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
+  const [showPreflight, setShowPreflight] = useState(false);
   const [recoveredItem, setRecoveredItem] = useState<{ document: RePageDocument; savedAt: string } | null>(null);
 
   const [, setHistoryVersion] = useState(0);
@@ -299,7 +302,15 @@ export function App() {
             Delete selected
           </button>
         )}
-        <span className="phase-chip">Urdu Rich-Text: Tiptap (M2.3)</span>
+        <span className="command-separator" />
+        <button
+          type="button"
+          className={`button ${showPreflight ? 'primary' : 'secondary'}`}
+          onClick={() => setShowPreflight((prev) => !prev)}
+        >
+          🔍 Preflight Report
+        </button>
+        <span className="phase-chip">Urdu Production Beta (M3)</span>
       </nav>
 
       <div className="editor-layout">
@@ -344,6 +355,7 @@ export function App() {
             <FabricCanvas
               page={activePage}
               objects={visibleObjects}
+              stories={document.stories}
               onObjectModified={handleObjectModified}
               onSelectionChanged={(id) => {
                 setSelectedObjectId(id);
@@ -355,6 +367,17 @@ export function App() {
                 }
               }}
             />
+            {showPreflight && (
+              <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
+                <PreflightPanel
+                  result={runPreflightCheck(document)}
+                  onClose={() => setShowPreflight(false)}
+                  onSelectIssue={(targetId) => {
+                    if (targetId) setSelectedObjectId(targetId);
+                  }}
+                />
+              </div>
+            )}
             {isEditingText && selectedTextFrame && activeStory && (
               <TextEditorOverlay
                 frame={selectedTextFrame.frame}

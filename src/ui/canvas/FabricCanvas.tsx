@@ -5,11 +5,12 @@ import { FabricCanvasAdapter } from '../../editor/canvas/fabricAdapter';
 interface FabricCanvasProps {
   page: Page;
   objects: PageObject[];
+  stories?: Record<string, import('../../domain/document/types').TextStory> | undefined;
   onObjectModified?: (objectId: string, frameProps: Partial<Rect>) => void;
   onSelectionChanged?: (objectId: string | null) => void;
 }
 
-export function FabricCanvas({ page, objects, onObjectModified, onSelectionChanged }: FabricCanvasProps) {
+export function FabricCanvas({ page, objects, stories, onObjectModified, onSelectionChanged }: FabricCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const adapterRef = useRef<FabricCanvasAdapter | null>(null);
 
@@ -43,12 +44,12 @@ export function FabricCanvas({ page, objects, onObjectModified, onSelectionChang
     }
   }, [page.width, page.height]);
 
-  // Synchronize objects on canvas when page objects change
+  // Synchronize objects on canvas when page objects or stories change
   useEffect(() => {
     if (adapterRef.current) {
-      adapterRef.current.syncObjects(objects);
+      adapterRef.current.syncObjects(objects, stories);
     }
-  }, [objects]);
+  }, [objects, stories]);
 
   return (
     <div className="canvas-wrapper" style={{ position: 'relative', width: '100%', height: '100%' }}>
