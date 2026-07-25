@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createStarterDocument } from '../domain/document/createDocument';
 import type { Page, PageObject, RePageDocument } from '../domain/document/types';
 import { pointsToMillimetres } from '../domain/geometry/units';
@@ -10,13 +10,13 @@ import {
   updateObjectGeometry,
 } from '../editor/commands/documentCommands';
 import { TransactionHistory } from '../editor/history/transactionHistory';
-import { getLatestRecovery } from '../persistence/autosave/database';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
 import { triggerNativePrintDialog } from '../platform/printService';
+import { defaultPlatformServices } from '../platform/platformServices';
 import {
   importExternalFileWorkflow,
   saveAsDocumentWorkflow,
@@ -88,20 +88,6 @@ export function App() {
   );
 
   const selectedObject = selectedObjectId ? document.objects[selectedObjectId] : null;
-  const selectedTextFrame = selectedObject?.type === 'text-frame' ? selectedObject : null;
-  const activeStory = selectedTextFrame ? document.stories[selectedTextFrame.storyId] : null;
-
-  const initialDocumentIdRef = React.useRef(document.id);
-  const initialDocumentId = initialDocumentIdRef.current;
-
-  // Check for recovery on startup
-  useEffect(() => {
-    void getLatestRecovery().then((recovery) => {
-      if (recovery && recovery.document.id !== initialDocumentId) {
-        setRecoveredItem(recovery);
-      }
-    });
-  }, [initialDocumentId]);
 
   // Update document with undo push
   const updateDocument = React.useCallback(
@@ -145,38 +131,40 @@ export function App() {
   // File Workflows
   const handleSaveNative = React.useCallback(async () => {
     setSaveState('Saving…');
-    const result = await saveDocumentWorkflow(document, fileRef);
-    if (result.success && result.updatedRef) {
-      setFileRef(result.updatedRef);
+    try {
+      const updatedRef = await saveDocumentWorkflow(document, fileRef, defaultPlatformServices);
+      setFileRef(updatedRef);
       setSaveState('Saved locally');
-      setMessage(result.message || 'Saved successfully');
-    } else {
+      setMessage('Saved successfully');
+    } catch {
       setSaveState('Save failed');
-      setMessage(result.error || 'Save failed');
+      setMessage('Save failed');
     }
   }, [document, fileRef]);
 
   const handleSaveAsNative = React.useCallback(async () => {
     setSaveState('Saving…');
-    const result = await saveAsDocumentWorkflow(document);
-    if (result.success && result.updatedRef) {
-      setFileRef(result.updatedRef);
+    try {
+      const updatedRef = await saveAsDocumentWorkflow(document, defaultPlatformServices);
+      setFileRef(updatedRef);
       setSaveState('Saved locally');
-      setMessage(result.message || 'Saved successfully');
-    } else {
+      setMessage('Saved successfully');
+    } catch {
       setSaveState('Save failed');
-      setMessage(result.error || 'Save failed');
+      setMessage('Save failed');
     }
   }, [document]);
 
   const handleOpenImportFile = React.useCallback(async (file: File) => {
-    const result = await importExternalFileWorkflow(file);
-    if (result.success && result.document) {
-      setDocumentState(result.document);
-      setActivePageId(result.document.pageOrder[0]!);
-      setMessage(`Imported file: ${file.name}`);
-    } else {
-      setMessage(`Import failed: ${result.error}`);
+    try {
+      const res = await importExternalFileWorkflow(file, file.name);
+      if (res && res.document) {
+        setDocumentState(res.document);
+        setActivePageId(res.document.pageOrder[0]!);
+        setMessage(`Imported file: ${file.name}`);
+      }
+    } catch (err) {
+      setMessage(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, []);
 
@@ -358,12 +346,11 @@ export function App() {
 
               {/* Fabric Canvas */}
               <FabricCanvas
-                width={activePage.width}
-                height={activePage.height}
+                page={activePage}
                 objects={visibleObjects}
-                selectedObjectId={selectedObjectId}
-                onSelectObject={setSelectedObjectId}
-                onModifyObject={handleObjectModified}
+                stories={document.stories}
+                onObjectModified={handleObjectModified}
+                onSelectionChanged={setSelectedObjectId}
               />
             </div>
 
@@ -385,7 +372,7 @@ export function App() {
           {/* Right Inspector Dock */}
           <InspectorDock
             document={document}
-            selectedObject={selectedObject}
+            selectedObject={selectedObject ?? null}
             onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}
             onOpenLanguageTools={() => setShowLanguageTools(true)}
             onOpenOcr={() => void handleTriggerOcr()}
@@ -399,10 +386,8 @@ export function App() {
           <VisualKeyboard
             mode={keyboardMode}
             onModeChange={setKeyboardMode}
-            onKeyPress={(char) => {
-              if (selectedTextFrame && activeStory) {
-                setMessage(`Character inserted: ${char}`);
-              }
+            onInsertChar={(char) => {
+              setMessage(`Character inserted: ${char}`);
             }}
           />
         </div>
