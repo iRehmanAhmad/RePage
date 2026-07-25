@@ -6,6 +6,7 @@ import type {
   Rect,
   RectangleObject,
   RePageDocument,
+  ShapeKind,
   TextFrameObject,
   TextStory,
 } from '../../domain/document/types';
@@ -85,25 +86,52 @@ export function removePage(document: RePageDocument, pageId: PageId): RePageDocu
   });
 }
 
-export function addRectangle(document: RePageDocument, pageId: PageId): RePageDocument {
+export function addRectangle(
+  document: RePageDocument,
+  pageId: PageId,
+  shapeKind: ShapeKind = 'rectangle',
+): RePageDocument {
   const page = document.pages[pageId];
   if (!page) {
     throw new Error(`Page ${pageId} does not exist.`);
   }
 
+  const nameMap: Record<ShapeKind, string> = {
+    rectangle: 'مستطیل (Rectangle)',
+    'rounded-rectangle': 'گول مستطیل (Rounded Rectangle)',
+    ellipse: 'بیضوی / دائرہ (Oval / Ellipse)',
+    circle: 'دائرہ (Circle)',
+    triangle: 'تثلیث (Triangle)',
+    diamond: 'ہیرا (Diamond)',
+    star: 'ستارہ (5-Point Star)',
+    'arrow-right': 'دائیں تیر (Arrow Right)',
+    'arrow-left': 'بائیں تیر (Arrow Left)',
+    'arrow-up': 'اوپر تیر (Arrow Up)',
+    'arrow-down': 'نیچے تیر (Arrow Down)',
+    hexagon: 'مسدس (Hexagon)',
+    callout: 'مکالمہ سائے (Callout)',
+    line: 'لکیر (Line)',
+  };
+
   const object: RectangleObject = {
     id: createId('object'),
     pageId,
     type: 'rectangle',
-    name: 'Rectangle',
-    frame: { x: 72, y: 72, width: 180, height: 108, rotation: 0 },
+    shapeKind,
+    name: nameMap[shapeKind] || 'شکل (Shape)',
+    frame:
+      shapeKind === 'line'
+        ? { x: 72, y: 120, width: 200, height: 2, rotation: 0 }
+        : shapeKind === 'circle'
+          ? { x: 100, y: 100, width: 120, height: 120, rotation: 0 }
+          : { x: 72, y: 72, width: 180, height: 108, rotation: 0 },
     locked: false,
     hidden: false,
     opacity: 1,
-    fill: '#dce8dc',
+    fill: shapeKind === 'line' ? '#0284c7' : '#dce8dc',
     stroke: '#52705a',
-    strokeWidth: 1,
-    cornerRadius: 6,
+    strokeWidth: shapeKind === 'line' ? 2 : 1,
+    cornerRadius: shapeKind === 'rounded-rectangle' ? 16 : 4,
   };
 
   return touch({

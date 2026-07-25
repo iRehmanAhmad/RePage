@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addTextFrame } from '../../editor/commands/documentCommands';
 import { createStarterDocument } from './createDocument';
 import {
   checkFrameOverflow,
@@ -10,7 +11,9 @@ import type { TextFrameObject } from './types';
 
 describe('textFlow foundations', () => {
   it('links two text frames into a multi-frame story chain', () => {
-    const doc = createStarterDocument();
+    const rawDoc = createStarterDocument();
+    const pageId = rawDoc.pageOrder[0]!;
+    const doc = addTextFrame(rawDoc, pageId);
     const frame1Id = Object.keys(doc.objects)[0]!;
     const story1Id = (doc.objects[frame1Id] as TextFrameObject).storyId;
 
@@ -18,7 +21,7 @@ describe('textFlow foundations', () => {
     const frame2Id = 'frame-body-2';
     const frame2: TextFrameObject = {
       id: frame2Id,
-      pageId: 'page-1',
+      pageId,
       name: 'Linked Body Frame 2',
       type: 'text-frame',
       storyId: 'story-headline',
@@ -53,7 +56,9 @@ describe('textFlow foundations', () => {
   });
 
   it('unlinks a text frame cleanly', () => {
-    const doc = createStarterDocument();
+    const rawDoc = createStarterDocument();
+    const pageId = rawDoc.pageOrder[0]!;
+    const doc = addTextFrame(rawDoc, pageId);
     const frame1Id = Object.keys(doc.objects)[0]!;
 
     const frame2Id = 'frame-body-2';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addPage, addRectangle, deleteObject, removePage, updateObjectGeometry } from '../../editor/commands/documentCommands';
+import { addPage, addRectangle, addTextFrame, deleteObject, removePage, updateObjectGeometry } from '../../editor/commands/documentCommands';
 import { createDocument, createStarterDocument } from './createDocument';
 import { parseDocument } from './schema';
 
@@ -11,7 +11,7 @@ describe('canonical document', () => {
     const parsed = parseDocument(document);
     const story = Object.values(parsed.stories)[0];
 
-    expect(story ? extractPlainText(story.content) : '').toContain('اردو');
+    expect(story ? extractPlainText(story.content) : '').toContain('ٹائپ');
   });
 
   it('adds pages and objects through commands', () => {
@@ -33,7 +33,8 @@ describe('canonical document', () => {
   });
 
   it('updates object geometry and validates frame values', () => {
-    const starter = createStarterDocument();
+    const doc = createStarterDocument();
+    const starter = addTextFrame(doc, doc.pageOrder[0]!);
     const objectId = Object.keys(starter.objects)[0]!;
 
     const updated = updateObjectGeometry(starter, objectId, { x: 120, y: 150, width: 250, height: 180, rotation: 15 });
@@ -42,9 +43,10 @@ describe('canonical document', () => {
   });
 
   it('deletes an object from page and document object map', () => {
-    const starter = createStarterDocument();
+    const doc = createStarterDocument();
+    const pageId = doc.pageOrder[0]!;
+    const starter = addTextFrame(doc, pageId);
     const objectId = Object.keys(starter.objects)[0]!;
-    const pageId = starter.pageOrder[0]!;
 
     const deleted = deleteObject(starter, objectId);
     expect(deleted.objects[objectId]).toBeUndefined();

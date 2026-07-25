@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import type { PageObject, RePageDocument } from '../../domain/document/types';
 import { pointsToMillimetres } from '../../domain/geometry/units';
 import type { Translations } from '../i18n/menuTranslation';
@@ -11,6 +11,14 @@ export interface InspectorDockProps {
     objectId: string,
     coords: Partial<{ x: number; y: number; width: number; height: number; rotation: number }>
   ) => void;
+  onUpdateShapeStyle?: (
+    objectId: string,
+    styleProps: Partial<{ fill: string; stroke: string; strokeWidth: number; cornerRadius: number }>
+  ) => void;
+  isOpen?: boolean | undefined;
+  onClose?: (() => void) | undefined;
+  width?: number | undefined;
+  onWidthChange?: ((width: number) => void) | undefined;
 }
 
 export const InspectorDock: React.FC<InspectorDockProps> = ({
@@ -18,16 +26,87 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   document,
   selectedObject,
   onUpdateGeometry,
+  onUpdateShapeStyle,
+  isOpen = true,
+  onClose,
+  width = 260,
+  onWidthChange,
 }) => {
+  const isDraggingRef = useRef(false);
+
+  if (!isOpen) return null;
+
   const activePage = document.pages[document.pageOrder[0]!];
 
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    const startX = e.clientX;
+    const startWidth = width;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const deltaX = startX - moveEvent.clientX; // Dragging left increases width
+      const newWidth = Math.max(180, Math.min(480, startWidth + deltaX));
+      onWidthChange?.(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
-    <aside className="studio-inspector">
+    <aside
+      className="studio-inspector"
+      style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+    >
+      {/* Left Resizer Drag Handle */}
+      <div
+        onMouseDown={handleMouseDownResize}
+        title="Drag to resize Properties Panel width"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: '5px',
+          cursor: 'col-resize',
+          zIndex: 20,
+          backgroundColor: 'transparent',
+        }}
+      />
+
       <div className="sidebar-header">
-        <span>⚙ {t.inspectorProps}</span>
-        <span className="save-badge">
-          {selectedObject ? selectedObject.type.toUpperCase() : 'CANVAS'}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>⚙ {t.inspectorProps}</span>
+          <span className="save-badge">
+            {selectedObject ? selectedObject.type.toUpperCase() : 'CANVAS'}
+          </span>
+        </div>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              fontSize: '14px',
+              cursor: 'pointer',
+              padding: '2px 4px',
+            }}
+            title="Close Properties Inspector"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       <div className="inspector-content">
@@ -113,6 +192,83 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 className="range-slider"
               />
             </div>
+
+            {/* Shape Fill & Outline Formatting (for Rectangle/Shapes) */}
+            {selectedObject.type === 'rectangle' && (
+              <div className="space-y-card" style={{ marginTop: '12px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+                <span className="field-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
+                  شکل کی خصوصیات (Shape Format)
+                </span>
+
+                {/* Fill Color */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>مطلوبہ رنگ (Fill Color):</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="color"
+                      value={selectedObject.fill}
+                      onChange={(e) =>
+                        onUpdateShapeStyle?.(selectedObject.id, { fill: e.target.value })
+                      }
+                      style={{ width: '32px', height: '24px', cursor: 'pointer', border: 'none', background: 'none' }}
+                    />
+                    <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{selectedObject.fill}</span>
+                  </div>
+                </div>
+
+                {/* Outline Color */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>آؤٹ لائن رنگ (Outline Color):</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="color"
+                      value={selectedObject.stroke}
+                      onChange={(e) =>
+                        onUpdateShapeStyle?.(selectedObject.id, { stroke: e.target.value })
+                      }
+                      style={{ width: '32px', height: '24px', cursor: 'pointer', border: 'none', background: 'none' }}
+                    />
+                    <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{selectedObject.stroke}</span>
+                  </div>
+                </div>
+
+                {/* Outline Width */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                  <div className="flex-between">
+                    <label style={{ fontSize: '11px', color: '#94a3b8' }}>آؤٹ لائن چوڑائی (Stroke Width):</label>
+                    <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{selectedObject.strokeWidth} pt</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={12}
+                    value={selectedObject.strokeWidth}
+                    onChange={(e) =>
+                      onUpdateShapeStyle?.(selectedObject.id, { strokeWidth: Number(e.target.value) })
+                    }
+                    className="range-slider"
+                  />
+                </div>
+
+                {/* Corner Radius */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                  <div className="flex-between">
+                    <label style={{ fontSize: '11px', color: '#94a3b8' }}>گولائی (Corner Radius):</label>
+                    <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{selectedObject.cornerRadius} pt</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={40}
+                    value={selectedObject.cornerRadius}
+                    onChange={(e) =>
+                      onUpdateShapeStyle?.(selectedObject.id, { cornerRadius: Number(e.target.value) })
+                    }
+                    className="range-slider"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Document Page Overview when no object selected */

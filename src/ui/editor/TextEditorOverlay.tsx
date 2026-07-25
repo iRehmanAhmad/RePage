@@ -1,13 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { Rect, TextStory } from '../../domain/document/types';
-import {
-  createRichTextFromPlainText,
-  extractPlainText,
-  type RichTextDocument,
-} from '../../domain/rich-text/types';
+import type { RichTextDocument } from '../../domain/rich-text/types';
 import { getFontDefinition } from '../../domain/unicode/fontRegistry';
+import { canonicalToTiptapHtml, tiptapHtmlToCanonical } from '../../domain/rich-text/tiptapConverter';
+import { SmartDeletePreview } from './smartDeletePreview';
+import { BidiVisualCursor } from './bidiVisualCursor';
 
 export interface TextEditorOverlayProps {
   frame: Rect;
@@ -34,12 +33,12 @@ export function TextEditorOverlay({
   onCommit,
   onClose,
 }: TextEditorOverlayProps) {
-  const initialText = extractPlainText(story.content);
   const fontDef = getFontDefinition(fontFamily);
+  const lastPendingCharacter = useRef<string | null>(null);
 
   const editor = useEditor({
-    extensions: [StarterKit],
-    content: initialText ? `<p>${initialText}</p>` : '<p></p>',
+    extensions: [StarterKit, SmartDeletePreview, BidiVisualCursor],
+    content: canonicalToTiptapHtml(story.content),
     autofocus: 'end',
     editorProps: {
       attributes: {
@@ -57,16 +56,18 @@ export function TextEditorOverlay({
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
-      const text = currentEditor.getText();
-      const updatedRichText = createRichTextFromPlainText(text, 'rtl');
+      const updatedRichText = tiptapHtmlToCanonical(currentEditor.getHTML(), 'rtl');
       onCommit(updatedRichText);
     },
   });
 
   // Handle pending character insertion from VisualKeyboard or virtual inputs
   useEffect(() => {
-    if (editor && pendingChar) {
+    if (editor && pendingChar && pendingChar !== lastPendingCharacter.current) {
       editor.commands.insertContent(pendingChar);
+      lastPendingCharacter.current = pendingChar;
+    } else if (!pendingChar) {
+      lastPendingCharacter.current = null;
     }
   }, [editor, pendingChar]);
 
@@ -88,38 +89,21 @@ export function TextEditorOverlay({
     <div
       style={{
         position: 'absolute',
-        left: `${frame.x * scale}px`,
-        top: `${frame.y * scale}px`,
-        width: `${frame.width * scale}px`,
-        height: `${frame.height * scale}px`,
+        left: `${frame.x * scale}pt`,
+        top: `${frame.y * scale}pt`,
+        width: `${frame.width * scale}pt`,
+        height: `${frame.height * scale}pt`,
         transform: `rotate(${frame.rotation}deg)`,
         transformOrigin: 'top left',
         zIndex: 50,
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        border: '2px solid #10b981',
-        borderRadius: '4px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-        padding: '8px',
+        backgroundColor: 'transparent',
+        border: '1px dashed #0284c7',
+        borderRadius: '2px',
+        boxShadow: 'none',
+        padding: '4px 6px',
         overflow: 'auto',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px' }}>
-        <span style={{ fontWeight: 700, color: '#047857' }}>اردو متن ایڈیٹر (Text Editor Overlay)</span>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#6b7280',
-            cursor: 'pointer',
-            fontSize: '11px',
-            fontWeight: 700,
-          }}
-        >
-          ✕ بند کریں
-        </button>
-      </div>
       <EditorContent editor={editor} />
     </div>
   );

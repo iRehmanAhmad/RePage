@@ -1,7 +1,7 @@
 import { PAGE_PRESETS, millimetresToPoints } from '../geometry/units';
 import { paragraph } from '../rich-text/types';
 import { createId } from './ids';
-import type { Page, RePageDocument, TextFrameObject, TextStory } from './types';
+import type { Page, RePageDocument, TextStory } from './types';
 
 function zeroInsets() {
   return { top: 0, right: 0, bottom: 0, left: 0 };
@@ -61,53 +61,17 @@ export function createDocument(title = 'Untitled RePage Document'): RePageDocume
 
 export function createStarterDocument(): RePageDocument {
   const document = createDocument('میری پہلی اردو دستاویز');
-  const pageId = document.pageOrder[0];
-
-  if (!pageId) {
-    return document;
-  }
-
   const primaryStory: TextStory = {
     id: PRIMARY_STORY_ID,
     name: 'Primary Document Story',
     content: {
       type: 'doc',
-      content: [paragraph('اردو میں ٹائپ کریں یا نیا ٹیکسٹ باکس درج کریں...', 'rtl')],
+      content: [paragraph('یہاں کلک کریں اور ٹائپ کرنا شروع کریں...', 'rtl')],
     },
-  };
-  const frame: TextFrameObject = {
-    id: createId('object'),
-    pageId,
-    type: 'text-frame',
-    name: 'Welcome text',
-    storyId: primaryStory.id,
-    frame: {
-      x: millimetresToPoints(25),
-      y: millimetresToPoints(35),
-      width: millimetresToPoints(160),
-      height: millimetresToPoints(55),
-      rotation: 0,
-    },
-    locked: false,
-    hidden: false,
-    opacity: 1,
-    fontFamily: 'Noto Nastaliq Urdu',
-    fontSize: 30,
-    color: '#172119',
-    lineHeight: 2,
-    padding: zeroInsets(),
   };
 
   return {
     ...document,
-    pages: {
-      ...document.pages,
-      [pageId]: {
-        ...document.pages[pageId]!,
-        objectOrder: [frame.id],
-      },
-    },
-    objects: { [frame.id]: frame },
     stories: { ...document.stories, [primaryStory.id]: primaryStory },
   };
 }

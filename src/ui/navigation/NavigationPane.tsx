@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { PageId, RePageDocument } from '../../domain/document/types';
+import { extractHeadingTree, reorderHeadingSection, type HeadingNode } from '../../domain/document/headingNavigationEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
 
 export interface NavigationPaneProps {
@@ -8,7 +9,10 @@ export interface NavigationPaneProps {
   document: RePageDocument;
   activePageId: PageId;
   onSelectPage: (pageId: PageId) => void;
+  onUpdateDocument?: ((newDoc: RePageDocument) => void) | undefined;
   lang: UiLanguage;
+  width?: number | undefined;
+  onWidthChange?: ((width: number) => void) | undefined;
 }
 
 type NavTab = 'headings' | 'pages' | 'results';
@@ -19,17 +23,124 @@ export function NavigationPane({
   document,
   activePageId,
   onSelectPage,
+  onUpdateDocument,
   lang,
+  width = 280,
+  onWidthChange,
 }: NavigationPaneProps) {
   const [activeTab, setActiveTab] = useState<NavTab>('pages');
   const [searchQuery, setSearchQuery] = useState('');
 
   if (!isOpen) return null;
 
+  const headings = extractHeadingTree(document);
+
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = width;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX; // Dragging right increases width
+      const newWidth = Math.max(180, Math.min(480, startWidth + deltaX));
+      onWidthChange?.(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleReorder = (headingIndex: number, direction: 'up' | 'down') => {
+    if (onUpdateDocument) {
+      const updated = reorderHeadingSection(document, headingIndex, direction);
+      onUpdateDocument(updated);
+    }
+  };
+
+  const renderHeadingNode = (node: HeadingNode) => {
+    const indent = (node.level - 1) * 12;
+
+    return (
+      <div key={node.id} style={{ marginBottom: '4px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '4px 8px',
+            paddingLeft: `${8 + indent}px`,
+            backgroundColor: '#1e293b',
+            borderRadius: '4px',
+            color: '#f8fafc',
+            fontSize: '11px',
+          }}
+        >
+          <span
+            style={{
+              fontWeight: node.level === 1 ? 700 : 500,
+              color: node.level === 1 ? '#38bdf8' : '#e2e8f0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+            }}
+          >
+            {node.text}
+          </span>
+          <div style={{ display: 'flex', gap: '4px', marginLeft: '6px' }}>
+            <button
+              type="button"
+              onClick={() => handleReorder(node.paragraphIndex, 'up')}
+              title={lang === 'ur' ? 'اوپر کریں' : 'Move Up'}
+              style={{
+                backgroundColor: '#334155',
+                border: 'none',
+                color: '#38bdf8',
+                borderRadius: '3px',
+                padding: '1px 4px',
+                fontSize: '10px',
+                cursor: 'pointer',
+              }}
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              onClick={() => handleReorder(node.paragraphIndex, 'down')}
+              title={lang === 'ur' ? 'نیچے کریں' : 'Move Down'}
+              style={{
+                backgroundColor: '#334155',
+                border: 'none',
+                color: '#38bdf8',
+                borderRadius: '3px',
+                padding: '1px 4px',
+                fontSize: '10px',
+                cursor: 'pointer',
+              }}
+            >
+              ▼
+            </button>
+          </div>
+        </div>
+        {node.children && node.children.length > 0 && (
+          <div style={{ marginTop: '2px' }}>
+            {node.children.map((child) => renderHeadingNode(child))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
-        width: '260px',
+        width: `${width}px`,
+        minWidth: `${width}px`,
         backgroundColor: '#0f172a',
         borderRight: '1px solid #1e293b',
         display: 'flex',
@@ -38,8 +149,25 @@ export function NavigationPane({
         color: '#f8fafc',
         fontSize: '12px',
         zIndex: 20,
+        position: 'relative',
       }}
     >
+      {/* Right Resizer Drag Handle */}
+      <div
+        onMouseDown={handleMouseDownResize}
+        title="Drag to resize Navigation Pane width"
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '5px',
+          cursor: 'col-resize',
+          zIndex: 25,
+          backgroundColor: 'transparent',
+        }}
+      />
+
       {/* Pane Header */}
       <div
         style={{
@@ -194,8 +322,14 @@ export function NavigationPane({
         )}
 
         {activeTab === 'headings' && (
-          <div style={{ padding: '8px 4px', color: '#94a3b8', fontSize: '11px' }}>
-            {lang === 'ur' ? 'کوئی سرخی نہیں ملی' : 'No headings found in document.'}
+          <div>
+            {headings.length > 0 ? (
+              headings.map((node) => renderHeadingNode(node))
+            ) : (
+              <div style={{ padding: '8px 4px', color: '#94a3b8', fontSize: '11px' }}>
+                {lang === 'ur' ? 'کوئی سرخی نہیں ملی' : 'No headings found in document.'}
+              </div>
+            )}
           </div>
         )}
 

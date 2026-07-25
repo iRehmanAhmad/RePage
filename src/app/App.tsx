@@ -1,7 +1,18 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
-import type { Page, PageObject, RePageDocument } from '../domain/document/types';
+import type { Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
 import { pointsToMillimetres } from '../domain/geometry/units';
+import { repaginateDocument } from '../domain/layout/paginationEngine';
+import { applyPageSetup, insertSectionBreak } from '../domain/layout/sectionEngine';
+import { DocumentRulers } from '../ui/editor/DocumentRulers';
+import { PaginatedPrintLayout } from '../ui/editor/PaginatedPrintLayout';
+import {
+  addTableObject,
+  alignPageObjects,
+  reorderPageObject,
+  setObjectWrapping,
+} from '../editor/commands/objectCommands';
+import { SelectionPane } from '../ui/navigation/SelectionPane';
 import {
   addPage,
   addRectangle,
@@ -46,6 +57,22 @@ import { MsWordRibbon, ActiveTool } from '../ui/ribbon/MsWordRibbon';
 import { InspectorDock } from '../ui/common/InspectorDock';
 import { FileBackstageOverlay } from '../ui/header/FileBackstageOverlay';
 import { NavigationPane } from '../ui/navigation/NavigationPane';
+import { DocumentStatsModal } from '../ui/dialogs/DocumentStatsModal';
+import { StylesManagerModal } from '../ui/dialogs/StylesManagerModal';
+import { CharacterSubstitutionModal } from '../ui/dialogs/CharacterSubstitutionModal';
+import { KeyboardLayoutEditorModal } from '../ui/dialogs/KeyboardLayoutEditorModal';
+import { ReviewingPane } from '../ui/collaboration/ReviewingPane';
+import { CompareDocumentsModal } from '../ui/dialogs/CompareDocumentsModal';
+import { VersionHistoryModal } from '../ui/dialogs/VersionHistoryModal';
+import { ShareDialogModal } from '../ui/dialogs/ShareDialogModal';
+import { AccessibilityCheckerModal } from '../ui/dialogs/AccessibilityCheckerModal';
+import { ReadAloudToolbar } from '../ui/navigation/ReadAloudToolbar';
+import { AccessibilitySettingsModal } from '../ui/dialogs/AccessibilitySettingsModal';
+import { loadAccessibilitySettings, type AccessibilitySettings } from '../domain/diagnostics/accessibilitySettings';
+import type { EditMode } from '../domain/document/trackChangesEngine';
+import { addBookmarkCommand, insertTocCommand } from '../editor/commands/longDocumentCommands';
+import { addCaptionToObject } from '../domain/document/captionEngine';
+import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/document/indexEngine';
 import { insertFootnote, insertEndnote } from '../domain/rich-text/notesEngine';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
@@ -80,10 +107,14 @@ export function App() {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [pendingChar, setPendingChar] = useState<string | null>(null);
+  const [bodyEditorFocusRequest, setBodyEditorFocusRequest] = useState(0);
+
+  const [viewMode, setViewMode] = useState<ViewMode>('print');
+  const [showRulers, setShowRulers] = useState(true);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [isKeyboardMinimized, setIsKeyboardMinimized] = useState(true);
-  const [activeTool, setActiveTool] = useState<ActiveTool>('select');
+  const [activeTool, setActiveTool] = useState<ActiveTool>('text');
 
   // Theme & Menu Language State
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
@@ -116,6 +147,29 @@ export function App() {
   const [showRecent, setShowRecent] = useState(false);
   const [isFileBackstageOpen, setIsFileBackstageOpen] = useState(false);
   const [isNavigationPaneOpen, setIsNavigationPaneOpen] = useState(false);
+  const [isSelectionPaneOpen, setIsSelectionPaneOpen] = useState(false);
+  const [showDocStats, setShowDocStats] = useState(false);
+  const [showStylesManager, setShowStylesManager] = useState(false);
+  const [showCharSub, setShowCharSub] = useState(false);
+  const [showKeyboardEditor, setShowKeyboardEditor] = useState(false);
+  const [editMode, setEditMode] = useState<EditMode>('editing');
+  const [isReviewingPaneOpen, setIsReviewingPaneOpen] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [showReadAloud, setShowReadAloud] = useState(false);
+  const [showAccessibilityChecker, setShowAccessibilityChecker] = useState(false);
+  const [showAccessibilitySettings, setShowAccessibilitySettings] = useState(false);
+  const [_accSettings, setAccSettings] = useState<AccessibilitySettings>(() =>
+    loadAccessibilitySettings(),
+  );
+
+  // Sidebars & Inspector layout state
+  const [isInspectorOpen, setIsInspectorOpen] = useState(true);
+  const [inspectorWidth, setInspectorWidth] = useState(260);
+  const [navPaneWidth, setNavPaneWidth] = useState(280);
+  const [selectionPaneWidth, setSelectionPaneWidth] = useState(260);
 
   // Zoom & Viewport state
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -193,11 +247,20 @@ export function App() {
     setMessage('Page removed');
   }, [activePageId, document, updateDocument]);
 
-  const handleAddRectangle = React.useCallback(() => {
-    const nextDoc = addRectangle(document, activePageId);
-    updateDocument(nextDoc, 'Add rectangle');
-    setMessage('Rectangle shape added');
-  }, [activePageId, document, updateDocument]);
+  const handleAddRectangle = React.useCallback(
+    (kind: ShapeKind = 'rectangle') => {
+      const nextDoc = addRectangle(document, activePageId, kind);
+      updateDocument(nextDoc, `Add ${kind} shape`);
+      const targetPage = nextDoc.pages[activePageId];
+      const newObjectId = targetPage ? targetPage.objectOrder[targetPage.objectOrder.length - 1] : null;
+      if (newObjectId) {
+        setSelectedObjectId(newObjectId);
+        setEditingObjectId(newObjectId);
+      }
+      setMessage(`Shape added. Type directly inside it.`);
+    },
+    [activePageId, document, updateDocument],
+  );
 
   const handleAddTextFrame = React.useCallback(() => {
     const nextDoc = addTextFrame(document, activePageId);
@@ -325,15 +388,38 @@ export function App() {
     setMessage('OCR text frame and source image added to page');
   }, [activePageId]);
 
-  // Handle Double Click on Text Frame
+  // Handle Double Click on Text Frame or Shape
   const handleObjectDoubleClicked = React.useCallback((objectId: string) => {
     const obj = document.objects[objectId];
-    if (obj && obj.type === 'text-frame') {
+    if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle')) {
       setSelectedObjectId(objectId);
       setEditingObjectId(objectId);
-      setMessage('Editing Text Frame. Double click or press ESC to exit.');
+      setMessage(obj.type === 'rectangle' ? 'Editing Shape Text. Press ESC to exit.' : 'Editing Text Frame. Press ESC to exit.');
     }
   }, [document.objects]);
+
+  // Handle Shape Style Updates (Fill, Stroke, StrokeWidth, CornerRadius)
+  const handleUpdateShapeStyle = React.useCallback(
+    (
+      objectId: string,
+      styleProps: Partial<{ fill: string; stroke: string; strokeWidth: number; cornerRadius: number }>,
+    ) => {
+      const target = document.objects[objectId];
+      if (!target || target.type !== 'rectangle') return;
+      const updatedDoc = {
+        ...document,
+        objects: {
+          ...document.objects,
+          [objectId]: {
+            ...target,
+            ...styleProps,
+          },
+        },
+      };
+      updateDocument(updatedDoc, 'Update Shape Style');
+    },
+    [document, updateDocument],
+  );
 
   // Handle Character Insertion from Visual Keyboard or Keypress
   const handleInsertChar = React.useCallback((char: string) => {
@@ -379,9 +465,10 @@ export function App() {
           activeTool={activeTool}
           onSelectTool={(tool) => {
             setActiveTool(tool);
-            if (tool === 'rectangle') handleAddRectangle();
+            if (tool === 'rectangle') handleAddRectangle('rectangle');
             if (tool === 'text') handleAddTextFrame();
           }}
+          onInsertShape={(kind) => handleAddRectangle(kind)}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={history.canUndo()}
@@ -410,9 +497,84 @@ export function App() {
           onToggleCollab={() => setMessage('Live collaboration room active')}
           onOpenFileBackstage={() => setIsFileBackstageOpen(true)}
           onToggleNavigationPane={() => setIsNavigationPaneOpen((prev) => !prev)}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onToggleOrientation={() => {
+            setDocumentState((prev) =>
+              applyPageSetup(prev, activePageId, {
+                orientation: activePage.width > activePage.height ? 'portrait' : 'landscape',
+              }),
+            );
+          }}
+          onInsertSectionBreak={(type) => {
+            setDocumentState((prev) => insertSectionBreak(prev, type, activePageId));
+          }}
+          showRulers={showRulers}
+          onToggleRulers={() => setShowRulers((prev) => !prev)}
+          selectedObjectType={selectedObject ? selectedObject.type : null}
+          onReorderObject={(action) => {
+            if (selectedObjectId) {
+              updateDocument(reorderPageObject(document, activePageId, selectedObjectId, action), 'Reorder object');
+            }
+          }}
+          onAlignObjects={(alignment) => {
+            if (selectedObjectId) {
+              updateDocument(alignPageObjects(document, activePageId, [selectedObjectId], alignment), 'Align object');
+            }
+          }}
+          onSetWrapping={(wrapMode) => {
+            if (selectedObjectId) {
+              updateDocument(setObjectWrapping(document, selectedObjectId, wrapMode), 'Set text wrapping');
+            }
+          }}
+          onToggleSelectionPane={() => setIsSelectionPaneOpen((prev) => !prev)}
+          onInsertTable={() => {
+            updateDocument(addTableObject(document, activePageId), 'Insert Table');
+          }}
+          onOpenStylesManager={() => setShowStylesManager(true)}
+          onOpenDocStats={() => setShowDocStats(true)}
+          onInsertToc={() => updateDocument(insertTocCommand(document), 'Insert Table of Contents')}
+          onInsertCaption={() => {
+            if (selectedObjectId) {
+              updateDocument(addCaptionToObject(document, selectedObjectId, 'figure', 'نمونہ کیپشن'), 'Add Caption');
+            } else {
+              setMessage('Please select an object to attach a caption');
+            }
+          }}
+          onInsertBookmark={() => updateDocument(addBookmarkCommand(document, 'بک مارک ۱', 0), 'Add Bookmark')}
+          onInsertIndex={() => {
+            const idx = generateSubjectIndex(document);
+            const docWithIndex = {
+              ...document,
+              stories: {
+                ...document.stories,
+                'index-story': {
+                  id: 'index-story',
+                  name: 'Subject Index',
+                  content: buildIndexRichTextDocument(idx),
+                },
+              },
+            };
+            updateDocument(docWithIndex, 'Insert Subject Index');
+          }}
+          onOpenCharacterSubstitution={() => setShowCharSub(true)}
+          onOpenKeyboardEditor={() => setShowKeyboardEditor(true)}
+          editMode={editMode}
+          onEditModeChange={setEditMode}
+          onToggleReviewingPane={() => setIsReviewingPaneOpen((prev) => !prev)}
+          onOpenCompare={() => setShowCompareModal(true)}
+          onOpenVersionHistory={() => setShowVersionHistoryModal(true)}
+          onOpenShare={() => setShowShareModal(true)}
+          onOpenAccessibilityChecker={() => setShowAccessibilityChecker(true)}
+          onOpenAccessibilitySettings={() => setShowAccessibilitySettings(true)}
+          onToggleReadAloud={() => setShowReadAloud((prev) => !prev)}
+          onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
+          isFocusMode={isFocusMode}
+          onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
+          isInspectorOpen={isInspectorOpen}
         />
 
-        {/* Streamlined MS Word Workspace (Navigation Pane + Canvas Viewport + Contextual Properties Panel) */}
+        {/* Streamlined MS Word Workspace (Navigation Pane + Selection Pane + Canvas Viewport + Contextual Properties Panel) */}
         <div className="studio-layout" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Navigation Pane */}
           <NavigationPane
@@ -422,10 +584,87 @@ export function App() {
             activePageId={activePageId}
             onSelectPage={setActivePageId}
             lang={lang}
+            width={navPaneWidth}
+            onWidthChange={setNavPaneWidth}
+          />
+
+          {/* Selection & Layers Pane */}
+          <SelectionPane
+            isOpen={isSelectionPaneOpen}
+            onClose={() => setIsSelectionPaneOpen(false)}
+            document={document}
+            activePageId={activePageId}
+            selectedObjectId={selectedObjectId}
+            onSelectObject={setSelectedObjectId}
+            onToggleVisibility={(objectId) => {
+              const obj = document.objects[objectId];
+              if (obj) {
+                updateDocument({
+                  ...document,
+                  objects: {
+                    ...document.objects,
+                    [objectId]: { ...obj, hidden: !obj.hidden },
+                  },
+                }, 'Toggle visibility');
+              }
+            }}
+            onToggleLock={(objectId) => {
+              const obj = document.objects[objectId];
+              if (obj) {
+                updateDocument({
+                  ...document,
+                  objects: {
+                    ...document.objects,
+                    [objectId]: { ...obj, locked: !obj.locked },
+                  },
+                }, 'Toggle lock');
+              }
+            }}
+            onReorderObject={(objectId, action) => {
+              updateDocument(reorderPageObject(document, activePageId, objectId, action), 'Reorder object');
+            }}
+            lang={lang}
+            width={selectionPaneWidth}
+            onWidthChange={setSelectionPaneWidth}
           />
 
           {/* Center Studio Viewport */}
-          <main className="studio-viewport">
+          <main className="studio-viewport" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto', alignItems: 'center', padding: '16px 0' }}>
+            {showRulers && activePage && <DocumentRulers page={activePage} unit={document.settings.measurementUnit} />}
+
+            {viewMode === 'print' ? (
+              <PaginatedPrintLayout
+                document={document}
+                activePageId={activePageId}
+                zoomLevel={zoomLevel}
+                activeFontFamily={activeFontFamily}
+                activeFontSize={activeFontSize}
+                pendingChar={pendingChar}
+                editingObjectId={editingObjectId}
+                isObjectSelectionMode={activeTool === 'select'}
+                bodyEditorFocusRequest={bodyEditorFocusRequest}
+                selectedObjectId={selectedObjectId}
+                onSelectPage={setActivePageId}
+                onSelectObject={setSelectedObjectId}
+                onEditObject={setEditingObjectId}
+                onObjectModified={handleObjectModified}
+                onCommitStory={(storyId, updatedContent) => {
+                  setDocumentState((prev) => {
+                    const updatedStories = {
+                      ...prev.stories,
+                      [storyId]: {
+                        id: storyId,
+                        name: 'Primary Story',
+                        content: updatedContent,
+                      },
+                    };
+                    const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
+                    return repagination.repaginatedDoc;
+                  });
+                }}
+                onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
+              />
+            ) : (
             <div
               className="canvas-paper-frame"
               style={{
@@ -471,6 +710,7 @@ export function App() {
                   color="#172119"
                   lineHeight={1.8}
                   pendingChar={!editingObjectId ? pendingChar : null}
+                  focusRequest={bodyEditorFocusRequest}
                   onCommit={(updatedContent) => {
                     setDocumentState((prev) => ({
                       ...prev,
@@ -493,14 +733,16 @@ export function App() {
                   page={activePage}
                   objects={visibleObjects}
                   stories={document.stories}
+                  selectedObjectId={selectedObjectId}
                   onObjectModified={handleObjectModified}
                   onSelectionChanged={(id) => {
                     setSelectedObjectId(id);
-                    if (id && document.objects[id]?.type === 'text-frame') {
-                      setEditingObjectId(id);
-                    }
                   }}
                   onObjectDoubleClicked={handleObjectDoubleClicked}
+                  onBlankCanvasClick={() => {
+                    setSelectedObjectId(null);
+                    setBodyEditorFocusRequest((value) => value + 1);
+                  }}
                 />
               </div>
 
@@ -529,6 +771,7 @@ export function App() {
                 />
               )}
             </div>
+            )}
           </main>
 
           {/* Right Properties Inspector Dock */}
@@ -537,6 +780,11 @@ export function App() {
             document={document}
             selectedObject={selectedObject ?? null}
             onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}
+            onUpdateShapeStyle={handleUpdateShapeStyle}
+            isOpen={isInspectorOpen}
+            onClose={() => setIsInspectorOpen(false)}
+            width={inspectorWidth}
+            onWidthChange={setInspectorWidth}
           />
         </div>
 
@@ -619,10 +867,116 @@ export function App() {
           />
         )}
 
+        {/* Reviewing Pane */}
+        <ReviewingPane
+          isOpen={isReviewingPaneOpen}
+          onClose={() => setIsReviewingPaneOpen(false)}
+          document={document}
+          onCommitDocument={(updated, msg) => updateDocument(updated, msg)}
+          lang={lang}
+        />
+
+        {/* Diagnostic Preflight & Audit Panel Modal */}
         {showPreflight && (
           <PreflightPanel
             result={runPreflightCheck(document)}
             onClose={() => setShowPreflight(false)}
+          />
+        )}
+
+        {showDocStats && (
+          <DocumentStatsModal
+            isOpen={showDocStats}
+            onClose={() => setShowDocStats(false)}
+            document={document}
+            lang={lang}
+          />
+        )}
+
+        {showStylesManager && (
+          <StylesManagerModal
+            isOpen={showStylesManager}
+            onClose={() => setShowStylesManager(false)}
+            document={document}
+            lang={lang}
+          />
+        )}
+
+        {showCharSub && (
+          <CharacterSubstitutionModal
+            isOpen={showCharSub}
+            onClose={() => setShowCharSub(false)}
+            document={document}
+            onCommitDocument={(updated, msg) => updateDocument(updated, msg)}
+            lang={lang}
+          />
+        )}
+
+        {showKeyboardEditor && (
+          <KeyboardLayoutEditorModal
+            isOpen={showKeyboardEditor}
+            onClose={() => setShowKeyboardEditor(false)}
+            lang={lang}
+          />
+        )}
+
+        {showCompareModal && (
+          <CompareDocumentsModal
+            isOpen={showCompareModal}
+            onClose={() => setShowCompareModal(false)}
+            document={document}
+            onCommitDocument={(updated, msg) => updateDocument(updated, msg)}
+            lang={lang}
+          />
+        )}
+
+        {showVersionHistoryModal && (
+          <VersionHistoryModal
+            isOpen={showVersionHistoryModal}
+            onClose={() => setShowVersionHistoryModal(false)}
+            document={document}
+            onRestoreSnapshot={(snapshot, msg) => updateDocument(snapshot, msg)}
+            lang={lang}
+          />
+        )}
+
+        {showShareModal && (
+          <ShareDialogModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            documentTitle={document.metadata.title}
+            lang={lang}
+          />
+        )}
+
+        {showAccessibilityChecker && (
+          <AccessibilityCheckerModal
+            isOpen={showAccessibilityChecker}
+            onClose={() => setShowAccessibilityChecker(false)}
+            document={document}
+            lang={lang}
+          />
+        )}
+
+        {showAccessibilitySettings && (
+          <AccessibilitySettingsModal
+            isOpen={showAccessibilitySettings}
+            onClose={() => setShowAccessibilitySettings(false)}
+            onApplySettings={setAccSettings}
+            lang={lang}
+          />
+        )}
+
+        {showReadAloud && (
+          <ReadAloudToolbar
+            isOpen={showReadAloud}
+            onClose={() => setShowReadAloud(false)}
+            textToRead={
+              document.stories[PRIMARY_STORY_ID]?.content?.content
+                ?.map((p) => p.content.map((r) => (r.type === 'text' ? r.text : '')).join(''))
+                .join('\n') || ''
+            }
+            lang={lang}
           />
         )}
 

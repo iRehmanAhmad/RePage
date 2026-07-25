@@ -23,16 +23,22 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - **Interactive canvas text editing**: Double-click text frame → Tiptap rich-text overlay (`TextEditorOverlay.tsx`) with `pendingChar` prop for Visual Keyboard character insertion, `onObjectDoubleClicked` callback in `FabricCanvasAdapter`, `addTextFrame` document command (`documentCommands.ts`), auto-creation and activation of text frames from Ribbon Text tool.
 - **Visual Keyboard**: 3-row QWERTY layout (`VisualKeyboard.tsx`), CRULP Phonetic / Navees Phonetic / English / Native OS modes (`keyboardLayouts.ts`), Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
 - **Theme & i18n**: Dark/light/system theme engine (`themeEngine.ts`), English/Urdu menu language toggle (`menuTranslation.ts`) with full dictionary.
-- **RePage UX/UI Modernization Shell**: Word-style Urdu word processor direction. CommandRegistry dispatcher (`commandRegistry.ts`), File Backstage Overlay (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), "Text Frame" renamed to "Text Box" across UI, `addTextBox` command, status bar centered keyboard button and zoom slider.
-- 158 passing automated unit and integration tests across 52 test suites (`vitest`).
+- **RePage UX/UI Modernization Shell**: Word-style Urdu word processor direction. CommandRegistry dispatcher (`commandRegistry.ts`), File Backstage Overlay (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), Selection Pane (`SelectionPane.tsx`), "Text Frame" renamed to "Text Box" across UI, `addTextBox` & `addTableObject` commands, status bar centered keyboard button and zoom slider.
+- **Phase UX-3 (Automatic Pagination & Print Layout)**: `paginationEngine.ts` auto-repagination and Urdu/English page number formatting, `sectionEngine.ts` section breaks & page setup, `PaginatedPrintLayout.tsx` paper sheet layout projection, and `DocumentRulers.tsx`.
+- **Phase UX-4 (Inserted Objects & Text Boxes)**: `textWrapEngine.ts` exclusionary zones, `objectCommands.ts` Z-ordering & alignments, `SelectionPane.tsx` layers & lock/visibility toggles, and dynamic Contextual Ribbon Tabs (`Shape Format` 🎨, `Picture Format` 🖼️, `Table Design` 📊).
+- 172 passing automated unit and integration tests across 58 test suites (`vitest`).
 
 ## RePage UX Modernization Roadmap Progress
 
 1. Phase UX-0: Product Interaction Spec & Command Registry Bus (**COMPLETE**).
 2. Phase UX-1: Application Shell & Responsive Ribbon (File Backstage, Navigation Pane, Status bar, Contextual Inspector) (**COMPLETE**).
 3. Phase UX-2: Word-Style Primary Authoring Surface (Immediate document body typing, Tiptap HTML converter, sanitization, bidi RTL/LTR, bold/italic/underline, primary story persistence) (**COMPLETE**).
-4. Phase UX-3: Automatic Pagination & Print Layout (**IN PROGRESS**).
-5. Phase UX-4: Floating Layout Objects & Text Boxes (**Scheduled**).
+4. Phase UX-3: Automatic Pagination & Print Layout (**COMPLETE**).
+5. Phase UX-4: Inserted Objects & Text Boxes (**COMPLETE**).
+6. Phase UX-5: Long-Document Features (Headings tree, TOC, page-anchored footnotes, captions, subject index, styles manager, stats) (**COMPLETE**).
+7. Phase UX-6: Urdu-Native Authoring Excellence (Character & punctuation substitution, diacritic-aware search, custom keyboard layout editor, redesigned visual keyboard with diacritics bar) (**COMPLETE**).
+8. Phase UX-7: Review and Collaboration UX (Track Changes, Reviewing Pane, Accept/Reject, Document Compare, Version History, Share Dialog, Editing/Reviewing/Viewing Modes) (**COMPLETE**).
+9. Phase UX-8: Accessibility and Customization (Accessibility Checker, Read Aloud, Focus Mode, Touch Mode, High Contrast, 200% Scale, Ribbon Key Tips) (**COMPLETE**).
 
 ## Foundation & Typography exit gate progress
 
@@ -45,16 +51,16 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - [x] Urdu typography register, Tiptap rich-text overlay, Bidi QA, Phonetic keyboards, and Linked text flow are complete.
 - [x] Desktop RC (M4) native workflows, desktop integration, distribution installers, signed updates, and release audit complete.
 - [x] Collaboration Preview (M5) CRDT binding, awareness, conflict engine, asset transfer, WebRTC networking, auth, and collaboration UX complete.
-- [x] Interactive canvas editing (M6) MS Word ribbon, QAT, double-click text editing, Visual Keyboard typing, and addTextFrame command complete.
+- [x] Interactive canvas editing & UX Modernization (Phases UX-0 through UX-8) complete with 206 passing tests.
 - [x] `npm run check` (strict UTF-8 scanner + `oxlint` + `vitest` + `tsc` + `vite build`) passes cleanly.
 
 ## Verification baseline
 
-Recorded on 2026-07-25 after M6.4 completion:
+Recorded on 2026-07-26 after Phase UX-8 completion:
 
-- `npm run check:utf8`: 228 files verified as valid UTF-8 without corrupt mojibake.
-- `npm run lint`: oxlint passes with 0 warnings and 0 errors across 136 files.
-- `npm run test`: vitest passes 158 unit/integration tests across 52 test suites.
+- `npm run check:utf8`: 299 files verified as valid UTF-8 without corrupt mojibake.
+- `npm run lint`: oxlint passes with 0 warnings and 0 errors across 203 files.
+- `npm run test`: vitest passes 206 unit/integration tests across 83 test suites.
 - `npm run build`: passes strict TypeScript compilation (`tsc -b`) and Vite production bundle.
 - Main JavaScript bundle: approximately 1,119 KB before gzip and 344 KB after gzip (includes Fabric, Tiptap, and full MS Word ribbon UI).
 - Browser smoke test: correct Urdu rendering; double-click text frame opens Tiptap overlay; Visual Keyboard inserts characters; QAT and ribbon work; no browser console warnings or errors.

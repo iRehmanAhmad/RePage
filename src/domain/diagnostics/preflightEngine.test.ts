@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addTextFrame } from '../../editor/commands/documentCommands';
 import { createStarterDocument } from '../document/createDocument';
 import { runPreflightCheck } from './preflightEngine';
 import type { ImageFrameObject, TextFrameObject } from '../document/types';
@@ -13,7 +14,8 @@ describe('preflightEngine (M3.6)', () => {
   });
 
   it('detects overset text frame warnings', () => {
-    const doc = createStarterDocument();
+    const raw = createStarterDocument();
+    const doc = addTextFrame(raw, raw.pageOrder[0]!);
     const firstObjId = Object.keys(doc.objects)[0]!;
 
     const oversetTextFrame = {

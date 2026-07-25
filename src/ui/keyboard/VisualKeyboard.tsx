@@ -205,9 +205,37 @@ export function VisualKeyboard({
                 Shift {isShift ? 'ON ▲' : 'OFF ▼'}
               </button>
 
-              {/* Special Urdu Marks */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>خاص علامتیں:</span>
+              {/* Special Urdu Marks & Diacritics */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>اعراب:</span>
+                {[
+                  { label: 'زبر', char: '\u064e' },
+                  { label: 'زیر', char: '\u0650' },
+                  { label: 'پیش', char: '\u064f' },
+                  { label: 'جزم', char: '\u0652' },
+                  { label: 'شد', char: '\u0651' },
+                  { label: 'کھڑی زبر', char: '\u0670' },
+                  { label: 'دو زبر', char: '\u064b' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => onInsertChar(item.char)}
+                    style={{
+                      backgroundColor: '#0369a1',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                    title={`Insert ${item.label}`}
+                  >
+                    {item.char}
+                  </button>
+                ))}
                 {SPECIAL_URDU_CHARACTERS.map((item) => (
                   <button
                     key={item.label}

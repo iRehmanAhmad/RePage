@@ -32,7 +32,7 @@ describe('exportEngine (M3.7)', () => {
 
     expect(svgMarkup).toContain('<?xml version="1.0"');
     expect(svgMarkup).toContain('<svg');
-    expect(svgMarkup).toContain('dir="rtl"');
+    expect(svgMarkup).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(svgMarkup).toContain('</svg>');
   });
 });

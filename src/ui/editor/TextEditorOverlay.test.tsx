@@ -36,7 +36,7 @@ describe('TextEditorOverlay', () => {
     },
   };
 
-  it('renders Tiptap editor overlay with Urdu title and close button', () => {
+  it('renders seamless in-place Tiptap editor overlay with story content', () => {
     const handleCommit = vi.fn();
     const handleClose = vi.fn();
 
@@ -46,10 +46,9 @@ describe('TextEditorOverlay', () => {
         story={sampleStory}
         onCommit={handleCommit}
         onClose={handleClose}
-      />
+      />,
     );
 
-    expect(screen.getByText('اردو متن ایڈیٹر (Text Editor Overlay)')).toBeInTheDocument();
-    expect(screen.getByText('✕ بند کریں')).toBeInTheDocument();
+    expect(screen.getByText('اردو ٹیسٹ متن')).toBeInTheDocument();
   });
 });

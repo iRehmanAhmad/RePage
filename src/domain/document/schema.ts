@@ -69,6 +69,27 @@ const imageFrameSchema = baseObjectSchema.extend({
   fit: z.enum(['contain', 'cover', 'stretch']),
 });
 
+const tableCellSchema = z.object({
+  id: z.string().min(1),
+  content: z.unknown(),
+  colSpan: z.number().int().positive().optional(),
+  rowSpan: z.number().int().positive().optional(),
+  backgroundColor: z.string().optional(),
+});
+
+const tableRowSchema = z.object({
+  id: z.string().min(1),
+  cells: z.array(tableCellSchema),
+});
+
+const tableSchema = baseObjectSchema.extend({
+  type: z.literal('table'),
+  rows: z.array(tableRowSchema),
+  cellPadding: insetsSchema.optional(),
+  borderColor: z.string().optional(),
+  borderWidth: nonNegativeNumber.optional(),
+});
+
 export const documentSchema = z.object({
   schemaVersion: z.literal(1),
   id: z.string().min(1),
@@ -99,7 +120,7 @@ export const documentSchema = z.object({
   ),
   objects: z.record(
     z.string(),
-    z.discriminatedUnion('type', [textFrameSchema, rectangleSchema, imageFrameSchema]),
+    z.discriminatedUnion('type', [textFrameSchema, rectangleSchema, imageFrameSchema, tableSchema]),
   ),
   stories: z.record(z.string(), storySchema),
   styles: z.record(z.string(), z.unknown()),
@@ -125,7 +146,7 @@ export const documentSchema = z.object({
       objectOrder: z.array(z.string().min(1)),
       objects: z.record(
         z.string(),
-        z.discriminatedUnion('type', [textFrameSchema, rectangleSchema, imageFrameSchema]),
+        z.discriminatedUnion('type', [textFrameSchema, rectangleSchema, imageFrameSchema, tableSchema]),
       ),
     }),
   ).optional(),

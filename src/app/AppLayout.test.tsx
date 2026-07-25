@@ -12,6 +12,10 @@ vi.mock('../ui/editor/TextEditorOverlay', () => ({
   TextEditorOverlay: () => <div data-testid="text-editor-overlay-mock" />,
 }));
 
+vi.mock('../ui/editor/DocumentBodyEditor', () => ({
+  DocumentBodyEditor: () => <div data-testid="document-body-editor-mock" />,
+}));
+
 vi.mock('../persistence/autosave/database', () => ({
   getLatestRecovery: vi.fn().mockResolvedValue(null),
   clearRecovery: vi.fn().mockResolvedValue(undefined),
@@ -23,7 +27,7 @@ describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspecto
     render(<App />);
 
     // Header & Brand
-    expect(await screen.findByText('RePage Studio')).toBeInTheDocument();
+    expect(screen.getAllByText('RePage Studio')[0]).toBeInTheDocument();
 
     // MS Word File Button & Ribbon Tabs
     expect(screen.getByText('File')).toBeInTheDocument();

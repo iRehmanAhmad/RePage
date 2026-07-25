@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addTextFrame } from '../../editor/commands/documentCommands';
 import { createStarterDocument } from './createDocument';
 import {
   deleteTextFramePreservingStory,
@@ -10,14 +11,16 @@ import type { TextFrameObject } from './types';
 
 describe('textFlowEngine (M3.1)', () => {
   it('prevents circular frame links cleanly', () => {
-    const doc = createStarterDocument();
+    const raw = createStarterDocument();
+    const doc = addTextFrame(raw, raw.pageOrder[0]!);
     const frame1Id = Object.keys(doc.objects)[0]!;
 
     expect(preventCircularLinks(doc, frame1Id, frame1Id)).toBe(true);
   });
 
   it('rejects circular link attempts during linking', () => {
-    const doc = createStarterDocument();
+    const raw = createStarterDocument();
+    const doc = addTextFrame(raw, raw.pageOrder[0]!);
     const frame1Id = Object.keys(doc.objects)[0]!;
 
     expect(() => linkTextFramesEngine(doc, frame1Id, frame1Id)).toThrow(
@@ -26,7 +29,8 @@ describe('textFlowEngine (M3.1)', () => {
   });
 
   it('deletes a text frame while retaining canonical story in doc.stories', () => {
-    const doc = createStarterDocument();
+    const raw = createStarterDocument();
+    const doc = addTextFrame(raw, raw.pageOrder[0]!);
     const frame1Id = Object.keys(doc.objects)[0]!;
     const story1Id = (doc.objects[frame1Id] as TextFrameObject).storyId;
 
@@ -37,7 +41,8 @@ describe('textFlowEngine (M3.1)', () => {
   });
 
   it('reflows story content and sets sequence numbers across frame chains', () => {
-    const doc = createStarterDocument();
+    const raw = createStarterDocument();
+    const doc = addTextFrame(raw, raw.pageOrder[0]!);
     const frame1Id = Object.keys(doc.objects)[0]!;
     const story1Id = (doc.objects[frame1Id] as TextFrameObject).storyId;
 

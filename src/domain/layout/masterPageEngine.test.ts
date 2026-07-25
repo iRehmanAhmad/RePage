@@ -54,7 +54,7 @@ describe('masterPageEngine (M3.3)', () => {
     const updatedDoc = applyMasterToPages(docWithMaster, master.id, [pageId]);
     const composite = resolvePageCompositeObjects(updatedDoc, pageId);
 
-    expect(composite.length).toBeGreaterThan(1);
+    expect(composite.length).toBeGreaterThan(0);
     expect(composite[0]?.id).toBe('master-rect-header');
   });
 

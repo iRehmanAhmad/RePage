@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import type { TextStory } from '../../domain/document/types';
 import {
   canonicalToTiptapHtml,
@@ -9,6 +8,8 @@ import {
 } from '../../domain/rich-text/tiptapConverter';
 import type { RichTextDocument } from '../../domain/rich-text/types';
 import { getFontDefinition } from '../../domain/unicode/fontRegistry';
+import { SmartDeletePreview } from './smartDeletePreview';
+import { BidiVisualCursor } from './bidiVisualCursor';
 
 export interface DocumentBodyEditorProps {
   story: TextStory;
@@ -18,6 +19,8 @@ export interface DocumentBodyEditorProps {
   lineHeight?: number;
   scale?: number;
   pendingChar?: string | null;
+  /** Increment to focus the editor after a click on unoccupied page space. */
+  focusRequest?: number;
   onCommit: (updatedContent: RichTextDocument) => void;
 }
 
@@ -29,13 +32,14 @@ export function DocumentBodyEditor({
   lineHeight = 1.8,
   scale = 1,
   pendingChar,
+  focusRequest = 0,
   onCommit,
 }: DocumentBodyEditorProps) {
   const fontDef = getFontDefinition(fontFamily);
   const initialHtml = canonicalToTiptapHtml(story.content);
 
   const editor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit, SmartDeletePreview, BidiVisualCursor],
     content: initialHtml,
     autofocus: false,
     editorProps: {
@@ -47,10 +51,11 @@ export function DocumentBodyEditor({
           color: ${color};
           line-height: ${lineHeight};
           outline: none;
-          min-height: 500px;
+          min-height: 100%;
           direction: rtl;
           text-align: right;
-          padding: 32px;
+          padding: 0;
+          margin: 0;
         `,
       },
     },
@@ -68,22 +73,27 @@ export function DocumentBodyEditor({
     }
   }, [editor, pendingChar]);
 
+  useEffect(() => {
+    if (editor && focusRequest > 0) {
+      editor.commands.focus('end');
+    }
+  }, [editor, focusRequest]);
+
   if (!editor) {
     return null;
   }
 
   return (
     <div
+      onClick={() => editor.commands.focus()}
       style={{
         width: '100%',
         height: '100%',
-        backgroundColor: '#ffffff',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-        borderRadius: '2px',
-        overflow: 'auto',
+        backgroundColor: 'transparent',
+        cursor: 'text',
       }}
     >
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} style={{ width: '100%', height: '100%' }} />
     </div>
   );
 }

@@ -79,8 +79,9 @@ button, input, select, textarea {
 /* Studio Main App Shell */
 .app-shell {
   height: 100vh;
-  display: grid;
-  grid-template-rows: 44px auto minmax(0, 1fr) auto 26px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg-studio);
 }
 
@@ -516,11 +517,13 @@ button, input, select, textarea {
   font-weight: 700;
 }
 
-/* Studio Main Editor Layout Grid (Clean 2-Column MS Word Viewport: Canvas + Properties Panel) */
+/* Studio Main Editor Layout Grid (Clean MS Word Viewport: Canvas + Dynamic Sidebars & Inspector) */
 .studio-layout {
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
   background: var(--bg-studio);
 }
 
@@ -550,7 +553,9 @@ button, input, select, textarea {
 /* Studio Center Viewport Workspace */
 .studio-viewport {
   position: relative;
+  flex: 1;
   min-width: 0;
+  flex-shrink: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -568,10 +573,37 @@ button, input, select, textarea {
   border-radius: 2px;
 }
 
+.canvas-wrapper,
+.canvas-wrapper .canvas-container,
+.canvas-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .canvas-margin-guide {
   position: absolute;
   border: 1px dashed rgba(16, 185, 129, 0.4);
   pointer-events: none;
+}
+
+/* Bidi editing guidance: only rendered at an RTL/LTR cursor boundary. */
+.ProseMirror {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.smart-delete-preview {
+  background: transparent;
+  outline: none;
+  text-decoration: none;
+}
+
+.smart-delete-preview-backspace {
+  color: #c2410c;
+}
+
+.smart-delete-preview-forward {
+  color: #0369a1;
 }
 
 /* Statusbar Layout (MS Word style) */
@@ -646,6 +678,7 @@ button, input, select, textarea {
   justify-content: space-between;
   padding: 0 14px;
   height: 32px;
+  flex: 0 0 32px;
   background: var(--panel-header);
   border-top: 1px solid var(--panel-border);
   font-size: 11px;

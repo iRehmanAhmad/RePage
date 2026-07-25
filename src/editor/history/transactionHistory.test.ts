@@ -23,13 +23,13 @@ describe('TransactionHistory', () => {
     history.push(doc, 'Before add rectangle');
     doc = addRectangle(doc, doc.pageOrder[0]!);
 
-    expect(doc.pages[doc.pageOrder[0]!]!.objectOrder.length).toBe(2);
+    expect(doc.pages[doc.pageOrder[0]!]!.objectOrder.length).toBe(1);
 
     // Undo Add Rectangle
     const undoneRectangle = history.undo(doc);
     expect(undoneRectangle).not.toBeNull();
     doc = undoneRectangle!;
-    expect(doc.pages[doc.pageOrder[0]!]!.objectOrder.length).toBe(1);
+    expect(doc.pages[doc.pageOrder[0]!]!.objectOrder.length).toBe(0);
     expect(history.canRedo()).toBe(true);
 
     // Undo Add Page
