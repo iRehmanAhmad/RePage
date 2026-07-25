@@ -14,10 +14,12 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - A shared browser core is desirable; Tauri is the intended desktop shell after the core architecture stabilizes.
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
-- Voice and AI features are- **Current Milestone**: Milestone 3 — Document Production Beta (**Fully Resolved & Audited**).
+- Voice and AI features are optional plugins, not dependencies for basic layout and editing.
+- **Current Milestone**: Milestone 4 — Cross-Platform Desktop Release Candidate (M4.1 **Resolved**).
+- **M4.1 Introduce Tauri 2**: `PlatformServices` abstraction layer (`src/platform/platformServices.ts`, `browserPlatform.ts`, `tauriPlatform.ts`) and Tauri 2 desktop shell configuration (`src-tauri/`) implemented.
 - **M3 Exit Gate Audit**: All 6 exit gate criteria PASSED (Linked text frame reflow, RTL column layout rules, Master Page inheritance & overrides, Urdu page number fields, Preflight diagnostics panel, Standalone vector SVG & PDF prepress export).
-- **Test Suite**: 77 vitest unit tests passing across 24 test suites. 128 UTF-8 files verified without mojibake.
-- **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage` files.
+- **Test Suite**: 80 vitest unit tests passing across 25 test suites. 138 UTF-8 files verified without mojibake.
+- **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
 

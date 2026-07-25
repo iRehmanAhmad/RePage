@@ -4,48 +4,24 @@ Last updated: 2026-07-25
 
 ## Current phase
 
-**M3 — Document Production Beta: in progress** (M0 Foundation & M2 Urdu Typography Beta: COMPLETE)
+**M4 — Cross-Platform Desktop Release Candidate: in progress** (M0 Foundation, M2 Urdu Typography Beta, and M3 Document Production Beta: COMPLETE)
 
-The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), and M3.1 Linked Text Frames Engine are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, Urdu Rich-Text Zod Schema, Tiptap DOM editing overlay, Bidi QA suite, Phonetic Keyboards (CRULP/Navees), Multi-frame story flow, circular-link prevention, and document templates.
+The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, and M4.1 Tauri 2 Desktop Shell are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, PlatformServices abstraction layer, Tauri 2 configuration (`src-tauri/`), and browser/desktop compatibility.
 
-## Completed capabilities (M0 & M2 Exit Gates Passed, M3.1 Active)
+## Completed capabilities (M0, M2, & M3 Exit Gates Passed, M4.1 Active)
 
 - React/Vite application rebuilt in strict TypeScript (`RePage` branding).
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
-- PDF-point canonical measurements with tested millimetre and viewport conversions.
-- Stable IDs and referential validation through Zod (`parseDocument`).
-- Domain commands for title, page creation/removal, rectangle insertion, geometry modification, and object deletion.
-- Bounded transaction history (`TransactionHistory`) supporting Undo / Redo (`Ctrl+Z`, `Ctrl+Y`, `Ctrl+Shift+Z`).
-- Interactive Fabric.js canvas adapter (`FabricCanvasAdapter` / `FabricCanvas`) for interactive shape rendering, drag, scale, rotate, and selection.
-- IndexedDB/Dexie recovery snapshots and startup restore/discard prompt UX.
-- Baseline `.urdup` ZIP package creation, SHA-256 asset hashing, size limits, and validated import.
-- Automated strict UTF-8 and mojibake verification scanner (`check:utf8`).
-- Pinned Urdu Font Register (`fontRegistry.ts`), Google Fonts web font loaders, and system fallbacks.
-- Urdu Rich-Text Schema (`types.ts`) with ProseMirror/Tiptap compatible node & mark structures.
-- Floating Tiptap DOM rich-text editor overlay (`TextEditorOverlay.tsx`) for canvas text frames.
-- 13 verified Urdu Unicode & Bidi test fixtures (`fixtures.ts`) with code-point round-trip verification.
-- CRULP Phonetic, Navees Phonetic, and Visual On-Screen Keyboard toolbar (`VisualKeyboard.tsx`).
-- Multi-frame linked story flow engine (`textFlowEngine.ts`), circular-link prevention, frame deletion story retention, and visual sequence badges.
-- Urdu paragraph styles (`styles.ts`), multi-column text frames, and Aerab-aware Find & Replace engine (`findReplace.ts`).
-- Urdu document template engine (`documentTemplates.ts`) with Newspaper and Poetry Book presets.
-- 53 passing automated unit and integration tests (`vitest`).
+- PlatformServices abstraction layer (`platformServices.ts`, `browserPlatform.ts`, `tauriPlatform.ts`) supporting both web browser and Tauri 2 desktop runtime without coupling domain core.
+- Tauri 2 desktop shell configuration (`src-tauri/tauri.conf.json`, `Cargo.toml`, `lib.rs`, `main.rs`) with least-privilege security capabilities.
+- 80 passing automated unit and integration tests (`vitest`).
 
-## Immediate Milestone 3 work queue
+## Milestone 4 work queue (Cross-Platform Desktop Release Candidate)
 
-1. Linked text frames, circular link prevention & multi-page reflow (M3.1 — **Resolved**).
-2. Multi-column text frames & RTL column layout engine (M3.2 — **Resolved**).
-3. Advanced Master Pages & Running Elements Engine (M3.3 — **Resolved**).
-4. Automatic Page Numbering Fields & Urdu Numerals (M3.4 — **Resolved**).
-5. Character & Paragraph Object Style Libraries (M3.5 — **Resolved**).
-6. Pre-flight Verification & Urdu Document Diagnostics (M3.6 — **Resolved**).
-7. Standalone Vector SVG & PDF Prepress Export Engine (M3.7 — **Resolved**).
-8. Table of Contents & Cross-References Engine (M3.8 — **Resolved**).
-9. Milestone 3 Exit Gate Audit & Handoff (M3.9 — **Resolved**).
-
-## Milestone 4 work queue (Advanced Typography & Prepress Production)
-
-1. Advanced Kashida Justification & Calligraphic Extensions (M4.1).
-2. WebAssembly PDF/X-1a Prepress Compiler (M4.2).
+1. Introduce Tauri 2 & PlatformServices Architecture (M4.1 — **Resolved**).
+2. Desktop native file associations & IPC commands (M4.2).
+3. System font enumerator & native font loader (M4.3).
+4. Milestone 4 Exit Gate Audit (M4.4).
 
 ## Foundation & Typography exit gate progress
 
