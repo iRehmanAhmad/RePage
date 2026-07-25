@@ -1,12 +1,12 @@
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
-import { createMinimalDocument } from '../domain/document/createDocument';
+import { createDocument } from '../domain/document/createDocument';
 import { insertFootnote } from '../domain/rich-text/notesEngine';
 import { exportDocumentToEpub } from './epubExporter';
 
 describe('epubExporter', () => {
   it('exports canonical document to valid EPUB 3.0 package with RTL Nastaliq CSS and OPF manifest', async () => {
-    const doc = createMinimalDocument('اسلامی جمہوریہ پاکستان');
+    const doc = createDocument('اسلامی جمہوریہ پاکستان');
     insertFootnote(doc.id, 'story-1', 'پاکستان کا قومی ترانہ حفیظ جالندھری نے لکھا');
 
     const epubBytes = await exportDocumentToEpub(doc, {
