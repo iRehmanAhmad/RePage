@@ -86,147 +86,171 @@ export function VisualKeyboard({ mode, onModeChange, onInsertChar }: VisualKeybo
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '6px',
-        padding: '6px 12px',
+        gap: isMinimized ? '0px' : '6px',
+        padding: isMinimized ? '2px 12px' : '6px 12px',
         backgroundColor: '#0f172a',
         color: '#f8fafc',
         borderTop: '1px solid #1e293b',
         fontSize: '11px',
       }}
     >
-      {/* Consolidated Top Header Bar: Title, Mode, Marks, Shift, Minimize Toggle */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '8px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 700, color: '#10b981' }}>اردو کی بورڈ (Keyboard Mode):</span>
-
-          <select
-            value={mode}
-            onChange={(e) => onModeChange(e.target.value as KeyboardMode)}
-            style={{
-              backgroundColor: '#1e293b',
-              color: '#f8fafc',
-              border: '1px solid #334155',
-              borderRadius: '5px',
-              padding: '2px 8px',
-              fontWeight: 600,
-              fontSize: '11px',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="crulp">CRULP Phonetic (Standard Urdu)</option>
-            <option value="navees">Navees Phonetic</option>
-            <option value="english">English (LTR Latin)</option>
-            <option value="native">Native OS Pass-through</option>
-          </select>
-
-          {/* Shift Toggle */}
+      {isMinimized ? (
+        /* Minimized: single centered expand button */
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <button
             type="button"
-            onClick={() => setIsShift((prev) => !prev)}
+            onClick={() => setIsMinimized(false)}
             style={{
-              backgroundColor: isShift ? '#059669' : '#334155',
-              color: '#fff',
-              border: 'none',
+              backgroundColor: '#1e293b',
+              color: '#38bdf8',
+              border: '1px solid #334155',
               borderRadius: '5px',
-              padding: '3px 10px',
-              cursor: 'pointer',
-              fontWeight: 700,
+              padding: '2px 14px',
               fontSize: '10px',
-              boxShadow: isShift ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title="Expand Visual Keyboard"
+          >
+            <span>⌨</span>
+            <span>Expand Keyboard ▲</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Consolidated Top Header Bar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px',
             }}
           >
-            Shift {isShift ? 'ON ▲' : 'OFF ▼'}
-          </button>
-
-          {/* Special Urdu Marks in top row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
-            <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>خاص علامتیں:</span>
-            {SPECIAL_URDU_CHARACTERS.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => onInsertChar(item.char)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, color: '#10b981' }}>اردو کی بورڈ (Keyboard Mode):</span>
+              <select
+                value={mode}
+                onChange={(e) => onModeChange(e.target.value as KeyboardMode)}
                 style={{
-                  backgroundColor: '#0f766e',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '2px 6px',
-                  fontSize: '10px',
+                  backgroundColor: '#1e293b',
+                  color: '#f8fafc',
+                  border: '1px solid #334155',
+                  borderRadius: '5px',
+                  padding: '2px 8px',
                   fontWeight: 600,
+                  fontSize: '11px',
+                  outline: 'none',
                   cursor: 'pointer',
                 }}
-                title={item.description}
               >
-                {item.label}
+                <option value="crulp">CRULP Phonetic (Standard Urdu)</option>
+                <option value="navees">Navees Phonetic</option>
+                <option value="english">English (LTR Latin)</option>
+                <option value="native">Native OS Pass-through</option>
+              </select>
+
+              {/* Shift Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsShift((prev) => !prev)}
+                style={{
+                  backgroundColor: isShift ? '#059669' : '#334155',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '5px',
+                  padding: '3px 10px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '10px',
+                  boxShadow: isShift ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none',
+                }}
+              >
+                Shift {isShift ? 'ON ▲' : 'OFF ▼'}
               </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Minimize / Expand Toggle Button */}
-        <button
-          type="button"
-          onClick={() => setIsMinimized((prev) => !prev)}
-          style={{
-            backgroundColor: '#1e293b',
-            color: '#38bdf8',
-            border: '1px solid #334155',
-            borderRadius: '5px',
-            padding: '3px 10px',
-            fontSize: '10px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-          title={isMinimized ? 'Expand Visual Keyboard' : 'Minimize Visual Keyboard'}
-        >
-          <span>⌨</span>
-          <span>{isMinimized ? 'Expand Keyboard ▲' : 'Minimize Keyboard ▼'}</span>
-        </button>
-      </div>
+              {/* Special Urdu Marks */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>خاص علامتیں:</span>
+                {SPECIAL_URDU_CHARACTERS.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => onInsertChar(item.char)}
+                    style={{
+                      backgroundColor: '#0f766e',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                    title={item.description}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      {/* Keyboard Keys Section (Hidden when minimized) */}
-      {!isMinimized && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-          {renderRow(QWERTY_ROW_1)}
-          {renderRow(QWERTY_ROW_2)}
-          {renderRow(QWERTY_ROW_3)}
-
-          {/* Centered Spacebar Row */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2px' }}>
+            {/* Minimize Toggle */}
             <button
               type="button"
-              onClick={() => onInsertChar(' ')}
+              onClick={() => setIsMinimized(true)}
               style={{
-                backgroundColor: '#334155',
-                color: '#f8fafc',
-                border: '1px solid #475569',
+                backgroundColor: '#1e293b',
+                color: '#38bdf8',
+                border: '1px solid #334155',
                 borderRadius: '5px',
-                padding: '4px 32px',
-                fontSize: '11px',
+                padding: '3px 10px',
+                fontSize: '10px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                minWidth: '220px',
-                textAlign: 'center',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
+              title="Minimize Visual Keyboard"
             >
-              Space (وقفہ)
+              <span>⌨</span>
+              <span>Minimize Keyboard ▼</span>
             </button>
           </div>
-        </div>
+
+          {/* Keyboard Keys */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+            {renderRow(QWERTY_ROW_1)}
+            {renderRow(QWERTY_ROW_2)}
+            {renderRow(QWERTY_ROW_3)}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2px' }}>
+              <button
+                type="button"
+                onClick={() => onInsertChar(' ')}
+                style={{
+                  backgroundColor: '#334155',
+                  color: '#f8fafc',
+                  border: '1px solid #475569',
+                  borderRadius: '5px',
+                  padding: '4px 32px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  minWidth: '220px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
+                Space (وقفہ)
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

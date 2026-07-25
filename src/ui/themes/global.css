@@ -574,21 +574,27 @@ button, input, select, textarea {
   pointer-events: none;
 }
 
-/* Viewport Controls Bar */
-.viewport-zoom-bar {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
+/* Statusbar Zoom Controls (MS Word style - bottom right) */
+.statusbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.statusbar-separator {
+  color: var(--panel-border);
+  font-size: 10px;
+  user-select: none;
+}
+
+.statusbar-zoom {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--panel-border);
-  border-radius: 20px;
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.3);
-  z-index: 20;
+  flex-shrink: 0;
 }
 
 .zoom-btn {
@@ -609,11 +615,18 @@ button, input, select, textarea {
   color: #ffffff;
 }
 
+.zoom-slider {
+  width: 90px;
+  height: 3px;
+  accent-color: var(--emerald-accent);
+  cursor: pointer;
+}
+
 .zoom-label {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
-  min-width: 40px;
+  min-width: 36px;
   text-align: center;
 }
 

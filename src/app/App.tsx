@@ -479,19 +479,6 @@ export function App() {
               )}
             </div>
 
-            {/* Viewport Zoom Floating Bar */}
-            <div className="viewport-zoom-bar">
-              <button onClick={() => setZoomLevel((z) => Math.max(50, z - 10))} className="zoom-btn">
-                -
-              </button>
-              <span className="zoom-label">{zoomLevel}%</span>
-              <button onClick={() => setZoomLevel((z) => Math.min(200, z + 10))} className="zoom-btn">
-                +
-              </button>
-              <button onClick={() => setZoomLevel(100)} className="zoom-btn px-2 text-[10px]">
-                Fit
-              </button>
-            </div>
           </main>
 
           {/* Right Properties Inspector Dock */}
@@ -512,15 +499,34 @@ export function App() {
           />
         </div>
 
-        {/* Bottom Studio Statusbar */}
+        {/* Bottom Studio Statusbar (MS Word layout: page info left, zoom right) */}
         <footer className="studio-statusbar">
-          <div className="status-indicator">
-            <span className="status-dot" />
-            <span>{message}</span>
+          <div className="statusbar-left">
+            <div className="status-indicator">
+              <span className="status-dot" />
+              <span>{message}</span>
+            </div>
+            <span className="statusbar-separator">|</span>
+            <span>صفحہ {document.pageOrder.indexOf(activePageId) + 1} از {document.pageOrder.length}</span>
+            <span className="statusbar-separator">|</span>
+            <span>{Math.round(pointsToMillimetres(activePage.width))} × {Math.round(pointsToMillimetres(activePage.height))} mm</span>
+            <span className="statusbar-separator">|</span>
+            <span>{saveState}</span>
           </div>
 
-          <div>
-            صفحہ {document.pageOrder.indexOf(activePageId) + 1} از {document.pageOrder.length} | {Math.round(pointsToMillimetres(activePage.width))} × {Math.round(pointsToMillimetres(activePage.height))} mm | {saveState}
+          <div className="statusbar-zoom">
+            <button onClick={() => setZoomLevel((z) => Math.max(50, z - 10))} className="zoom-btn">−</button>
+            <input
+              type="range"
+              min="50"
+              max="200"
+              value={zoomLevel}
+              onChange={(e) => setZoomLevel(Number(e.target.value))}
+              className="zoom-slider"
+            />
+            <span className="zoom-label">{zoomLevel}%</span>
+            <button onClick={() => setZoomLevel((z) => Math.min(200, z + 10))} className="zoom-btn">+</button>
+            <button onClick={() => setZoomLevel(100)} className="zoom-btn" style={{ width: 'auto', borderRadius: '4px', padding: '0 6px', fontSize: '10px' }}>Fit</button>
           </div>
         </footer>
 
