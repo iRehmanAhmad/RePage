@@ -17,6 +17,7 @@ export interface TextEditorOverlayProps {
   color?: string;
   lineHeight?: number;
   scale?: number;
+  pendingChar?: string | null;
   onCommit: (updatedContent: RichTextDocument) => void;
   onClose: () => void;
 }
@@ -29,6 +30,7 @@ export function TextEditorOverlay({
   color = '#172119',
   lineHeight = 1.8,
   scale = 1,
+  pendingChar,
   onCommit,
   onClose,
 }: TextEditorOverlayProps) {
@@ -61,6 +63,13 @@ export function TextEditorOverlay({
     },
   });
 
+  // Handle pending character insertion from VisualKeyboard or virtual inputs
+  useEffect(() => {
+    if (editor && pendingChar) {
+      editor.commands.insertContent(pendingChar);
+    }
+  }, [editor, pendingChar]);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -86,16 +95,16 @@ export function TextEditorOverlay({
         transform: `rotate(${frame.rotation}deg)`,
         transformOrigin: 'top left',
         zIndex: 50,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
         border: '2px solid #10b981',
         borderRadius: '4px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
         padding: '8px',
         overflow: 'auto',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px' }}>
-        <span style={{ fontWeight: 600, color: '#047857' }}>اردو ایڈیٹر (Tiptap)</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px' }}>
+        <span style={{ fontWeight: 700, color: '#047857' }}>اردو متن ایڈیٹر (Text Editor Overlay)</span>
         <button
           type="button"
           onClick={onClose}
@@ -104,7 +113,8 @@ export function TextEditorOverlay({
             border: 'none',
             color: '#6b7280',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '11px',
+            fontWeight: 700,
           }}
         >
           ✕ بند کریں

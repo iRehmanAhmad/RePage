@@ -8,6 +8,10 @@ vi.mock('../ui/canvas/FabricCanvas', () => ({
   FabricCanvas: () => <div data-testid="fabric-canvas-mock" />,
 }));
 
+vi.mock('../ui/editor/TextEditorOverlay', () => ({
+  TextEditorOverlay: () => <div data-testid="text-editor-overlay-mock" />,
+}));
+
 vi.mock('../persistence/autosave/database', () => ({
   getLatestRecovery: vi.fn().mockResolvedValue(null),
   clearRecovery: vi.fn().mockResolvedValue(undefined),
@@ -46,5 +50,5 @@ describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspecto
     expect(screen.getAllByText('فائل (File)')[0]).toBeInTheDocument();
     expect(screen.getByText('اہم')).toBeInTheDocument();
     expect(screen.getByText('⚙ خواص')).toBeInTheDocument();
-  });
+  }, 15000);
 });

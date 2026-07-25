@@ -8,16 +8,24 @@ interface FabricCanvasProps {
   stories?: Record<string, import('../../domain/document/types').TextStory> | undefined;
   onObjectModified?: (objectId: string, frameProps: Partial<Rect>) => void;
   onSelectionChanged?: (objectId: string | null) => void;
+  onObjectDoubleClicked?: (objectId: string) => void;
 }
 
-export function FabricCanvas({ page, objects, stories, onObjectModified, onSelectionChanged }: FabricCanvasProps) {
+export function FabricCanvas({
+  page,
+  objects,
+  stories,
+  onObjectModified,
+  onSelectionChanged,
+  onObjectDoubleClicked,
+}: FabricCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const adapterRef = useRef<FabricCanvasAdapter | null>(null);
 
-  const callbacksRef = useRef({ onObjectModified, onSelectionChanged });
+  const callbacksRef = useRef({ onObjectModified, onSelectionChanged, onObjectDoubleClicked });
   useEffect(() => {
-    callbacksRef.current = { onObjectModified, onSelectionChanged };
-  }, [onObjectModified, onSelectionChanged]);
+    callbacksRef.current = { onObjectModified, onSelectionChanged, onObjectDoubleClicked };
+  }, [onObjectModified, onSelectionChanged, onObjectDoubleClicked]);
 
   // Attach fabric canvas on mount
   useEffect(() => {
@@ -27,6 +35,7 @@ export function FabricCanvas({ page, objects, stories, onObjectModified, onSelec
     adapter.attach(canvasRef.current, page.width, page.height, {
       onObjectModified: (id, frame) => callbacksRef.current.onObjectModified?.(id, frame),
       onSelectionChanged: (id) => callbacksRef.current.onSelectionChanged?.(id),
+      onObjectDoubleClicked: (id) => callbacksRef.current.onObjectDoubleClicked?.(id),
     });
 
     adapterRef.current = adapter;

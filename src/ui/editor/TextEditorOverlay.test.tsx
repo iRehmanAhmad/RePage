@@ -49,7 +49,7 @@ describe('TextEditorOverlay', () => {
       />
     );
 
-    expect(screen.getByText('اردو ایڈیٹر (Tiptap)')).toBeInTheDocument();
+    expect(screen.getByText('اردو متن ایڈیٹر (Text Editor Overlay)')).toBeInTheDocument();
     expect(screen.getByText('✕ بند کریں')).toBeInTheDocument();
   });
 });

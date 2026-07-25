@@ -5,6 +5,7 @@ import { getFontDefinition } from '../../domain/unicode/fontRegistry';
 export interface AdapterCallbacks {
   onObjectModified?: (objectId: string, frame: Partial<Rect>) => void;
   onSelectionChanged?: (selectedObjectId: string | null) => void;
+  onObjectDoubleClicked?: (selectedObjectId: string) => void;
 }
 
 /**
@@ -54,6 +55,16 @@ export class FabricCanvasAdapter {
       if (objectId && this.callbacks.onObjectModified) {
         const frame = fabricToObjectGeometry(target);
         this.callbacks.onObjectModified(objectId, frame);
+      }
+    });
+
+    this.canvas.on('mouse:dblclick', (e) => {
+      const target = e.target;
+      if (!target) return;
+
+      const objectId = (target as unknown as { canonicalId?: string }).canonicalId;
+      if (objectId && this.callbacks.onObjectDoubleClicked) {
+        this.callbacks.onObjectDoubleClicked(objectId);
       }
     });
 
@@ -120,7 +131,7 @@ export class FabricCanvasAdapter {
           textAlign: 'right',
           opacity: obj.opacity,
           selectable: !obj.locked,
-          editable: false, // Rich text DOM overlay handles editing
+          editable: false, // Rich text DOM overlay handles interactive editing on double click
         });
       } else if (obj.type === 'image-frame') {
         fabricObj = new fabric.Rect({

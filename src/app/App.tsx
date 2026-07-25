@@ -5,6 +5,7 @@ import { pointsToMillimetres } from '../domain/geometry/units';
 import {
   addPage,
   addRectangle,
+  addTextFrame,
   removePage,
   renameDocument,
   updateObjectGeometry,
@@ -12,6 +13,7 @@ import {
 import { TransactionHistory } from '../editor/history/transactionHistory';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
+import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
@@ -73,6 +75,9 @@ export function App() {
   const [saveState, setSaveState] = useState<SaveState>('Unsaved changes');
   const [message, setMessage] = useState('RePage Studio Ready');
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
+  const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
+  const [pendingChar, setPendingChar] = useState<string | null>(null);
+
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [activeTool, setActiveTool] = useState<ActiveTool>('select');
 
@@ -129,6 +134,10 @@ export function App() {
 
   const selectedObject = selectedObjectId ? document.objects[selectedObjectId] : null;
 
+  // Find object being edited
+  const editingObject = editingObjectId ? document.objects[editingObjectId] : null;
+  const editingStory = editingObject && editingObject.type === 'text-frame' ? document.stories[editingObject.storyId] : null;
+
   // Update document with undo push
   const updateDocument = React.useCallback(
     (nextDocument: RePageDocument, description?: string) => {
@@ -182,6 +191,18 @@ export function App() {
     const nextDoc = addRectangle(document, activePageId);
     updateDocument(nextDoc, 'Add rectangle');
     setMessage('Rectangle shape added');
+  }, [activePageId, document, updateDocument]);
+
+  const handleAddTextFrame = React.useCallback(() => {
+    const nextDoc = addTextFrame(document, activePageId);
+    updateDocument(nextDoc, 'Add text frame');
+    const nextPage = nextDoc.pages[activePageId];
+    const newTextFrameId = nextPage ? nextPage.objectOrder[nextPage.objectOrder.length - 1] : undefined;
+    if (newTextFrameId) {
+      setSelectedObjectId(newTextFrameId);
+      setEditingObjectId(newTextFrameId);
+    }
+    setMessage('Text Frame added. Type to edit text.');
   }, [activePageId, document, updateDocument]);
 
   const handleAddFootnote = React.useCallback(() => {
@@ -287,6 +308,42 @@ export function App() {
     setMessage('OCR text frame and source image added to page');
   }, [activePageId]);
 
+  // Handle Double Click on Text Frame
+  const handleObjectDoubleClicked = React.useCallback((objectId: string) => {
+    const obj = document.objects[objectId];
+    if (obj && obj.type === 'text-frame') {
+      setSelectedObjectId(objectId);
+      setEditingObjectId(objectId);
+      setMessage('Editing Text Frame. Double click or press ESC to exit.');
+    }
+  }, [document.objects]);
+
+  // Handle Character Insertion from Visual Keyboard or Keypress
+  const handleInsertChar = React.useCallback((char: string) => {
+    let targetObjId = editingObjectId || selectedObjectId;
+
+    // If no text frame is currently active, find the first text frame on the page or create one
+    if (!targetObjId || document.objects[targetObjId]?.type !== 'text-frame') {
+      const firstTextFrame = activePage.objectOrder.find((id) => document.objects[id]?.type === 'text-frame');
+      if (firstTextFrame) {
+        targetObjId = firstTextFrame;
+        setSelectedObjectId(firstTextFrame);
+        setEditingObjectId(firstTextFrame);
+      } else {
+        handleAddTextFrame();
+        return;
+      }
+    }
+
+    if (targetObjId && document.objects[targetObjId]?.type === 'text-frame') {
+      setEditingObjectId(targetObjId);
+      setPendingChar(char);
+      // Reset pendingChar after tick
+      setTimeout(() => setPendingChar(null), 50);
+      setMessage(`Typed character: ${char}`);
+    }
+  }, [activePage.objectOrder, document.objects, editingObjectId, handleAddTextFrame, selectedObjectId]);
+
   return (
     <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
       <div className="app-shell">
@@ -326,6 +383,7 @@ export function App() {
           onSelectTool={(tool) => {
             setActiveTool(tool);
             if (tool === 'rectangle') handleAddRectangle();
+            if (tool === 'text') handleAddTextFrame();
           }}
           onUndo={handleUndo}
           onRedo={handleRedo}
@@ -366,6 +424,7 @@ export function App() {
                 height: `${activePage.height}pt`,
                 transform: `scale(${zoomLevel / 100})`,
                 transformOrigin: 'top center',
+                position: 'relative',
               }}
             >
               {/* Margin Guide */}
@@ -385,8 +444,39 @@ export function App() {
                 objects={visibleObjects}
                 stories={document.stories}
                 onObjectModified={handleObjectModified}
-                onSelectionChanged={setSelectedObjectId}
+                onSelectionChanged={(id) => {
+                  setSelectedObjectId(id);
+                  if (id && document.objects[id]?.type === 'text-frame') {
+                    setEditingObjectId(id);
+                  }
+                }}
+                onObjectDoubleClicked={handleObjectDoubleClicked}
               />
+
+              {/* Interactive In-place Rich Text Editor Overlay */}
+              {editingObject && editingObject.type === 'text-frame' && editingStory && (
+                <TextEditorOverlay
+                  frame={editingObject.frame}
+                  story={editingStory}
+                  fontFamily={editingObject.fontFamily || activeFontFamily}
+                  fontSize={editingObject.fontSize || activeFontSize}
+                  color={editingObject.color}
+                  pendingChar={pendingChar}
+                  onCommit={(updatedContent) => {
+                    setDocumentState((prev) => ({
+                      ...prev,
+                      stories: {
+                        ...prev.stories,
+                        [editingObject.storyId]: {
+                          ...prev.stories[editingObject.storyId]!,
+                          content: updatedContent,
+                        },
+                      },
+                    }));
+                  }}
+                  onClose={() => setEditingObjectId(null)}
+                />
+              )}
             </div>
 
             {/* Viewport Zoom Floating Bar */}
@@ -418,9 +508,7 @@ export function App() {
           <VisualKeyboard
             mode={keyboardMode}
             onModeChange={setKeyboardMode}
-            onInsertChar={(char) => {
-              setMessage(`Character inserted: ${char}`);
-            }}
+            onInsertChar={handleInsertChar}
           />
         </div>
 

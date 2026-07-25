@@ -6,7 +6,10 @@ import type {
   Rect,
   RectangleObject,
   RePageDocument,
+  TextFrameObject,
+  TextStory,
 } from '../../domain/document/types';
+import { paragraph } from '../../domain/rich-text/types';
 
 function touch(document: RePageDocument): RePageDocument {
   return {
@@ -110,6 +113,53 @@ export function addRectangle(document: RePageDocument, pageId: PageId): RePageDo
       [pageId]: { ...page, objectOrder: [...page.objectOrder, object.id] },
     },
     objects: { ...document.objects, [object.id]: object },
+  });
+}
+
+export function addTextFrame(document: RePageDocument, pageId: PageId): RePageDocument {
+  const page = document.pages[pageId];
+  if (!page) {
+    throw new Error(`Page ${pageId} does not exist.`);
+  }
+
+  const storyId = createId('story');
+  const objectId = createId('object');
+
+  const story: TextStory = {
+    id: storyId,
+    name: 'New Text Frame',
+    content: {
+      type: 'doc',
+      content: [paragraph('', 'rtl')],
+    },
+  };
+
+  const textFrame: TextFrameObject = {
+    id: objectId,
+    pageId,
+    type: 'text-frame',
+    name: 'Text Frame',
+    frame: { x: 72, y: 200, width: 360, height: 120, rotation: 0 },
+    locked: false,
+    hidden: false,
+    opacity: 1,
+    storyId,
+    fontFamily: 'Noto Nastaliq Urdu',
+    fontSize: 24,
+    color: '#172119',
+    lineHeight: 1.8,
+    padding: { top: 8, right: 8, bottom: 8, left: 8 },
+  };
+
+  return touch({
+    ...document,
+    pageOrder: document.pageOrder,
+    pages: {
+      ...document.pages,
+      [pageId]: { ...page, objectOrder: [...page.objectOrder, objectId] },
+    },
+    objects: { ...document.objects, [objectId]: textFrame },
+    stories: { ...document.stories, [storyId]: story },
   });
 }
 
