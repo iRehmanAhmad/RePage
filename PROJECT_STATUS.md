@@ -4,11 +4,11 @@ Last updated: 2026-07-25
 
 ## Current phase
 
-**M4 — Cross-Platform Desktop Release Candidate: in progress** (M0 Foundation, M2 Urdu Typography Beta, and M3 Document Production Beta: COMPLETE)
+**M4 — Cross-Platform Desktop Release Candidate: COMPLETE (All Exit Gates Passed)** (M0 Foundation, M2 Urdu Typography Beta, M3 Document Production Beta, M4 Desktop Release Candidate: COMPLETE)
 
-The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, and M4.1 Tauri 2 Desktop Shell are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, PlatformServices abstraction layer, Tauri 2 configuration (`src-tauri/`), and browser/desktop compatibility.
+The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, and Milestone 4 Cross-Platform Desktop Release Candidate are complete with verified UTF-8 scanner, Urdu Unicode test fixtures, Font Governance register, PlatformServices abstraction layer, Tauri 2 configuration (`src-tauri/`), native file workflow engine, desktop OS integration, multi-platform installers (NSIS, DMG, DEB, AppImage, RPM), and registered `.urdup` file associations.
 
-## Completed capabilities (M0, M2, & M3 Exit Gates Passed, M4.1 Active)
+## Completed capabilities (M0, M2, M3, & M4 Exit Gates Passed)
 
 - React/Vite application rebuilt in strict TypeScript (`RePage` branding).
 - Canonical schema-version-one document, page, object, story, rich-text, asset, and geometry types.
@@ -16,14 +16,16 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Tauri 2 desktop shell configuration (`src-tauri/tauri.conf.json`, `Cargo.toml`, `lib.rs`, `main.rs`) with least-privilege security capabilities.
 - Native file workflow engine (`fileWorkflowEngine.ts`, `recentFiles.ts`, `conflictDetector.ts`) supporting Open, Save, Save As, atomic file replacement, recent files history, file associations for `.urdup`, drag-and-drop document opening (`DragAndDropOverlay.tsx`), and external file modification conflict detection.
 - Desktop OS integration (`windowIntegration.ts`, `clipboard.ts`, `printService.ts`, `themeIntegration.ts`, `accessibility.ts`) supporting dynamic title dirty state tracking, native menu shortcuts (`Ctrl+S`, `Ctrl+O`, `Ctrl+P`), native print dialog trigger, OS theme listeners, High-DPI backing scale, and screen-reader ARIA live region notifications.
-- 91 passing automated unit and integration tests (`vitest`).
+- Multi-platform packaging pipeline (`DISTRIBUTION.md`, `verify-distribution.js`, `.github/workflows/release-distribution.yml`) producing Windows NSIS, macOS DMG, and Linux AppImage/DEB/RPM installers.
+- 94 passing automated unit and integration tests (`vitest`).
 
 ## Milestone 4 work queue (Cross-Platform Desktop Release Candidate)
 
 1. Introduce Tauri 2 & PlatformServices Architecture (M4.1 — **Resolved**).
 2. Desktop native file associations & IPC commands (M4.2 — **Resolved**).
 3. System font enumerator & native OS services (M4.3 — **Resolved**).
-4. Milestone 4 Exit Gate Audit (M4.4).
+4. Packaging & Multi-Platform Distribution Pipeline (M4.4 — **Resolved**).
+5. Milestone 4 Exit Gate Audit (M4.5 — **Resolved**).
 
 ## Foundation & Typography exit gate progress
 

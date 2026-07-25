@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "dmg", "deb", "appimage", "rpm"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -33,6 +33,31 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "category": "Office",
+    "shortDescription": "Authentic Urdu Document Publishing System",
+    "longDescription": "RePage is an offline-first frame-oriented desktop publishing system tailored for authentic Urdu Nastaliq and complex multi-lingual document production.",
+    "copyright": "Copyright © 2026 RePage Contributors",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    },
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "signing": {
+        "entitlements": null
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["webkit2gtk-4.1", "fontconfig", "libssl3"]
+      },
+      "rpm": {
+        "depends": ["webkit2gtk4.1", "fontconfig", "openssl"]
+      }
+    },
     "fileAssociations": [
       {
         "ext": ["urdup"],
