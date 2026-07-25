@@ -155,12 +155,24 @@ export function App() {
     }
   }, [document]);
 
+function extractDocumentFromImport(res: unknown): RePageDocument | null {
+  if (!res || typeof res !== 'object') return null;
+  if ('document' in res && res.document && typeof res.document === 'object' && 'pageOrder' in (res.document as object)) {
+    return (res as { document: RePageDocument }).document;
+  }
+  if ('pageOrder' in res && Array.isArray((res as RePageDocument).pageOrder)) {
+    return res as RePageDocument;
+  }
+  return null;
+}
+
   const handleOpenImportFile = React.useCallback(async (file: File) => {
     try {
       const res = await importExternalFileWorkflow(file, file.name);
-      if (res && 'document' in res && res.document) {
-        setDocumentState(res.document);
-        setActivePageId(res.document.pageOrder[0]!);
+      const importedDoc = extractDocumentFromImport(res);
+      if (importedDoc) {
+        setDocumentState(importedDoc);
+        setActivePageId(importedDoc.pageOrder[0]!);
         setMessage(`Imported file: ${file.name}`);
       }
     } catch (err) {
