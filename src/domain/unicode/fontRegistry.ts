@@ -34,6 +34,42 @@ export const FONT_REGISTRY: Record<string, FontDefinition> = {
     upstreamUrl: 'https://fonts.google.com/specimen/Gulzar',
     fallbackChain: ['Noto Nastaliq Urdu', 'serif'],
   },
+  'inpage-nastaliq': {
+    id: 'inpage-nastaliq',
+    name: 'InPage Nastaliq',
+    family: "'InPage Nastaliq', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif",
+    category: 'nastaliq',
+    license: 'Proprietary',
+    isBundled: false,
+    fallbackChain: ['Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'serif'],
+  },
+  'inpage-noori-nastaliq': {
+    id: 'inpage-noori-nastaliq',
+    name: 'InPage Noori Nastaliq',
+    family: "'InPage Noori Nastaliq', 'Noori Nastaliq', 'Noto Nastaliq Urdu', serif",
+    category: 'nastaliq',
+    license: 'Proprietary',
+    isBundled: false,
+    fallbackChain: ['Noori Nastaliq', 'Noto Nastaliq Urdu', 'serif'],
+  },
+  'inpage-ali-nastaliq': {
+    id: 'inpage-ali-nastaliq',
+    name: 'InPage Ali Nastaliq',
+    family: "'InPage Ali Nastaliq', 'Ali Nastaliq', 'Noto Nastaliq Urdu', serif",
+    category: 'nastaliq',
+    license: 'Proprietary',
+    isBundled: false,
+    fallbackChain: ['Ali Nastaliq', 'Noto Nastaliq Urdu', 'serif'],
+  },
+  'inpage-lahori-nastaliq': {
+    id: 'inpage-lahori-nastaliq',
+    name: 'InPage Lahori Nastaliq',
+    family: "'InPage Lahori Nastaliq', 'Faiz Lahori Nastaliq', 'Noto Nastaliq Urdu', serif",
+    category: 'nastaliq',
+    license: 'Proprietary',
+    isBundled: false,
+    fallbackChain: ['Faiz Lahori Nastaliq', 'Noto Nastaliq Urdu', 'serif'],
+  },
   'noto-naskh-arabic': {
     id: 'noto-naskh-arabic',
     name: 'Noto Naskh Arabic',
@@ -54,6 +90,20 @@ export const FONT_REGISTRY: Record<string, FontDefinition> = {
     fallbackChain: ['sans-serif'],
   },
 };
+
+export function registerCustomInPageFont(fontId: string, fontName: string, familyCss: string): FontDefinition {
+  const customDef: FontDefinition = {
+    id: fontId,
+    name: fontName,
+    family: familyCss,
+    category: 'nastaliq',
+    license: 'Proprietary',
+    isBundled: false,
+    fallbackChain: ['Noto Nastaliq Urdu', 'serif'],
+  };
+  FONT_REGISTRY[fontId] = customDef;
+  return customDef;
+}
 
 export const DEFAULT_URDU_FONT: FontDefinition = NOTO_NASTALIQ;
 

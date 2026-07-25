@@ -116,3 +116,5 @@ export function exportDocumentToSvg(doc: RePageDocument, pageId: PageId): string
   ${elementsSvg.join('\n  ')}
 </svg>`;
 }
+
+export { exportDocumentToEpub } from './epubExporter';
