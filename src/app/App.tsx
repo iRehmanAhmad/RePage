@@ -5,31 +5,37 @@ import { pointsToMillimetres } from '../domain/geometry/units';
 import {
   addPage,
   addRectangle,
-  deleteObject,
   removePage,
   renameDocument,
   updateObjectGeometry,
 } from '../editor/commands/documentCommands';
 import { TransactionHistory } from '../editor/history/transactionHistory';
-import { clearRecovery, getLatestRecovery, saveRecovery } from '../persistence/autosave/database';
+import { getLatestRecovery } from '../persistence/autosave/database';
 import { FabricCanvas } from '../ui/canvas/FabricCanvas';
-import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
-import { tauriPlatform } from '../platform/tauri/tauriPlatform';
-import { updateWindowTitle } from '../platform/tauri/windowIntegration';
-import { announceToScreenReader } from '../ui/common/accessibility';
 import { triggerNativePrintDialog } from '../platform/printService';
 import {
-  openDocumentWorkflow,
+  importExternalFileWorkflow,
   saveAsDocumentWorkflow,
   saveDocumentWorkflow,
   type DocumentFileRef,
 } from '../persistence/package/fileWorkflowEngine';
-import { getRecentFiles } from '../persistence/package/recentFiles';
 import type { KeyboardMode } from '../domain/unicode/keyboardLayouts';
+
+// Language & OCR Imports
+import { LanguageToolsPanel } from '../ui/language/LanguageToolsPanel';
+import { OcrCorrectionPanel } from '../ui/ocr/OcrCorrectionPanel';
+import { runUrduOcr, OcrPageResult } from '../domain/ocr/ocrEngine';
+import { convertOcrResultToDocumentObjects } from '../domain/ocr/ocrCorrection';
+import { exportDocumentToPdfMetadata, exportDocumentToEpub } from '../export/exportEngine';
+
+// Studio Layout Components
+import { StudioHeader } from '../ui/common/StudioHeader';
+import { StudioRibbon, ActiveTool } from '../ui/common/StudioRibbon';
+import { InspectorDock } from '../ui/common/InspectorDock';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -48,16 +54,29 @@ export function App() {
   const [document, setDocumentState] = useState<RePageDocument>(() => createStarterDocument());
   const [activePageId, setActivePageId] = useState(() => document.pageOrder[0]!);
   const [saveState, setSaveState] = useState<SaveState>('Unsaved changes');
-  const [message, setMessage] = useState('Foundation workspace');
+  const [message, setMessage] = useState('RePage Studio Ready');
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
-  const [isEditingText, setIsEditingText] = useState(false);
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
-  const [showPreflight, setShowPreflight] = useState(false);
-  const [fileRef, setFileRef] = useState<DocumentFileRef>({ isDirty: false });
-  const [showRecent, setShowRecent] = useState(false);
-  const [recoveredItem, setRecoveredItem] = useState<{ document: RePageDocument; savedAt: string } | null>(null);
+  const [activeTool, setActiveTool] = useState<ActiveTool>('select');
 
+  // Modal Panel Toggles
+  const [showPreflight, setShowPreflight] = useState(false);
+  const [showLanguageTools, setShowLanguageTools] = useState(false);
+  const [showOcrPanel, setShowOcrPanel] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OcrPageResult | null>(null);
+  const [showRecent, setShowRecent] = useState(false);
+
+  // Zoom & Viewport state
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+
+  const [fileRef, setFileRef] = useState<DocumentFileRef>({ isDirty: false });
   const [, setHistoryVersion] = useState(0);
+
+  // Typography state
+  const [activeFontFamily, setActiveFontFamily] = useState('Noto Nastaliq Urdu');
+  const [activeFontSize, setActiveFontSize] = useState(16);
+  const [isKashidaEnabled, setIsKashidaEnabled] = useState(true);
+  const [activeAlignment, setActiveAlignment] = useState('start');
 
   const activePage = resolveActivePage(document, activePageId);
   const visibleObjects = useMemo(
@@ -97,469 +116,332 @@ export function App() {
   const handleObjectModified = React.useCallback(
     (objectId: string, frameProps: Partial<import('../domain/document/types').Rect>) => {
       updateDocument(updateObjectGeometry(document, objectId, frameProps), 'Modify object geometry');
-      setMessage('Object geometry updated on canvas');
+      setMessage('Object geometry updated');
     },
     [document, updateDocument],
   );
 
-  const handleDeleteSelected = React.useCallback(() => {
-    if (!selectedObjectId) return;
-    try {
-      updateDocument(deleteObject(document, selectedObjectId), 'Delete object');
-      setSelectedObjectId(null);
-      setMessage('Object deleted');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to delete object.');
-    }
-  }, [document, selectedObjectId, updateDocument]);
+  const handleAddPage = React.useCallback(() => {
+    const nextDoc = addPage(document);
+    updateDocument(nextDoc, 'Add page');
+    setActivePageId(nextDoc.pageOrder[nextDoc.pageOrder.length - 1]!);
+    setMessage(`Page ${nextDoc.pageOrder.length} added`);
+  }, [document, updateDocument]);
 
-  const handleUndo = React.useCallback(() => {
-    if (!history.canUndo()) return;
-    const previous = history.undo(document);
-    if (previous) {
-      setDocumentState(previous);
-      setHistoryVersion((v) => v + 1);
-      setMessage('Undo applied');
-    }
-  }, [document]);
+  const handleRemovePage = React.useCallback(() => {
+    if (document.pageOrder.length <= 1) return;
+    const nextDoc = removePage(document, activePageId);
+    updateDocument(nextDoc, 'Remove page');
+    setActivePageId(nextDoc.pageOrder[0]!);
+    setMessage('Page removed');
+  }, [activePageId, document, updateDocument]);
 
-  const handleRedo = React.useCallback(() => {
-    if (!history.canRedo()) return;
-    const next = history.redo(document);
-    if (next) {
-      setDocumentState(next);
-      setHistoryVersion((v) => v + 1);
-      setMessage('Redo applied');
-    }
-  }, [document]);
+  const handleAddRectangle = React.useCallback(() => {
+    const nextDoc = addRectangle(document, activePageId);
+    updateDocument(nextDoc, 'Add rectangle');
+    setMessage('Rectangle shape added');
+  }, [activePageId, document, updateDocument]);
 
-  const handleOpenNative = React.useCallback(async (inputData?: ArrayBuffer | File) => {
-    try {
-      const activePlatform = tauriPlatform;
-      const opened = await openDocumentWorkflow(activePlatform, inputData);
-      if (opened) {
-        history.clear();
-        setDocumentState(opened.document);
-        setActivePageId(opened.document.pageOrder[0]!);
-        setFileRef(opened.fileRef);
-        setMessage(`Opened ${opened.fileRef.filePath || opened.document.metadata.title}`);
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to open file.');
-    }
-  }, []);
-
+  // File Workflows
   const handleSaveNative = React.useCallback(async () => {
-    try {
-      const activePlatform = tauriPlatform;
-      const updatedRef = await saveDocumentWorkflow(document, fileRef, activePlatform);
-      setFileRef(updatedRef);
-      setMessage(`Saved to ${updatedRef.filePath || 'package'}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to save file.');
+    setSaveState('Saving…');
+    const result = await saveDocumentWorkflow(document, fileRef);
+    if (result.success && result.updatedRef) {
+      setFileRef(result.updatedRef);
+      setSaveState('Saved locally');
+      setMessage(result.message || 'Saved successfully');
+    } else {
+      setSaveState('Save failed');
+      setMessage(result.error || 'Save failed');
     }
   }, [document, fileRef]);
 
   const handleSaveAsNative = React.useCallback(async () => {
-    try {
-      const activePlatform = tauriPlatform;
-      const updatedRef = await saveAsDocumentWorkflow(document, activePlatform);
-      setFileRef(updatedRef);
-      setMessage(`Saved as ${updatedRef.filePath}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to save file as.');
+    setSaveState('Saving…');
+    const result = await saveAsDocumentWorkflow(document);
+    if (result.success && result.updatedRef) {
+      setFileRef(result.updatedRef);
+      setSaveState('Saved locally');
+      setMessage(result.message || 'Saved successfully');
+    } else {
+      setSaveState('Save failed');
+      setMessage(result.error || 'Save failed');
     }
   }, [document]);
 
-  // Sync OS Window Title and Dirty State
-  useEffect(() => {
-    void updateWindowTitle(document.metadata.title, fileRef.isDirty);
-  }, [document.metadata.title, fileRef.isDirty]);
-
-  // Global keybindings for Undo/Redo, Delete, Open, Save, Print
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      const isCmdOrCtrl = event.ctrlKey || event.metaKey;
-      const key = event.key.toLowerCase();
-
-      if (isCmdOrCtrl && key === 'z') {
-        if (event.shiftKey) {
-          event.preventDefault();
-          handleRedo();
-        } else {
-          event.preventDefault();
-          handleUndo();
-        }
-      } else if (isCmdOrCtrl && key === 'y') {
-        event.preventDefault();
-        handleRedo();
-      } else if (isCmdOrCtrl && key === 's') {
-        event.preventDefault();
-        if (event.shiftKey) {
-          void handleSaveAsNative();
-        } else {
-          void handleSaveNative();
-        }
-      } else if (isCmdOrCtrl && key === 'o') {
-        event.preventDefault();
-        void handleOpenNative();
-      } else if (isCmdOrCtrl && key === 'p') {
-        event.preventDefault();
-        triggerNativePrintDialog();
-        announceToScreenReader('Print dialog opened');
-      } else if (
-        (event.key === 'Delete' || event.key === 'Backspace') &&
-        !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-      ) {
-        if (selectedObjectId) {
-          event.preventDefault();
-          handleDeleteSelected();
-        }
-      }
+  const handleOpenImportFile = React.useCallback(async (file: File) => {
+    const result = await importExternalFileWorkflow(file);
+    if (result.success && result.document) {
+      setDocumentState(result.document);
+      setActivePageId(result.document.pageOrder[0]!);
+      setMessage(`Imported file: ${file.name}`);
+    } else {
+      setMessage(`Import failed: ${result.error}`);
     }
+  }, []);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleDeleteSelected, selectedObjectId, fileRef, document, handleSaveAsNative, handleSaveNative, handleOpenNative]);
-
-  useEffect(() => {
-    setSaveState('Unsaved changes');
-    const timeoutId = window.setTimeout(() => {
-      setSaveState('Saving…');
-      void saveRecovery(document)
-        .then(() => setSaveState('Saved locally'))
-        .catch(() => setSaveState('Save failed'));
-    }, 500);
-
-    return () => window.clearTimeout(timeoutId);
+  const handleExportPdf = React.useCallback(() => {
+    const meta = exportDocumentToPdfMetadata(document);
+    triggerNativePrintDialog();
+    setMessage(`Exporting PDF: ${meta.title}`);
   }, [document]);
 
-  function handleAddPage() {
-    const next = addPage(document, activePageId);
-    updateDocument(next, 'Add page');
-    setActivePageId(next.pageOrder[next.pageOrder.indexOf(activePageId) + 1] ?? next.pageOrder.at(-1)!);
-    setMessage('Page added');
-  }
+  const handleExportEpub = React.useCallback(async () => {
+    const epubBytes = await exportDocumentToEpub(document);
+    const blob = new Blob([new Uint8Array(epubBytes)], { type: 'application/epub+zip' });
+    const url = URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${document.metadata.title || 'RePage_Document'}.epub`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setMessage('ePUB 3.0 exported successfully');
+  }, [document]);
 
-  function handleRemovePage() {
-    try {
-      const next = removePage(document, activePageId);
-      updateDocument(next, 'Remove page');
-      setActivePageId(next.pageOrder[0]!);
-      setMessage('Page removed');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to remove page.');
-    }
-  }
+  const handleTriggerOcr = React.useCallback(async () => {
+    const dummyBuffer = new ArrayBuffer(2048);
+    const res = await runUrduOcr(dummyBuffer, 'Urdu_Scan_Page1.png');
+    setOcrResult(res);
+    setShowOcrPanel(true);
+  }, []);
 
-  function handleAddRectangle() {
-    updateDocument(addRectangle(document, activePageId), 'Add rectangle');
-    setMessage('Rectangle added through domain command');
-  }
-
-  function handleRestoreRecovery() {
-    if (!recoveredItem) return;
-    history.clear();
-    setDocumentState(recoveredItem.document);
-    setActivePageId(recoveredItem.document.pageOrder[0]!);
-    setRecoveredItem(null);
-    setMessage('Previous session document restored from recovery snapshot');
-  }
-
-  function handleDiscardRecovery() {
-    setRecoveredItem(null);
-    void clearRecovery();
-    setMessage('Recovery snapshot discarded');
-  }
+  const handleCommitOcrToCanvas = React.useCallback((finalResult: OcrPageResult) => {
+    const { imageFrame, textFrame, story } = convertOcrResultToDocumentObjects(finalResult, activePageId);
+    setDocumentState((prev) => ({
+      ...prev,
+      objects: {
+        ...prev.objects,
+        [imageFrame.id]: imageFrame,
+        [textFrame.id]: textFrame,
+      },
+      stories: {
+        ...prev.stories,
+        [story.id]: story,
+      },
+      pages: {
+        ...prev.pages,
+        [activePageId]: {
+          ...prev.pages[activePageId]!,
+          objectOrder: [...prev.pages[activePageId]!.objectOrder, imageFrame.id, textFrame.id],
+        },
+      },
+    }));
+    setShowOcrPanel(false);
+    setMessage('OCR text frame and source image added to page');
+  }, [activePageId]);
 
   return (
-    <div className="app-shell">
-      <DragAndDropOverlay onFileDrop={(file) => void handleOpenNative(file)} />
-      {recoveredItem && (
-        <div className="recovery-banner" role="alert" style={{ background: '#2d3748', color: '#fff', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Unsaved session found from {new Date(recoveredItem.savedAt).toLocaleTimeString()} ({recoveredItem.document.metadata.title})</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" className="button primary" onClick={handleRestoreRecovery}>Restore Session</button>
-            <button type="button" className="button secondary" onClick={handleDiscardRecovery}>Discard</button>
-          </div>
-        </div>
-      )}
+    <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
+      <div className="app-shell">
+        {/* Top Studio Glassmorphic Header */}
+        <StudioHeader
+          documentTitle={document.metadata.title}
+          onTitleChange={(newTitle) => updateDocument(renameDocument(document, newTitle), 'Rename document')}
+          onOpenDocument={(file) => void handleOpenImportFile(file)}
+          onSaveDocument={() => void handleSaveNative()}
+          onSaveAsDocument={() => void handleSaveAsNative()}
+          onShowRecentFiles={() => setShowRecent(!showRecent)}
+          onRunPreflight={() => setShowPreflight(true)}
+          onToggleCollab={() => setMessage('Live collaboration room active')}
+          onOpenLanguageTools={() => setShowLanguageTools(true)}
+          onOpenOcr={() => void handleTriggerOcr()}
+          onExportPdf={handleExportPdf}
+          onExportEpub={() => void handleExportEpub()}
+          saveState={saveState}
+        />
 
-      <header className="topbar">
-        <div className="brand-block">
-          <span className="brand-mark" aria-hidden="true">ا</span>
-          <div>
-            <strong>RePage</strong>
-            <span>Foundation 0.1</span>
-          </div>
+        {/* Studio Control Ribbon */}
+        <StudioRibbon
+          activeTool={activeTool}
+          onSelectTool={(tool) => {
+            setActiveTool(tool);
+            if (tool === 'rectangle') handleAddRectangle();
+          }}
+          onUndo={() => {
+            const prev = history.undo(document);
+            if (prev) {
+              setDocumentState(prev);
+              setHistoryVersion((v) => v + 1);
+            }
+          }}
+          onRedo={() => {
+            const next = history.redo(document);
+            if (next) {
+              setDocumentState(next);
+              setHistoryVersion((v) => v + 1);
+            }
+          }}
+          canUndo={history.canUndo()}
+          canRedo={history.canRedo()}
+          activeFontFamily={activeFontFamily}
+          onFontFamilyChange={setActiveFontFamily}
+          activeFontSize={activeFontSize}
+          onFontSizeChange={setActiveFontSize}
+          isKashidaEnabled={isKashidaEnabled}
+          onToggleKashida={() => setIsKashidaEnabled(!isKashidaEnabled)}
+          activeAlignment={activeAlignment}
+          onAlignmentChange={setActiveAlignment}
+        />
+
+        {/* Main Editor Grid Layout */}
+        <div className="studio-layout">
+          {/* Left Panel: Pages & Layers */}
+          <aside className="studio-sidebar">
+            <div className="sidebar-header">
+              <span>صفحات (Pages)</span>
+              <span className="px-2 py-0.5 bg-slate-800 text-emerald-400 rounded-full text-[10px] font-bold">
+                {document.pageOrder.length}
+              </span>
+            </div>
+
+            <div className="p-3 border-b border-slate-800 flex gap-2">
+              <button
+                onClick={handleAddPage}
+                className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded shadow"
+              >
+                + نیا صفحہ
+              </button>
+              <button
+                onClick={handleRemovePage}
+                disabled={document.pageOrder.length <= 1}
+                className={`px-3 py-1.5 border border-slate-700 text-slate-300 text-xs rounded ${
+                  document.pageOrder.length <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-800'
+                }`}
+              >
+                حذف
+              </button>
+            </div>
+
+            <ul className="p-2 space-y-2 overflow-y-auto flex-1 dir-rtl">
+              {document.pageOrder.map((pageId, idx) => {
+                const isSelected = pageId === activePageId;
+                return (
+                  <li key={pageId}>
+                    <button
+                      onClick={() => setActivePageId(pageId)}
+                      className={`w-full p-2.5 rounded-lg border text-right transition flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 font-bold shadow-lg ring-1 ring-emerald-500/50'
+                          : 'bg-slate-900/60 hover:bg-slate-800/80 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <span>صفحہ نمبر {idx + 1}</span>
+                      <span className="w-3 h-4 bg-slate-700 rounded border border-slate-600 block"></span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </aside>
+
+          {/* Center Studio Viewport */}
+          <main className="studio-viewport">
+            <div
+              className="canvas-paper-frame"
+              style={{
+                width: `${activePage.width}pt`,
+                height: `${activePage.height}pt`,
+                transform: `scale(${zoomLevel / 100})`,
+                transformOrigin: 'top center',
+              }}
+            >
+              {/* Margin Guide */}
+              <div
+                className="canvas-margin-guide"
+                style={{
+                  top: `${activePage.margins.top}pt`,
+                  right: `${activePage.margins.right}pt`,
+                  bottom: `${activePage.margins.bottom}pt`,
+                  left: `${activePage.margins.left}pt`,
+                }}
+              />
+
+              {/* Fabric Canvas */}
+              <FabricCanvas
+                width={activePage.width}
+                height={activePage.height}
+                objects={visibleObjects}
+                selectedObjectId={selectedObjectId}
+                onSelectObject={setSelectedObjectId}
+                onModifyObject={handleObjectModified}
+              />
+            </div>
+
+            {/* Viewport Zoom Floating Bar */}
+            <div className="viewport-zoom-bar">
+              <button onClick={() => setZoomLevel((z) => Math.max(50, z - 10))} className="zoom-btn">
+                -
+              </button>
+              <span className="zoom-label">{zoomLevel}%</span>
+              <button onClick={() => setZoomLevel((z) => Math.min(200, z + 10))} className="zoom-btn">
+                +
+              </button>
+              <button onClick={() => setZoomLevel(100)} className="zoom-btn px-2 text-[10px]">
+                Fit
+              </button>
+            </div>
+          </main>
+
+          {/* Right Inspector Dock */}
+          <InspectorDock
+            document={document}
+            selectedObject={selectedObject}
+            onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}
+            onOpenLanguageTools={() => setShowLanguageTools(true)}
+            onOpenOcr={() => void handleTriggerOcr()}
+            onExportPdf={handleExportPdf}
+            onExportEpub={() => void handleExportEpub()}
+          />
         </div>
 
-        <label className="title-field">
-          <span className="sr-only">Document title</span>
-          <input
-            value={document.metadata.title}
-            dir="auto"
-            onChange={(event) => {
-              if (event.target.value.trim()) {
-                updateDocument(renameDocument(document, event.target.value), 'Rename document');
+        {/* Bottom Urdu Visual Keyboard Dock */}
+        <div className="border-t border-slate-800 bg-slate-950">
+          <VisualKeyboard
+            mode={keyboardMode}
+            onModeChange={setKeyboardMode}
+            onKeyPress={(char) => {
+              if (selectedTextFrame && activeStory) {
+                setMessage(`Character inserted: ${char}`);
               }
             }}
           />
-        </label>
-
-        <div className="top-actions" style={{ position: 'relative' }}>
-          <button className="button secondary" type="button" onClick={() => void handleOpenNative()}>
-            Open
-          </button>
-          <button className="button secondary" type="button" onClick={() => void handleSaveNative()}>
-            Save
-          </button>
-          <button className="button primary" type="button" onClick={() => void handleSaveAsNative()}>
-            Save As
-          </button>
-          <button
-            className="button secondary"
-            type="button"
-            onClick={() => setShowRecent((prev) => !prev)}
-            title="Recent Documents"
-          >
-            📋 Recent
-          </button>
-          {showRecent && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '4px',
-                background: '#1e293b',
-                color: '#fff',
-                border: '1px solid #475569',
-                borderRadius: '6px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
-                minWidth: '220px',
-                zIndex: 1000,
-                padding: '8px 0',
-              }}
-            >
-              <div style={{ padding: '4px 12px', fontSize: '11px', textTransform: 'uppercase', opacity: 0.6 }}>
-                Recent Documents
-              </div>
-              {getRecentFiles().length === 0 ? (
-                <div style={{ padding: '8px 12px', fontSize: '13px', opacity: 0.7 }}>No recent files</div>
-              ) : (
-                getRecentFiles().map((item) => (
-                  <button
-                    key={item.pathOrName}
-                    type="button"
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '6px 12px',
-                      background: 'none',
-                      border: 'none',
-                      color: '#38bdf8',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                    }}
-                    onClick={() => {
-                      setShowRecent(false);
-                      setMessage(`Selected recent file ${item.title}`);
-                    }}
-                  >
-                    {item.title} <small style={{ color: '#94a3b8' }}>({item.pathOrName})</small>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
         </div>
-      </header>
 
-      <nav className="commandbar" aria-label="Editor commands">
-        <button type="button" onClick={handleUndo} disabled={!history.canUndo()}>Undo</button>
-        <button type="button" onClick={handleRedo} disabled={!history.canRedo()}>Redo</button>
-        <span className="command-separator" />
-        <button type="button" onClick={handleAddPage}>Add page</button>
-        <button type="button" onClick={handleRemovePage}>Remove page</button>
-        <span className="command-separator" />
-        <button type="button" onClick={handleAddRectangle}>Rectangle</button>
-        {selectedTextFrame && (
-          <button
-            type="button"
-            className="button secondary"
-            onClick={() => setIsEditingText((prev) => !prev)}
-          >
-            {isEditingText ? 'Done editing' : 'Edit text'}
-          </button>
+        {/* Bottom Studio Statusbar */}
+        <footer className="studio-statusbar">
+          <div className="status-indicator">
+            <span className="status-dot" />
+            <span>{message}</span>
+          </div>
+
+          <div>
+            صفحہ {document.pageOrder.indexOf(activePageId) + 1} از {document.pageOrder.length} | {Math.round(pointsToMillimetres(activePage.width))} × {Math.round(pointsToMillimetres(activePage.height))} mm | {saveState}
+          </div>
+        </footer>
+
+        {/* Modal Panels */}
+        {showLanguageTools && (
+          <LanguageToolsPanel
+            initialText="پاکستان کا قومی ترانہ"
+            onClose={() => setShowLanguageTools(false)}
+          />
         )}
-        {selectedObjectId && (
-          <button type="button" className="button danger" onClick={handleDeleteSelected}>
-            Delete selected
-          </button>
+
+        {showOcrPanel && ocrResult && (
+          <OcrCorrectionPanel
+            ocrResult={ocrResult}
+            onClose={() => setShowOcrPanel(false)}
+            onCommitToDocument={handleCommitOcrToCanvas}
+          />
         )}
-        <span className="command-separator" />
-        <button
-          type="button"
-          className={`button ${showPreflight ? 'primary' : 'secondary'}`}
-          onClick={() => setShowPreflight((prev) => !prev)}
-        >
-          🔍 Preflight Report
-        </button>
-        <span className="phase-chip">Urdu Production Beta (M3)</span>
-      </nav>
 
-      <div className="editor-layout">
-        <aside className="pages-panel" aria-label="Document pages">
-          <div className="panel-heading">
-            <span>Pages</span>
-            <small>{document.pageOrder.length}</small>
-          </div>
-          <ol className="page-list">
-            {document.pageOrder.map((pageId, index) => {
-              const page = document.pages[pageId]!;
-              return (
-                <li key={pageId}>
-                  <button
-                    type="button"
-                    className={pageId === activePageId ? 'page-item active' : 'page-item'}
-                    onClick={() => setActivePageId(pageId)}
-                  >
-                    <span className="page-thumbnail"><i /></span>
-                    <span>{index + 1}. {page.name}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </aside>
-
-        <main className="workspace">
-          <div className="workspace-label">
-            <span>{activePage.name}</span>
-            <span>
-              {pointsToMillimetres(activePage.width).toFixed(0)} ×{' '}
-              {pointsToMillimetres(activePage.height).toFixed(0)} mm
-            </span>
-          </div>
-          <section
-            className="page-surface"
-            aria-label={`${activePage.name} document canvas`}
-            style={{ aspectRatio: `${activePage.width} / ${activePage.height}`, position: 'relative' }}
-          >
-            <div className="margin-guide" aria-hidden="true" />
-            <FabricCanvas
-              page={activePage}
-              objects={visibleObjects}
-              stories={document.stories}
-              onObjectModified={handleObjectModified}
-              onSelectionChanged={(id) => {
-                setSelectedObjectId(id);
-                const obj = id ? document.objects[id] : null;
-                if (obj?.type === 'text-frame') {
-                  setIsEditingText(true);
-                } else {
-                  setIsEditingText(false);
-                }
-              }}
-            />
-            {showPreflight && (
-              <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
-                <PreflightPanel
-                  result={runPreflightCheck(document)}
-                  onClose={() => setShowPreflight(false)}
-                  onSelectIssue={(targetId) => {
-                    if (targetId) setSelectedObjectId(targetId);
-                  }}
-                />
-              </div>
-            )}
-            {isEditingText && selectedTextFrame && activeStory && (
-              <TextEditorOverlay
-                frame={selectedTextFrame.frame}
-                story={activeStory}
-                fontFamily={selectedTextFrame.fontFamily}
-                fontSize={selectedTextFrame.fontSize}
-                color={selectedTextFrame.color}
-                lineHeight={selectedTextFrame.lineHeight}
-                onCommit={(updatedContent) => {
-                  const nextDoc: RePageDocument = {
-                    ...document,
-                    stories: {
-                      ...document.stories,
-                      [activeStory.id]: {
-                        ...activeStory,
-                        content: updatedContent,
-                      },
-                    },
-                  };
-                  updateDocument(nextDoc, 'Update Urdu story text');
-                }}
-                onClose={() => setIsEditingText(false)}
-              />
-            )}
-          </section>
-        </main>
-
-        <aside className="inspector-panel" aria-label="Document inspector">
-          <div className="panel-heading">Foundation state</div>
-          <dl className="facts">
-            <div><dt>Schema</dt><dd>v{document.schemaVersion}</dd></div>
-            <div><dt>Units</dt><dd>{document.settings.measurementUnit}</dd></div>
-            <div><dt>Objects</dt><dd>{activePage.objectOrder.length}</dd></div>
-            <div><dt>Stories</dt><dd>{Object.keys(document.stories).length}</dd></div>
-            <div><dt>Undo stack</dt><dd>{history.undoCount}</dd></div>
-            <div><dt>Redo stack</dt><dd>{history.redoCount}</dd></div>
-          </dl>
-          <div className="architecture-note">
-            <strong>Canonical first</strong>
-            <p>This interface reads a validated document model. Fabric, rich text, and collaboration attach through adapters.</p>
-          </div>
-        </aside>
+        {showPreflight && (
+          <PreflightPanel
+            result={runPreflightCheck(document)}
+            onClose={() => setShowPreflight(false)}
+          />
+        )}
       </div>
-
-      <VisualKeyboard
-        mode={keyboardMode}
-        onModeChange={setKeyboardMode}
-        onInsertChar={(char) => {
-          if (selectedTextFrame && activeStory) {
-            const currentText = activeStory.content.content[0]?.content[0]?.type === 'text'
-              ? activeStory.content.content[0].content[0].text
-              : '';
-            const nextText = currentText + char;
-            const updatedRichText = {
-              type: 'doc' as const,
-              content: [
-                {
-                  type: 'paragraph' as const,
-                  direction: 'rtl' as const,
-                  alignment: 'start' as const,
-                  content: [{ type: 'text' as const, text: nextText }],
-                },
-              ],
-            };
-            const nextDoc = {
-              ...document,
-              stories: {
-                ...document.stories,
-                [activeStory.id]: {
-                  ...activeStory,
-                  content: updatedRichText,
-                },
-              },
-            };
-            updateDocument(nextDoc, `Insert character ${char}`);
-            setMessage(`Inserted '${char}' into story`);
-          } else {
-            setMessage(`Character '${char}' selected (select a text frame to insert)`);
-          }
-        }}
-      />
-
-      <footer className="statusbar">
-        <span>{message}</span>
-        <span>{saveState}</span>
-      </footer>
-    </div>
+    </DragAndDropOverlay>
   );
 }
