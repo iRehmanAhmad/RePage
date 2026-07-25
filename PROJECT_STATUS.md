@@ -17,15 +17,14 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Native file workflow engine (`fileWorkflowEngine.ts`, `recentFiles.ts`, `conflictDetector.ts`) supporting Open, Save, Save As, atomic file replacement, recent files history, file associations for `.urdup`, drag-and-drop document opening (`DragAndDropOverlay.tsx`), and external file modification conflict detection.
 - Desktop OS integration (`windowIntegration.ts`, `clipboard.ts`, `printService.ts`, `themeIntegration.ts`, `accessibility.ts`) supporting dynamic title dirty state tracking, native menu shortcuts (`Ctrl+S`, `Ctrl+O`, `Ctrl+P`), native print dialog trigger, OS theme listeners, High-DPI backing scale, and screen-reader ARIA live region notifications.
 - Multi-platform packaging pipeline (`DISTRIBUTION.md`, `verify-distribution.js`, `.github/workflows/release-distribution.yml`) producing Windows NSIS, macOS DMG, and Linux AppImage/DEB/RPM installers.
-- 94 passing automated unit and integration tests (`vitest`).
+- Signed application update manager (`updateManager.ts`), release channels (`stable`/`beta`), Ed25519 signature verification, failed-update rollback policy, and explicit user-driven document migration policy.
+- Collaboration CRDT document mapping (`crdtDoc.ts`) translating canonical document entities to Yjs shared maps (`yPageOrder`, `yPages`, `yObjects`, `yStories`, `yStyles`, `yComments`) with binary asset isolation.
+- Ephemeral collaborator awareness manager (`awareness.ts`) isolating user ID, display name, user color, active page, selection, and canvas cursor.
+- 101 passing automated unit and integration tests (`vitest`).
 
-## Milestone 4 work queue (Cross-Platform Desktop Release Candidate)
+## Milestone 5 work queue (Collaboration Preview)
 
-1. Introduce Tauri 2 & PlatformServices Architecture (M4.1 — **Resolved**).
-2. Desktop native file associations & IPC commands (M4.2 — **Resolved**).
-3. System font enumerator & native OS services (M4.3 — **Resolved**).
-4. Packaging & Multi-Platform Distribution Pipeline (M4.4 — **Resolved**).
-5. Milestone 4 Exit Gate Audit (M4.5 — **Resolved**).
+1. Map canonical concepts to Yjs & Awareness separation (M5.1 — **Resolved**).
 
 ## Foundation & Typography exit gate progress
 
