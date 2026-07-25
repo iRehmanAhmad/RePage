@@ -13,7 +13,7 @@ export function proofreadUrduText(text: string): ProofreadIssue[] {
   const issues: ProofreadIssue[] = [];
 
   // 1. Missing space before auxiliary verbs/words (e.g. "کیاحال ہے" -> "کیا حال ہے", "پاکستانہے" -> "پاکستان ہے")
-  const auxVerbRegex = /([\u0600-\u06FF]{2,})(ہے|ہیں|تھا|تھے|گا|گی|گے|حال)\b/g;
+  const auxVerbRegex = /([\u0600-\u06FF]{2,})(ہے|ہیں|تھا|تھے|گا|گی|گے|حال)(?=\s|[۔،؛؟!]|$)/gu;
   let match: RegExpExecArray | null;
 
   while ((match = auxVerbRegex.exec(text)) !== null) {
