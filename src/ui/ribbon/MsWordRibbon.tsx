@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 
 export type ActiveTool = 'select' | 'text' | 'rectangle' | 'image' | 'pan';
-export type RibbonTab = 'home' | 'insert' | 'urdu-tools' | 'layout' | 'collab' | 'export';
+export type RibbonTab = 'file' | 'home' | 'insert' | 'urdu-tools' | 'layout' | 'collab' | 'export';
 
 export interface MsWordRibbonProps {
   t: Translations;
@@ -73,7 +73,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
 
   return (
     <div className="ms-word-ribbon-container">
-      {/* Hidden File Input for Ribbon Open action */}
+      {/* Hidden File Input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -87,6 +87,14 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
 
       {/* Ribbon Top Tab Header Navigation */}
       <div className="ribbon-tabs-header">
+        {/* Special MS Word File Button */}
+        <button
+          onClick={() => setActiveTab('file')}
+          className={`ribbon-file-btn ${activeTab === 'file' ? 'active' : ''}`}
+        >
+          <span>📁</span> {t.tabFile}
+        </button>
+
         <button
           onClick={() => setActiveTab('home')}
           className={`ribbon-tab-btn ${activeTab === 'home' ? 'active' : ''}`}
@@ -127,154 +135,192 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
 
       {/* Ribbon Tool Toolbar Body */}
       <div className="ribbon-toolbar-body">
+        {/* Tab 0: FILE */}
+        {activeTab === 'file' && (
+          <div className="ribbon-group-row">
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ribbon-action-btn highlight"
+                >
+                  <span>📂</span>
+                  <span>{t.open}</span>
+                </button>
+                <button onClick={onSaveDocument} className="ribbon-action-btn primary">
+                  <span>💾</span>
+                  <span>{t.save}</span>
+                </button>
+                <button onClick={onSaveAsDocument} className="ribbon-action-btn gold">
+                  <span>💾</span>
+                  <span>{t.saveAs}</span>
+                </button>
+                <button onClick={onShowRecentFiles} className="ribbon-action-btn">
+                  <span>📜</span>
+                  <span>{t.recent}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.tabFile}</div>
+            </div>
+          </div>
+        )}
+
         {/* Tab 1: HOME */}
         {activeTab === 'home' && (
           <div className="ribbon-group-row">
-            {/* File Operations Chunk */}
-            <div className="ribbon-chunk">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="ribbon-action-btn"
-                title={t.open}
-              >
-                <span>📂</span>
-                <span>{t.open}</span>
-              </button>
-              <button onClick={onSaveDocument} className="ribbon-action-btn" title={t.save}>
-                <span>💾</span>
-                <span>{t.save}</span>
-              </button>
-              <button onClick={onSaveAsDocument} className="ribbon-action-btn gold" title={t.saveAs}>
-                <span>💾</span>
-                <span>{t.saveAs}</span>
-              </button>
-              <button onClick={onShowRecentFiles} className="ribbon-action-btn" title={t.recent}>
-                <span>📜</span>
-                <span>{t.recent}</span>
-              </button>
-            </div>
-
-            <div className="ribbon-v-divider" />
-
-            {/* History Chunk */}
-            <div className="ribbon-chunk">
-              <button
-                onClick={onUndo}
-                disabled={!canUndo}
-                className={`ribbon-action-btn ${!canUndo ? 'disabled' : ''}`}
-                title={t.undo}
-              >
-                <span>↩</span>
-                <span>{t.undo}</span>
-              </button>
-              <button
-                onClick={onRedo}
-                disabled={!canRedo}
-                className={`ribbon-action-btn ${!canRedo ? 'disabled' : ''}`}
-                title={t.redo}
-              >
-                <span>↪</span>
-                <span>{t.redo}</span>
-              </button>
-            </div>
-
-            <div className="ribbon-v-divider" />
-
-            {/* Selection & Drawing Tools */}
-            <div className="ribbon-chunk">
-              <button
-                onClick={() => onSelectTool('select')}
-                className={`ribbon-action-btn ${activeTool === 'select' ? 'active' : ''}`}
-                title={t.select}
-              >
-                <span>↖</span>
-                <span>{t.select}</span>
-              </button>
-
-              <button
-                onClick={() => onSelectTool('text')}
-                className={`ribbon-action-btn ${activeTool === 'text' ? 'active' : ''}`}
-                title={t.textFrame}
-              >
-                <span>T</span>
-                <span>{t.textFrame}</span>
-              </button>
-
-              <button
-                onClick={() => onSelectTool('rectangle')}
-                className={`ribbon-action-btn ${activeTool === 'rectangle' ? 'active' : ''}`}
-                title={t.shape}
-              >
-                <span>▭</span>
-                <span>{t.shape}</span>
-              </button>
-
-              <button
-                onClick={() => onSelectTool('image')}
-                className={`ribbon-action-btn ${activeTool === 'image' ? 'active' : ''}`}
-                title={t.imageFrame}
-              >
-                <span>🖼</span>
-                <span>{t.imageFrame}</span>
-              </button>
-            </div>
-
-            <div className="ribbon-v-divider" />
-
-            {/* Typography */}
-            <div className="ribbon-chunk dir-rtl">
-              <select
-                value={activeFontFamily}
-                onChange={(e) => onFontFamilyChange(e.target.value)}
-                className="ribbon-select"
-                title={t.fontFamily}
-              >
-                <option value="Noto Nastaliq Urdu">نستعلیق (Noto Nastaliq)</option>
-                <option value="Jameel Noori Nastaleeq">جمیل نوری نستعلیق</option>
-                <option value="Gulzar">گلزار (Gulzar)</option>
-                <option value="InPage Ali Nastaliq">انپیج علی نستعلیق</option>
-                <option value="InPage Lahori Nastaliq">انپیج لاہوری نستعلیق</option>
-              </select>
-
-              <input
-                type="number"
-                value={activeFontSize}
-                onChange={(e) => onFontSizeChange(Number(e.target.value))}
-                className="ribbon-number-input"
-                min={8}
-                max={144}
-                title={t.fontSize}
-              />
-
-              <button
-                onClick={onToggleKashida}
-                className={`ribbon-action-btn ${isKashidaEnabled ? 'active' : ''}`}
-                title={t.kashida}
-              >
-                <span>ـ</span>
-                <span>{t.kashida}</span>
-              </button>
-
-              <div className="ribbon-align-group">
+            {/* Group 1: Clipboard */}
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
                 <button
-                  onClick={() => onAlignmentChange('start')}
-                  className={`ribbon-align-btn ${activeAlignment === 'start' ? 'active' : ''}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ribbon-action-btn"
+                  title={t.open}
                 >
-                  {t.alignRight}
+                  <span>📂</span>
+                  <span>{t.open}</span>
+                </button>
+                <button onClick={onSaveDocument} className="ribbon-action-btn" title={t.save}>
+                  <span>💾</span>
+                  <span>{t.save}</span>
+                </button>
+                <button onClick={onSaveAsDocument} className="ribbon-action-btn gold" title={t.saveAs}>
+                  <span>💾</span>
+                  <span>{t.saveAs}</span>
                 </button>
                 <button
-                  onClick={() => onAlignmentChange('center')}
-                  className={`ribbon-align-btn ${activeAlignment === 'center' ? 'active' : ''}`}
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                  className={`ribbon-action-btn ${!canUndo ? 'disabled' : ''}`}
+                  title={t.undo}
                 >
-                  {t.alignCenter}
+                  <span>↩</span>
+                  <span>{t.undo}</span>
                 </button>
                 <button
-                  onClick={() => onAlignmentChange('justify')}
-                  className={`ribbon-align-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                  className={`ribbon-action-btn ${!canRedo ? 'disabled' : ''}`}
+                  title={t.redo}
                 >
-                  {t.alignJustify}
+                  <span>↪</span>
+                  <span>{t.redo}</span>
                 </button>
               </div>
+              <div className="ribbon-group-caption">{t.grpClipboard}</div>
+            </div>
+
+            {/* Group 2: Font */}
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk dir-rtl">
+                <select
+                  value={activeFontFamily}
+                  onChange={(e) => onFontFamilyChange(e.target.value)}
+                  className="ribbon-select"
+                  title={t.fontFamily}
+                >
+                  <option value="Noto Nastaliq Urdu">نستعلیق (Noto Nastaliq)</option>
+                  <option value="Jameel Noori Nastaleeq">جمیل نوری نستعلیق</option>
+                  <option value="Gulzar">گلزار (Gulzar)</option>
+                  <option value="InPage Ali Nastaliq">انپیج علی نستعلیق</option>
+                  <option value="InPage Lahori Nastaliq">انپیج لاہوری نستعلیق</option>
+                </select>
+
+                <input
+                  type="number"
+                  value={activeFontSize}
+                  onChange={(e) => onFontSizeChange(Number(e.target.value))}
+                  className="ribbon-number-input"
+                  min={8}
+                  max={144}
+                  title={t.fontSize}
+                />
+
+                <button className="ribbon-action-btn sm-icon" title={t.bold}>
+                  <b>B</b>
+                </button>
+                <button className="ribbon-action-btn sm-icon" title={t.italic}>
+                  <i>I</i>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpFont}</div>
+            </div>
+
+            {/* Group 3: Paragraph */}
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <div className="ribbon-align-group">
+                  <button
+                    onClick={() => onAlignmentChange('start')}
+                    className={`ribbon-align-btn ${activeAlignment === 'start' ? 'active' : ''}`}
+                  >
+                    {t.alignRight}
+                  </button>
+                  <button
+                    onClick={() => onAlignmentChange('center')}
+                    className={`ribbon-align-btn ${activeAlignment === 'center' ? 'active' : ''}`}
+                  >
+                    {t.alignCenter}
+                  </button>
+                  <button
+                    onClick={() => onAlignmentChange('justify')}
+                    className={`ribbon-align-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
+                  >
+                    {t.alignJustify}
+                  </button>
+                </div>
+
+                <button
+                  onClick={onToggleKashida}
+                  className={`ribbon-action-btn ${isKashidaEnabled ? 'active' : ''}`}
+                  title={t.kashida}
+                >
+                  <span>ـ</span>
+                  <span>{t.kashida}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpParagraph}</div>
+            </div>
+
+            {/* Group 4: Tools */}
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button
+                  onClick={() => onSelectTool('select')}
+                  className={`ribbon-action-btn ${activeTool === 'select' ? 'active' : ''}`}
+                  title={t.select}
+                >
+                  <span>↖</span>
+                  <span>{t.select}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectTool('text')}
+                  className={`ribbon-action-btn ${activeTool === 'text' ? 'active' : ''}`}
+                  title={t.textFrame}
+                >
+                  <span>T</span>
+                  <span>{t.textFrame}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectTool('rectangle')}
+                  className={`ribbon-action-btn ${activeTool === 'rectangle' ? 'active' : ''}`}
+                  title={t.shape}
+                >
+                  <span>▭</span>
+                  <span>{t.shape}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectTool('image')}
+                  className={`ribbon-action-btn ${activeTool === 'image' ? 'active' : ''}`}
+                  title={t.imageFrame}
+                >
+                  <span>🖼</span>
+                  <span>{t.imageFrame}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpTools}</div>
             </div>
           </div>
         )}
@@ -282,45 +328,50 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {/* Tab 2: INSERT */}
         {activeTab === 'insert' && (
           <div className="ribbon-group-row">
-            <div className="ribbon-chunk">
-              <button onClick={onAddPage} className="ribbon-action-btn highlight">
-                <span>📄</span>
-                <span>{t.addPage}</span>
-              </button>
-              <button onClick={onRemovePage} className="ribbon-action-btn">
-                <span>🗑</span>
-                <span>{t.removePage}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onAddPage} className="ribbon-action-btn highlight">
+                  <span>📄</span>
+                  <span>{t.addPage}</span>
+                </button>
+                <button onClick={onRemovePage} className="ribbon-action-btn">
+                  <span>🗑</span>
+                  <span>{t.removePage}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpPages}</div>
             </div>
 
-            <div className="ribbon-v-divider" />
-
-            <div className="ribbon-chunk">
-              <button onClick={() => onSelectTool('text')} className="ribbon-action-btn">
-                <span>T</span>
-                <span>{t.textFrame}</span>
-              </button>
-              <button onClick={() => onSelectTool('image')} className="ribbon-action-btn">
-                <span>🖼</span>
-                <span>{t.imageFrame}</span>
-              </button>
-              <button onClick={() => onSelectTool('rectangle')} className="ribbon-action-btn">
-                <span>▭</span>
-                <span>{t.shape}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={() => onSelectTool('text')} className="ribbon-action-btn">
+                  <span>T</span>
+                  <span>{t.textFrame}</span>
+                </button>
+                <button onClick={() => onSelectTool('image')} className="ribbon-action-btn">
+                  <span>🖼</span>
+                  <span>{t.imageFrame}</span>
+                </button>
+                <button onClick={() => onSelectTool('rectangle')} className="ribbon-action-btn">
+                  <span>▭</span>
+                  <span>{t.shape}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpIllustrations}</div>
             </div>
 
-            <div className="ribbon-v-divider" />
-
-            <div className="ribbon-chunk">
-              <button onClick={onAddFootnote} className="ribbon-action-btn">
-                <span>📜</span>
-                <span>{t.addFootnote}</span>
-              </button>
-              <button onClick={onAddEndnote} className="ribbon-action-btn">
-                <span>🔖</span>
-                <span>{t.addEndnote}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onAddFootnote} className="ribbon-action-btn">
+                  <span>📜</span>
+                  <span>{t.addFootnote}</span>
+                </button>
+                <button onClick={onAddEndnote} className="ribbon-action-btn">
+                  <span>🔖</span>
+                  <span>{t.addEndnote}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpFootnotes}</div>
             </div>
           </div>
         )}
@@ -328,24 +379,28 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {/* Tab 3: URDU TOOLS */}
         {activeTab === 'urdu-tools' && (
           <div className="ribbon-group-row">
-            <div className="ribbon-chunk">
-              <button onClick={onOpenLanguageTools} className="ribbon-action-btn highlight">
-                <span>🌐</span>
-                <span>{t.spellcheck} & {t.dictionary}</span>
-              </button>
-              <button onClick={onOpenLanguageTools} className="ribbon-action-btn">
-                <span>✍</span>
-                <span>{t.proofread} & {t.transliteration}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onOpenLanguageTools} className="ribbon-action-btn highlight">
+                  <span>🌐</span>
+                  <span>{t.spellcheck} & {t.dictionary}</span>
+                </button>
+                <button onClick={onOpenLanguageTools} className="ribbon-action-btn">
+                  <span>✍</span>
+                  <span>{t.proofread} & {t.transliteration}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpProofing}</div>
             </div>
 
-            <div className="ribbon-v-divider" />
-
-            <div className="ribbon-chunk">
-              <button onClick={onOpenOcr} className="ribbon-action-btn sky">
-                <span>📷</span>
-                <span>{t.ocr}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onOpenOcr} className="ribbon-action-btn sky">
+                  <span>📷</span>
+                  <span>{t.ocr}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpConversion}</div>
             </div>
           </div>
         )}
@@ -353,21 +408,16 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {/* Tab 4: PAGE LAYOUT */}
         {activeTab === 'layout' && (
           <div className="ribbon-group-row">
-            <div className="ribbon-chunk">
-              <div className="ribbon-label-tag">
-                <span>📄 {t.pageSize}: A4 (210 × 297 mm)</span>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <div className="ribbon-label-tag">
+                  <span>📄 {t.pageSize}: A4 (210 × 297 mm)</span>
+                </div>
+                <div className="ribbon-label-tag">
+                  <span>📐 {t.margins}: Top 36pt / Right 50pt</span>
+                </div>
               </div>
-              <div className="ribbon-label-tag">
-                <span>📐 {t.margins}: Top 36pt / Right 50pt</span>
-              </div>
-            </div>
-
-            <div className="ribbon-v-divider" />
-
-            <div className="ribbon-chunk">
-              <div className="ribbon-label-tag">
-                <span>📊 {t.columns}: Single Column Flow</span>
-              </div>
+              <div className="ribbon-group-caption">{t.grpPageSetup}</div>
             </div>
           </div>
         )}
@@ -375,15 +425,18 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {/* Tab 5: COLLABORATION */}
         {activeTab === 'collab' && (
           <div className="ribbon-group-row">
-            <div className="ribbon-chunk">
-              <button onClick={onToggleCollab} className="ribbon-action-btn highlight">
-                <span>👥</span>
-                <span>{t.collabRoom}</span>
-              </button>
-              <button onClick={onToggleCollab} className="ribbon-action-btn">
-                <span>🔗</span>
-                <span>{t.shareLink}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onToggleCollab} className="ribbon-action-btn highlight">
+                  <span>👥</span>
+                  <span>{t.collabRoom}</span>
+                </button>
+                <button onClick={onToggleCollab} className="ribbon-action-btn">
+                  <span>🔗</span>
+                  <span>{t.shareLink}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.tabCollab}</div>
             </div>
           </div>
         )}
@@ -391,24 +444,28 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {/* Tab 6: EXPORT & VIEW */}
         {activeTab === 'export' && (
           <div className="ribbon-group-row">
-            <div className="ribbon-chunk">
-              <button onClick={onExportPdf} className="ribbon-action-btn primary">
-                <span>📄</span>
-                <span>{t.exportPdf} (1200 DPI)</span>
-              </button>
-              <button onClick={onExportEpub} className="ribbon-action-btn gold">
-                <span>📚</span>
-                <span>{t.exportEpub}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onExportPdf} className="ribbon-action-btn primary">
+                  <span>📄</span>
+                  <span>{t.exportPdf} (1200 DPI)</span>
+                </button>
+                <button onClick={onExportEpub} className="ribbon-action-btn gold">
+                  <span>📚</span>
+                  <span>{t.exportEpub}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.tabExportView}</div>
             </div>
 
-            <div className="ribbon-v-divider" />
-
-            <div className="ribbon-chunk">
-              <button onClick={onRunPreflight} className="ribbon-action-btn">
-                <span>🔍</span>
-                <span>{t.preflight}</span>
-              </button>
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk">
+                <button onClick={onRunPreflight} className="ribbon-action-btn">
+                  <span>🔍</span>
+                  <span>{t.preflight}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.preflight}</div>
             </div>
           </div>
         )}

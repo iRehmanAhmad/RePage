@@ -14,46 +14,34 @@ vi.mock('../persistence/autosave/database', () => ({
   saveRecovery: vi.fn().mockResolvedValue(undefined),
 }));
 
-describe('App Studio Layout with Quick Access Toolbar & MS Word Header', () => {
-  it('renders Quick Access Toolbar on left, centered title in middle, and ribbon tabs', async () => {
+describe('App Studio Layout with MS Word Ribbon Group Cards & Captions', () => {
+  it('renders File menu button, MS Word Ribbon group cards, and captions', async () => {
     render(<App />);
 
     // Header & Brand
     expect(await screen.findByText('RePage Studio')).toBeInTheDocument();
 
-    // Quick Access Toolbar (QAT) Shortcuts
-    expect(screen.getByTitle('Quick Access: Save')).toBeInTheDocument();
-    expect(screen.getByTitle('Quick Access: Undo')).toBeInTheDocument();
-    expect(screen.getByTitle('Quick Access: Redo')).toBeInTheDocument();
-    expect(screen.getByTitle('Quick Access: Open')).toBeInTheDocument();
-
-    // QAT Customize Dropdown Button
-    const qatDropdownBtn = screen.getByTitle('Customize Quick Access Toolbar');
-    expect(qatDropdownBtn).toBeInTheDocument();
-
-    // Toggle QAT Customize Dropdown
-    fireEvent.click(qatDropdownBtn);
-    expect(screen.getByText('Customize Quick Access Toolbar')).toBeInTheDocument();
-
-    // Default English MS Word Ribbon Tabs
+    // MS Word File Button & Tabs
+    expect(screen.getByText('File')).toBeInTheDocument();
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Insert')).toBeInTheDocument();
     expect(screen.getByText('Urdu Tools')).toBeInTheDocument();
-    expect(screen.getByText('Page Layout')).toBeInTheDocument();
-    expect(screen.getByText('Collaboration')).toBeInTheDocument();
-    expect(screen.getByText('Export & View')).toBeInTheDocument();
 
-    // Switch Ribbon Tab to Insert
-    fireEvent.click(screen.getByText('Insert'));
-    expect(screen.getByText('+ Footnote')).toBeInTheDocument();
+    // MS Word Home Ribbon Group Captions
+    expect(screen.getByText('Clipboard')).toBeInTheDocument();
+    expect(screen.getByText('Font')).toBeInTheDocument();
+    expect(screen.getByText('Paragraph')).toBeInTheDocument();
+    expect(screen.getByText('Tools')).toBeInTheDocument();
+
+    // Click File menu button
+    fireEvent.click(screen.getByText('File'));
 
     // Switch Menu Language to Urdu
     const langSelect = screen.getByTitle('Software Menu Language');
     fireEvent.change(langSelect, { target: { value: 'ur' } });
 
-    // Verify translated Urdu tab titles
+    // Verify translated Urdu tab titles & group captions
+    expect(screen.getByText('فائل (File)')).toBeInTheDocument();
     expect(screen.getByText('اہم')).toBeInTheDocument();
-    expect(screen.getByText('درج کریں')).toBeInTheDocument();
-    expect(screen.getByText('اردو آلات')).toBeInTheDocument();
   });
 });

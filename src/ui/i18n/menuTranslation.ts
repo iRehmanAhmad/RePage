@@ -2,12 +2,25 @@ export type UiLanguage = 'en' | 'ur';
 
 export interface Translations {
   // Tabs
+  tabFile: string;
   tabHome: string;
   tabInsert: string;
   tabUrduTools: string;
   tabPageLayout: string;
   tabCollab: string;
   tabExportView: string;
+
+  // Ribbon Group Captions
+  grpClipboard: string;
+  grpFont: string;
+  grpParagraph: string;
+  grpTools: string;
+  grpPages: string;
+  grpIllustrations: string;
+  grpFootnotes: string;
+  grpProofing: string;
+  grpConversion: string;
+  grpPageSetup: string;
 
   // Common Actions
   open: string;
@@ -25,6 +38,8 @@ export interface Translations {
   // Home Ribbon
   fontFamily: string;
   fontSize: string;
+  bold: string;
+  italic: string;
   kashida: string;
   alignRight: string;
   alignCenter: string;
@@ -73,12 +88,24 @@ export interface Translations {
 
 export const DICTIONARY: Record<UiLanguage, Translations> = {
   ur: {
+    tabFile: 'فائل (File)',
     tabHome: 'اہم',
     tabInsert: 'درج کریں',
     tabUrduTools: 'اردو آلات',
     tabPageLayout: 'صفحہ بندی',
     tabCollab: 'باہمی تعاون',
     tabExportView: 'برآمد و منظر',
+
+    grpClipboard: 'کلپ بورڈ',
+    grpFont: 'فونٹ و خطاطی',
+    grpParagraph: 'پیراگراف و الائنمنٹ',
+    grpTools: 'کینوس آلات',
+    grpPages: 'صفحات',
+    grpIllustrations: 'اشکال و فریم',
+    grpFootnotes: 'حواشی و تعلیقات',
+    grpProofing: 'املاء تفتیش',
+    grpConversion: 'تبدیلی',
+    grpPageSetup: 'صفحہ کی ترتیبات',
 
     open: 'کھولیں',
     save: 'محفوظ',
@@ -94,6 +121,8 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
 
     fontFamily: 'اردو رسم الخط',
     fontSize: 'سائز',
+    bold: 'جلی',
+    italic: 'ترچھا',
     kashida: 'کشیدہ',
     alignRight: 'دائیں',
     alignCenter: 'مرکز',
@@ -135,12 +164,24 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     langUrdu: 'اردو',
   },
   en: {
+    tabFile: 'File',
     tabHome: 'Home',
     tabInsert: 'Insert',
     tabUrduTools: 'Urdu Tools',
     tabPageLayout: 'Page Layout',
     tabCollab: 'Collaboration',
     tabExportView: 'Export & View',
+
+    grpClipboard: 'Clipboard',
+    grpFont: 'Font',
+    grpParagraph: 'Paragraph',
+    grpTools: 'Tools',
+    grpPages: 'Pages',
+    grpIllustrations: 'Illustrations',
+    grpFootnotes: 'Footnotes',
+    grpProofing: 'Proofing',
+    grpConversion: 'Conversion',
+    grpPageSetup: 'Page Setup',
 
     open: 'Open',
     save: 'Save',
@@ -156,6 +197,8 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
 
     fontFamily: 'Font Family',
     fontSize: 'Size',
+    bold: 'Bold',
+    italic: 'Italic',
     kashida: 'Kashida',
     alignRight: 'Right',
     alignCenter: 'Center',

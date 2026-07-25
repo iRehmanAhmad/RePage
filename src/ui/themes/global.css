@@ -308,6 +308,26 @@ button, input, select, textarea {
   border-bottom: 1px solid var(--panel-border);
 }
 
+.ribbon-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  background: var(--emerald-accent);
+  color: #ffffff;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ribbon-file-btn:hover,
+.ribbon-file-btn.active {
+  background: #047857;
+}
+
 .ribbon-tab-btn {
   display: inline-flex;
   align-items: center;
@@ -334,31 +354,53 @@ button, input, select, textarea {
 }
 
 .ribbon-toolbar-body {
-  height: 56px;
+  height: 68px;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 12px;
   overflow-x: auto;
 }
 
 .ribbon-group-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* MS Word Ribbon Group Card Container */
+.ribbon-group-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-right: 1px solid var(--panel-border);
+  background: var(--panel-header);
+  border-radius: 4px;
+}
+
+.ribbon-group-caption {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  padding-top: 3px;
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .ribbon-chunk {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .ribbon-label-tag {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   background: var(--btn-bg);
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: 4px;
   border: 1px solid var(--panel-border);
 }
@@ -369,10 +411,10 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 5px 10px;
+  padding: 4px 8px;
   font-size: 10px;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-main);
@@ -416,9 +458,15 @@ button, input, select, textarea {
   color: #ffffff;
 }
 
+.ribbon-action-btn.sm-icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
 .ribbon-v-divider {
   width: 1px;
-  height: 32px;
+  height: 36px;
   background: var(--panel-border);
 }
 
@@ -426,18 +474,18 @@ button, input, select, textarea {
   background: var(--bg-studio);
   color: var(--text-main);
   font-size: 11px;
-  padding: 4px 8px;
+  padding: 3px 6px;
   border: 1px solid var(--panel-border);
   border-radius: 4px;
   outline: none;
 }
 
 .ribbon-number-input {
-  width: 54px;
+  width: 50px;
   background: var(--bg-studio);
   color: var(--text-main);
   font-size: 11px;
-  padding: 4px 6px;
+  padding: 3px 4px;
   border: 1px solid var(--panel-border);
   border-radius: 4px;
   text-align: center;
@@ -453,8 +501,8 @@ button, input, select, textarea {
 }
 
 .ribbon-align-btn {
-  padding: 2px 8px;
-  font-size: 10px;
+  padding: 2px 7px;
+  font-size: 9px;
   border: none;
   background: transparent;
   color: var(--text-muted);
