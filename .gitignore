@@ -9,3 +9,4 @@ Thumbs.db
 src-tauri/target/
 *.urdup
 !tests/fixtures/**/*.urdup
+graphify-out/
