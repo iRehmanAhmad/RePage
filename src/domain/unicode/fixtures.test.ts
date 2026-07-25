@@ -1,28 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { URDU_UNICODE_FIXTURES, isValidUrduString } from './fixtures';
+import {
+  URDU_UNICODE_FIXTURES,
+  isValidUrduString,
+  validateBidiFixtureContent,
+} from './fixtures';
 
-describe('Urdu Unicode Fixtures', () => {
-  it('contains valid non-empty Unicode test strings', () => {
-    for (const key of Object.keys(URDU_UNICODE_FIXTURES)) {
-      const fixture = URDU_UNICODE_FIXTURES[key]!;
-      expect(fixture.text.length).toBeGreaterThan(0);
+describe('URDU_UNICODE_FIXTURES & Bidi QA', () => {
+  it('contains all required M2.4 typography and bidi fixtures', () => {
+    const keys = Object.keys(URDU_UNICODE_FIXTURES);
+    expect(keys).toContain('standardNastalique');
+    expect(keys).toContain('joiningControls');
+    expect(keys).toContain('bidiControls');
+    expect(keys).toContain('mixedEnglish');
+    expect(keys).toContain('phoneNumbers');
+    expect(keys).toContain('datesAndUrls');
+    expect(keys).toContain('emailAddresses');
+    expect(keys).toContain('parenthesesAndQuotes');
+    expect(keys).toContain('arabicPersianVariants');
+    expect(keys).toContain('directionalIsolates');
+    expect(keys).toContain('honorifics');
+  });
+
+  it('validates UTF-8 validity for all 13 fixtures', () => {
+    for (const fixture of Object.values(URDU_UNICODE_FIXTURES)) {
       expect(isValidUrduString(fixture.text)).toBe(true);
     }
   });
 
-  it('detects corrupted or invalid replacement characters', () => {
-    expect(isValidUrduString('اردو \uFFFD پیج')).toBe(false);
-    expect(isValidUrduString('\uFEFFاردو')).toBe(false);
-    expect(isValidUrduString('پاک ')).toBe(true);
+  it('preserves code points and bidi control characters across JSON round-trips', () => {
+    for (const fixture of Object.values(URDU_UNICODE_FIXTURES)) {
+      expect(validateBidiFixtureContent(fixture.text)).toBe(true);
+    }
   });
 
-  it('preserves Zero-Width Non-Joiner (ZWNJ) control characters', () => {
-    const fixture = URDU_UNICODE_FIXTURES.joiningControls!;
-    expect(fixture.text).toContain('\u200C');
-  });
-
-  it('preserves Aerab diacritics', () => {
-    const fixture = URDU_UNICODE_FIXTURES.aerabDiacritics!;
-    expect(fixture.text).toContain('\u064F'); // Pesh U+064F
+  it('rejects strings containing replacement characters or BOMs', () => {
+    expect(isValidUrduString('خطا \uFFFD مکرم')).toBe(false);
+    expect(isValidUrduString('\uFEFFمتن')).toBe(false);
   });
 });

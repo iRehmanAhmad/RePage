@@ -43,6 +43,7 @@ The clean strict-TypeScript Foundation is complete with verified UTF-8 scanner, 
 2. Establish Pinned Urdu Font Register & Typography Setup (M2.1 / F-008 — **Resolved**).
 3. Urdu Rich-Text Schema & Validation (M2.2 / F-002 — **Resolved**).
 4. Tiptap Rich-Text DOM Editor Overlay (M2.3 — **Resolved**).
+5. Font & Bidi QA Unicode Test Suite (M2.4 — **Resolved**).
 
 ## Foundation exit gate progress
 
