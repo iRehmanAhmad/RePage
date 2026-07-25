@@ -15,10 +15,10 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: RePage UX/UI Modernization (Phases UX-0 & UX-1 **Complete**, UX-2 In Progress).
+- **Current Milestone**: RePage UX/UI Modernization (Phases UX-0, UX-1, & UX-2 **Complete**, UX-3 In Progress).
 - **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED.
 - **MS Word–Style UI**: Quick Access Toolbar (QAT), centered document title, Backstage File menu (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), statusbar with centered keyboard toggle & zoom slider, 7-tab MS Word ribbon.
-- **Interactive Canvas & Word Editing**: Immediate caret placement, "Text Frame" renamed to **"Text Box"**, `addTextBox` command, unified `CommandRegistry` dispatcher.
+- **Word-Style Authoring Surface (Phase UX-2)**: `DocumentBodyEditor.tsx` renders directly inside document margins for immediate typing on document creation without text box creation. Tiptap converter (`tiptapConverter.ts`) handles HTML sanitization, bold/italic/underline, RTL/LTR bidi direction, and `PRIMARY_STORY_ID` persistence.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions

@@ -30,8 +30,8 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 
 1. Phase UX-0: Product Interaction Spec & Command Registry Bus (**COMPLETE**).
 2. Phase UX-1: Application Shell & Responsive Ribbon (File Backstage, Navigation Pane, Status bar, Contextual Inspector) (**COMPLETE**).
-3. Phase UX-2: Word-Style Primary Authoring Surface (**IN PROGRESS**).
-4. Phase UX-3: Automatic Pagination & Print Layout (**Scheduled**).
+3. Phase UX-2: Word-Style Primary Authoring Surface (Immediate document body typing, Tiptap HTML converter, sanitization, bidi RTL/LTR, bold/italic/underline, primary story persistence) (**COMPLETE**).
+4. Phase UX-3: Automatic Pagination & Print Layout (**IN PROGRESS**).
 5. Phase UX-4: Floating Layout Objects & Text Boxes (**Scheduled**).
 
 ## Foundation & Typography exit gate progress
