@@ -76,8 +76,9 @@ p {
 
   // Extract pages and stories
   const chapterFiles: string[] = [];
+  const pageList = doc.pageOrder ? doc.pageOrder.map((id) => doc.pages[id]!).filter(Boolean) : Object.values(doc.pages);
 
-  doc.pages.forEach((page, index) => {
+  pageList.forEach((page, index) => {
     const chapterFilename = `chapter_${index + 1}.xhtml`;
     chapterFiles.push(chapterFilename);
 
@@ -133,8 +134,8 @@ p {
   <head>
     <meta name="dtb:uid" content="urn:uuid:repage-${doc.id}"/>
     <meta name="dtb:depth" content="1"/>
-    <meta name="dtb:totalPageCount" content="${doc.pages.length}"/>
-    <meta name="dtb:maxPageNumber" content="${doc.pages.length}"/>
+    <meta name="dtb:totalPageCount" content="${pageList.length}"/>
+    <meta name="dtb:maxPageNumber" content="${pageList.length}"/>
   </head>
   <docTitle><text>${title}</text></docTitle>
   <navMap>
