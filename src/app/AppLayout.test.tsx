@@ -31,9 +31,9 @@ describe('App Studio Layout', () => {
     expect(screen.getByText('صفحہ نمبر 1')).toBeInTheDocument();
 
     // Inspector Tabs
-    expect(screen.getByText('خواص (Props)')).toBeInTheDocument();
-    expect(screen.getByText('خطاطی (Type)')).toBeInTheDocument();
-    expect(screen.getByText('آلات (Tools)')).toBeInTheDocument();
-    expect(screen.getByText('حواشی/برآمد')).toBeInTheDocument();
+    expect(screen.getByText('خواص')).toBeInTheDocument();
+    expect(screen.getByText('خطاطی')).toBeInTheDocument();
+    expect(screen.getByText('آلات')).toBeInTheDocument();
+    expect(screen.getByText('برآمد')).toBeInTheDocument();
   });
 });
