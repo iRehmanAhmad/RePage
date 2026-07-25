@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+*.local
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+src-tauri/target/
+*.urdup
+!tests/fixtures/**/*.urdup
