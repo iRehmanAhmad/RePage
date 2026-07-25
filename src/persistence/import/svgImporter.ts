@@ -1,5 +1,5 @@
 import { PageObject } from '../../domain/document/types';
-import { createId } from '../../domain/document/createDocument';
+import { createId } from '../../domain/document/ids';
 import { DEFAULT_RESOURCE_LIMITS, ImportOptions, ImportVectorResult, validateResourceLimits } from './importEngine';
 import { sanitizeSvgXml } from './sanitizer';
 
