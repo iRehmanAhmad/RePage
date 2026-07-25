@@ -46,15 +46,23 @@ export function importSvg(
 
       objects.push({
         id: createId('obj'),
+        pageId: 'imported',
+        name: 'Rectangle Vector',
+        frame: {
+          x,
+          y,
+          width: Math.max(width, 1),
+          height: Math.max(height, 1),
+          rotation: 0,
+        },
+        locked: false,
+        hidden: false,
+        opacity: 1,
         type: 'rectangle',
-        x,
-        y,
-        width: Math.max(width, 1),
-        height: Math.max(height, 1),
-        rotation: 0,
         fill,
         stroke,
         strokeWidth: parseFloat(rect.getAttribute('stroke-width') || '1'),
+        cornerRadius: 0,
       });
     });
 
@@ -68,15 +76,23 @@ export function importSvg(
 
       objects.push({
         id: createId('obj'),
-        type: 'ellipse',
-        x: cx - rx,
-        y: cy - ry,
-        width: Math.max(rx * 2, 1),
-        height: Math.max(ry * 2, 1),
-        rotation: 0,
+        pageId: 'imported',
+        name: 'Ellipse Vector',
+        frame: {
+          x: cx - rx,
+          y: cy - ry,
+          width: Math.max(rx * 2, 1),
+          height: Math.max(ry * 2, 1),
+          rotation: 0,
+        },
+        locked: false,
+        hidden: false,
+        opacity: 1,
+        type: 'rectangle',
         fill,
         stroke,
         strokeWidth: parseFloat(ellipse.getAttribute('stroke-width') || '1'),
+        cornerRadius: Math.min(rx, ry),
       });
     });
 
@@ -88,18 +104,23 @@ export function importSvg(
 
       objects.push({
         id: createId('obj'),
-        type: 'line',
-        x: Math.min(x1, x2),
-        y: Math.min(y1, y2),
-        width: Math.max(Math.abs(x2 - x1), 1),
-        height: Math.max(Math.abs(y2 - y1), 1),
-        rotation: 0,
-        x1,
-        y1,
-        x2,
-        y2,
+        pageId: 'imported',
+        name: 'Line Vector',
+        frame: {
+          x: Math.min(x1, x2),
+          y: Math.min(y1, y2),
+          width: Math.max(Math.abs(x2 - x1), 1),
+          height: Math.max(Math.abs(y2 - y1), 1),
+          rotation: 0,
+        },
+        locked: false,
+        hidden: false,
+        opacity: 1,
+        type: 'rectangle',
+        fill: 'none',
         stroke: line.getAttribute('stroke') || '#000000',
         strokeWidth: parseFloat(line.getAttribute('stroke-width') || '1'),
+        cornerRadius: 0,
       });
     });
   } else {

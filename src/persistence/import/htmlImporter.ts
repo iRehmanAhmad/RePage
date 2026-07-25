@@ -98,7 +98,7 @@ export function importHtml(
     }
   }
 
-  const finalParagraphs = paragraphs.length > 0 ? paragraphs : [{ type: 'paragraph', direction: 'rtl', alignment: 'start', content: [] }];
+  const finalParagraphs = paragraphs.length > 0 ? paragraphs : [paragraph('', options.defaultDirection ?? 'rtl')];
 
   if (finalParagraphs.length > limits.maxParagraphCount) {
     throw new Error(`Paragraph count (${finalParagraphs.length}) exceeds resource limit of ${limits.maxParagraphCount}`);

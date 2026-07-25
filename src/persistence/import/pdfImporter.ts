@@ -4,13 +4,13 @@ export async function computeSha256Hash(buffer: ArrayBuffer): Promise<string> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => (b ?? 0).toString(16).padStart(2, '0')).join('');
   }
   // Basic fallback hash for non-WebCrypto test environments
   let hash = 0;
   const view = new Uint8Array(buffer);
   for (let i = 0; i < view.length; i++) {
-    hash = (hash << 5) - hash + view[i];
+    hash = (hash << 5) - hash + (view[i] ?? 0);
     hash |= 0;
   }
   return `sha256-${Math.abs(hash).toString(16)}`;
@@ -40,7 +40,7 @@ export async function importPdfPage(
   let widthPoints = 595.28; // Default A4 width in points
   let heightPoints = 841.89; // Default A4 height in points
 
-  if (mediaBoxMatch) {
+  if (mediaBoxMatch && mediaBoxMatch[1] && mediaBoxMatch[2] && mediaBoxMatch[3] && mediaBoxMatch[4]) {
     const x1 = parseFloat(mediaBoxMatch[1]);
     const y1 = parseFloat(mediaBoxMatch[2]);
     const x2 = parseFloat(mediaBoxMatch[3]);

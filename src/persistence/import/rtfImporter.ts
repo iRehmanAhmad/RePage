@@ -144,7 +144,7 @@ export function importRtf(
   const finalParagraphs = paragraphs.filter((p) => p.content.length > 0);
   const story: RichTextDocument = {
     type: 'doc',
-    content: finalParagraphs.length > 0 ? finalParagraphs : [{ type: 'paragraph', direction: 'rtl', alignment: 'start', content: [] }],
+    content: finalParagraphs.length > 0 ? finalParagraphs : [paragraph('', options.defaultDirection ?? 'rtl')],
   };
 
   if (story.content.length > limits.maxParagraphCount) {

@@ -14,7 +14,7 @@ describe('textImporter', () => {
     expect(result.type).toBe('story');
     expect(result.detectedFormat).toBe('txt');
     expect(result.paragraphCount).toBe(2);
-    expect(result.story.content[0].direction).toBe('rtl');
+    expect(result.story.content[0]!.direction).toBe('rtl');
   });
 
   it('rejects oversized text exceeding file size resource limit', () => {

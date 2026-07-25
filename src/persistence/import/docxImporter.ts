@@ -1,4 +1,4 @@
-import { InlineNode, ParagraphNode, RichTextDocument, TextMark } from '../../domain/rich-text/types';
+import { InlineNode, ParagraphNode, paragraph, RichTextDocument, TextMark } from '../../domain/rich-text/types';
 import { DEFAULT_RESOURCE_LIMITS, ImportOptions, ImportTextResult, validateResourceLimits } from './importEngine';
 import { detectTextDirection } from './textImporter';
 
@@ -66,9 +66,11 @@ export function importDocxXml(
           }
 
           const fontEl = rPr.getElementsByTagName('w:rFonts')[0];
-          if (fontEl && (fontEl.getAttribute('w:ascii') || fontEl.getAttribute('w:cs'))) {
-            const family = fontEl.getAttribute('w:cs') || fontEl.getAttribute('w:ascii')!;
-            marks.push({ type: 'fontFamily', family });
+          if (fontEl) {
+            const family = fontEl.getAttribute('w:cs') || fontEl.getAttribute('w:ascii');
+            if (family) {
+              marks.push({ type: 'fontFamily', family });
+            }
           }
         }
 
@@ -112,7 +114,7 @@ export function importDocxXml(
     }
   }
 
-  const finalParagraphs = paragraphs.length > 0 ? paragraphs : [{ type: 'paragraph', direction: 'rtl', alignment: 'start', content: [] }];
+  const finalParagraphs = paragraphs.length > 0 ? paragraphs : [paragraph('', options.defaultDirection ?? 'rtl')];
 
   if (finalParagraphs.length > limits.maxParagraphCount) {
     throw new Error(`Paragraph count (${finalParagraphs.length}) exceeds resource limit of ${limits.maxParagraphCount}`);

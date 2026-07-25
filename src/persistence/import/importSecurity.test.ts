@@ -59,6 +59,6 @@ describe('importSecurity', () => {
     const result = importSvg(payload);
 
     expect(result.objects.length).toBe(1);
-    expect(result.objects[0].type).toBe('rectangle');
+    expect(result.objects[0]!.type).toBe('rectangle');
   });
 });

@@ -22,6 +22,6 @@ describe('docxImporter', () => {
     expect(result.type).toBe('story');
     expect(result.detectedFormat).toBe('docx');
     expect(result.paragraphCount).toBe(1);
-    expect(result.story.content[0].direction).toBe('rtl');
+    expect(result.story.content[0]!.direction).toBe('rtl');
   });
 });
