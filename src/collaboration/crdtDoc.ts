@@ -74,7 +74,7 @@ export function yjsToCanonicalDoc(ydoc: Y.Doc): RePageDocument {
   const yObjects = ydoc.getMap<Y.Map<unknown>>('objects');
   const yStories = ydoc.getMap<Y.Map<unknown>>('stories');
 
-  const pageOrder = yPageOrder.toArray();
+  const pageOrder = Array.from(new Set(yPageOrder.toArray()));
   const pages: Record<string, Page> = {};
   const objects: Record<string, PageObject> = {};
   const stories: Record<string, TextStory> = {};
