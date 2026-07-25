@@ -1,5 +1,5 @@
 import { OcrPageResult } from './ocrEngine';
-import { ImageFrameObject, TextFrameObject } from '../document/types';
+import { ImageFrameObject, TextFrameObject, TextStory } from '../document/types';
 import { createRichTextFromPlainText } from '../rich-text/types';
 
 export function correctOcrWord(
@@ -69,36 +69,52 @@ export function convertOcrResultToDocumentObjects(
 ): {
   imageFrame: ImageFrameObject;
   textFrame: TextFrameObject;
+  story: TextStory;
 } {
   const timestamp = Date.now();
 
   // Preserved source image background asset frame
   const imageFrame: ImageFrameObject = {
     id: `img-ocr-${timestamp}`,
-    type: 'image',
+    type: 'image-frame',
     name: `OCR Source Image (${pageResult.fileName})`,
     pageId,
     frame: { x: 50, y: 50, width: 500, height: 350, rotation: 0 },
     assetId: pageResult.sourceAssetId,
-    fitMode: 'contain',
+    fit: 'contain',
     opacity: 0.25, // Faded background reference
     locked: true,
+    hidden: false,
+  };
+
+  // Primary recognized Urdu text story
+  const storyId = `story-ocr-${timestamp}`;
+  const story: TextStory = {
+    id: storyId,
+    name: `OCR Story (${pageResult.fileName})`,
+    content: createRichTextFromPlainText(pageResult.text, 'rtl'),
   };
 
   // Primary recognized Urdu text frame
-  const storyId = `story-ocr-${timestamp}`;
   const textFrame: TextFrameObject = {
     id: `txt-ocr-${timestamp}`,
-    type: 'text',
-    name: `OCR Recognized Story (${pageResult.fileName})`,
+    type: 'text-frame',
+    name: `OCR Recognized Text (${pageResult.fileName})`,
     pageId,
     frame: { x: 50, y: 50, width: 500, height: 350, rotation: 0 },
     storyId,
-    richText: createRichTextFromPlainText(pageResult.text, 'rtl'),
+    fontFamily: 'Jameel Noori Nastaleeq',
+    fontSize: 16,
+    color: '#000000',
+    lineHeight: 1.6,
+    padding: { top: 10, right: 10, bottom: 10, left: 10 },
+    locked: false,
+    hidden: false,
+    opacity: 1,
     verticalAlignment: 'top',
-    columnCount: 1,
+    columns: 1,
     columnGap: 12,
   };
 
-  return { imageFrame, textFrame };
+  return { imageFrame, textFrame, story };
 }

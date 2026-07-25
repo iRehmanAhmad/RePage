@@ -18,13 +18,14 @@ describe('ocrCorrection', () => {
     const dummyBuffer = new ArrayBuffer(512);
     const result = await runUrduOcr(dummyBuffer, 'document_scan.jpg');
 
-    const { imageFrame, textFrame } = convertOcrResultToDocumentObjects(result, 'page-1');
+    const { imageFrame, textFrame, story } = convertOcrResultToDocumentObjects(result, 'page-1');
 
-    expect(imageFrame.type).toBe('image');
+    expect(imageFrame.type).toBe('image-frame');
     expect(imageFrame.assetId).toBe(result.sourceAssetId);
     expect(imageFrame.locked).toBe(true); // Source image preserved as background reference
 
-    expect(textFrame.type).toBe('text');
-    expect(textFrame.richText.content.length).toBeGreaterThan(0);
+    expect(textFrame.type).toBe('text-frame');
+    expect(textFrame.storyId).toBe(story.id);
+    expect(story.content.content.length).toBeGreaterThan(0);
   });
 });
