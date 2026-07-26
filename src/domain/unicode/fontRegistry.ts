@@ -107,6 +107,80 @@ export function registerCustomInPageFont(fontId: string, fontName: string, famil
 
 export const DEFAULT_URDU_FONT: FontDefinition = NOTO_NASTALIQ;
 
+export const URDU_FONTS_LIST: string[] = [
+  'Noto Nastaliq Urdu',
+  'Jameel Noori Nastaleeq',
+  'Gulzar',
+  'Pak Nastaleeq',
+  'Mehr Nastaliq',
+  'InPage Ali Nastaliq',
+  'InPage Lahori Nastaliq',
+  'Urdu Typesetting',
+  'Arabic Typesetting',
+];
+
+export const URDU_FONT_PRESETS: { name: string; urduName: string; category: FontCategory }[] = [
+  { name: 'Noto Nastaliq Urdu', urduName: 'نستعلیق (Noto Nastaliq)', category: 'nastaliq' },
+  { name: 'Jameel Noori Nastaleeq', urduName: 'جمیل نوری نستعلیق', category: 'nastaliq' },
+  { name: 'Gulzar', urduName: 'گلزار (Gulzar)', category: 'nastaliq' },
+  { name: 'Pak Nastaleeq', urduName: 'پاک نستعلیق', category: 'nastaliq' },
+  { name: 'Mehr Nastaliq', urduName: 'مہر نستعلیق', category: 'nastaliq' },
+  { name: 'InPage Ali Nastaliq', urduName: 'انپیج علی نستعلیق', category: 'nastaliq' },
+  { name: 'InPage Lahori Nastaliq', urduName: 'انپیج لاہوری نستعلیق', category: 'nastaliq' },
+];
+
+export const WINDOWS_STANDARD_FONTS: string[] = [
+  'Aptos',
+  'Aptos Display',
+  'Calibri',
+  'Calibri Light',
+  'Segoe UI',
+  'Segoe UI Semibold',
+  'Segoe UI Variable',
+  'Arial',
+  'Arial Black',
+  'Arial Narrow',
+  'Times New Roman',
+  'Georgia',
+  'Verdana',
+  'Tahoma',
+  'Trebuchet MS',
+  'Consolas',
+  'Courier New',
+  'Cambria',
+  'Cambria Math',
+  'Garamond',
+  'Palatino Linotype',
+  'Comic Sans MS',
+  'Impact',
+  'Century Gothic',
+  'Book Antiqua',
+  'Bookman Old Style',
+  'Franklin Gothic Medium',
+  'Lucida Console',
+  'Lucida Sans Unicode',
+  'Microsoft Sans Serif',
+  'Urdu Typesetting',
+  'Arabic Typesetting',
+  'Traditional Arabic',
+  'Simplified Arabic',
+  'Symbol',
+  'Wingdings',
+];
+
+export const BUNDLED_URDU_FONTS: string[] = ['Noto Nastaliq Urdu', 'Gulzar', 'Noto Naskh Arabic'];
+export const UNAVAILABLE_INPAGE_FONTS: string[] = ['InPage Nastaliq', 'InPage Noori Nastaliq', 'InPage Ali Nastaliq', 'InPage Lahori Nastaliq'];
+
+export function getFontCategoryBadge(fontName: string): { label: string; isUnavailable: boolean } {
+  if (BUNDLED_URDU_FONTS.includes(fontName)) {
+    return { label: 'Bundled OFL', isUnavailable: false };
+  }
+  if (UNAVAILABLE_INPAGE_FONTS.includes(fontName)) {
+    return { label: '⚠️ Not Installed', isUnavailable: true };
+  }
+  return { label: 'System Font', isUnavailable: false };
+}
+
 export function getFontDefinition(fontId: string): FontDefinition {
   return FONT_REGISTRY[fontId] ?? DEFAULT_URDU_FONT;
 }

@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
-import type { Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
+import { createId } from '../domain/document/ids';
+import type { AssetReference, ImageFrameObject, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
+import { paragraph } from '../domain/rich-text/types';
 import { pointsToMillimetres } from '../domain/geometry/units';
 import { repaginateDocument } from '../domain/layout/paginationEngine';
 import { applyPageSetup, insertSectionBreak } from '../domain/layout/sectionEngine';
@@ -10,15 +12,29 @@ import { PaginatedPrintLayout } from '../ui/editor/PaginatedPrintLayout';
 import {
   addTableObject,
   alignPageObjects,
+  deleteTableColumn,
+  deleteTableRow,
+  insertTableColumn,
+  insertTableRow,
   reorderPageObject,
   setObjectWrapping,
+  updateTableCell,
 } from '../editor/commands/objectCommands';
 import { SelectionPane } from '../ui/navigation/SelectionPane';
+import {
+  copySelection,
+  cutSelection,
+  pasteText,
+  pasteUnformatted,
+} from '../editor/commands/clipboardCommands';
+import { applyStyleToStory } from '../editor/commands/styleCommands';
+import { commandRegistry } from '../editor/commands/commandRegistry';
 import {
   addImageFrame,
   addPage,
   addRectangle,
   addTextFrame,
+  deleteObject,
   removePage,
   renameDocument,
   updateObjectGeometry,
@@ -74,10 +90,9 @@ import { ReadAloudToolbar } from '../ui/navigation/ReadAloudToolbar';
 import { AccessibilitySettingsModal } from '../ui/dialogs/AccessibilitySettingsModal';
 import { loadAccessibilitySettings, type AccessibilitySettings } from '../domain/diagnostics/accessibilitySettings';
 import type { EditMode } from '../domain/document/trackChangesEngine';
-import { addBookmarkCommand, insertTocCommand } from '../editor/commands/longDocumentCommands';
+import { addBookmarkCommand, insertTocCommand, addFootnoteCommand, addEndnoteCommand } from '../editor/commands/longDocumentCommands';
 import { addCaptionToObject } from '../domain/document/captionEngine';
 import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/document/indexEngine';
-import { insertFootnote, insertEndnote } from '../domain/rich-text/notesEngine';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -118,6 +133,8 @@ export function App() {
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [isKeyboardMinimized, setIsKeyboardMinimized] = useState(true);
+  const [isTransliterationEnabled, setIsTransliterationEnabled] = useState(false);
+  const [numeralSystem, setNumeralSystem] = useState<'urdu' | 'western'>('urdu');
   const [activeTool, setActiveTool] = useState<ActiveTool>('text');
 
   // Theme & Menu Language State
@@ -180,6 +197,7 @@ export function App() {
 
   const [fileRef, setFileRef] = useState<DocumentFileRef>({ isDirty: false });
   const [, setHistoryVersion] = useState(0);
+  const [activeTableCell, setActiveTableCell] = useState<{ rowIndex: number; colIndex: number }>({ rowIndex: 0, colIndex: 0 });
 
   // Typography state
   const [activeFontFamily, setActiveFontFamily] = useState('Noto Nastaliq Urdu');
@@ -259,9 +277,9 @@ export function App() {
       const newObjectId = targetPage ? targetPage.objectOrder[targetPage.objectOrder.length - 1] : null;
       if (newObjectId) {
         setSelectedObjectId(newObjectId);
-        setEditingObjectId(newObjectId);
+        setEditingObjectId(null);
       }
-      setMessage(`Shape added. Type directly inside it.`);
+      setMessage(`Shape inserted and selected. Double-click or press Enter to edit text.`);
     },
     [activePageId, document, updateDocument],
   );
@@ -273,22 +291,51 @@ export function App() {
     const newTextFrameId = nextPage ? nextPage.objectOrder[nextPage.objectOrder.length - 1] : undefined;
     if (newTextFrameId) {
       setSelectedObjectId(newTextFrameId);
-      setEditingObjectId(newTextFrameId);
+      setEditingObjectId(null);
     }
-    setMessage('Text Frame added. Type to edit text.');
+    setMessage('Text Box inserted and selected. Double-click or press Enter to edit text.');
   }, [activePageId, document, updateDocument]);
 
+  const handleAddTable = React.useCallback(
+    (rowCount = 3, colCount = 3) => {
+      const nextDoc = addTableObject(document, activePageId, rowCount, colCount);
+      updateDocument(nextDoc, `Insert ${rowCount}×${colCount} Table`);
+      const targetPage = nextDoc.pages[activePageId];
+      const newTableId = targetPage ? targetPage.objectOrder[targetPage.objectOrder.length - 1] : null;
+      if (newTableId) {
+        setSelectedObjectId(newTableId);
+        setEditingObjectId(null);
+      }
+      setMessage(`Table inserted (${rowCount} rows × ${colCount} columns). Selected in Select mode.`);
+    },
+    [activePageId, document, updateDocument],
+  );
+
+  const handleUpdateTableCell = React.useCallback(
+    (tableId: string, rowIndex: number, colIndex: number, text: string) => {
+      const updatedCellContent = {
+        type: 'doc',
+        content: [paragraph(text, 'rtl')],
+      };
+      const nextDoc = updateTableCell(document, tableId, rowIndex, colIndex, {
+        content: updatedCellContent,
+      });
+      updateDocument(nextDoc, `Update Table Cell (${rowIndex + 1},${colIndex + 1})`);
+    },
+    [document, updateDocument],
+  );
+
   const handleAddFootnote = React.useCallback(() => {
-    const storyId = selectedObject && selectedObject.type === 'text-frame' ? selectedObject.storyId : 'story-1';
-    insertFootnote(document.id, storyId, 'نیا حاشیہ (New Footnote)');
+    const nextDoc = addFootnoteCommand(document, activePageId, 'نیا حاشیہ (New Footnote)');
+    updateDocument(nextDoc, 'Add Footnote');
     setMessage('Footnote added');
-  }, [document.id, selectedObject]);
+  }, [activePageId, document, updateDocument]);
 
   const handleAddEndnote = React.useCallback(() => {
-    const storyId = selectedObject && selectedObject.type === 'text-frame' ? selectedObject.storyId : 'story-1';
-    insertEndnote(document.id, storyId, 'نئی تعلیق (New Endnote)');
+    const nextDoc = addEndnoteCommand(document, activePageId, 'نئی تعلیق (New Endnote)');
+    updateDocument(nextDoc, 'Add Endnote');
     setMessage('Endnote added');
-  }, [document.id, selectedObject]);
+  }, [activePageId, document, updateDocument]);
 
   // File Workflows
   const handleSaveNative = React.useCallback(async () => {
@@ -354,11 +401,40 @@ export function App() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         setIsNavigationPaneOpen((prev) => !prev);
+      } else if (e.key === 'Enter' && selectedObjectId && !editingObjectId) {
+        const obj = document.objects[selectedObjectId];
+        if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle')) {
+          e.preventDefault();
+          setEditingObjectId(selectedObjectId);
+          setMessage(obj.type === 'rectangle' ? 'Editing Shape Text. Press ESC to exit.' : 'Editing Text Frame. Press ESC to exit.');
+        }
+      } else if (e.key === 'Escape') {
+        if (editingObjectId) {
+          e.preventDefault();
+          setEditingObjectId(null);
+          setMessage('Exited text editing mode. Object remains selected.');
+        } else if (selectedObjectId) {
+          e.preventDefault();
+          setSelectedObjectId(null);
+          setMessage('Object deselected.');
+        }
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedObjectId && !editingObjectId) {
+        const activeElem = window.document.activeElement;
+        const isInputFocused = activeElem && (activeElem.tagName === 'INPUT' || activeElem.tagName === 'TEXTAREA' || activeElem.getAttribute('contenteditable') === 'true');
+        if (!isInputFocused) {
+          e.preventDefault();
+          try {
+            const nextDoc = deleteObject(document, selectedObjectId);
+            updateDocument(nextDoc, 'Delete object');
+            setSelectedObjectId(null);
+            setMessage('Object deleted.');
+          } catch {}
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [document, selectedObjectId, editingObjectId, updateDocument]);
 
   const handleTriggerOcr = React.useCallback(async () => {
     const dummyBuffer = new ArrayBuffer(2048);
@@ -396,6 +472,17 @@ export function App() {
 
   const handleSelectImageFile = React.useCallback(
     (file: File) => {
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(png|jpe?g|webp|svg)$/i)) {
+        setMessage('Unsupported image format. Please select PNG, JPEG, WebP, or SVG.');
+        return;
+      }
+      const maxSize = 25 * 1024 * 1024; // 25MB limit
+      if (file.size > maxSize) {
+        setMessage('Image file size exceeds 25MB limit.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
@@ -403,32 +490,64 @@ export function App() {
 
         const img = new Image();
         img.onload = () => {
-          const { document: nextDoc, objectId } = addImageFrame(
-            document,
-            activePageId,
-            file.name,
-            dataUrl,
-            img.width,
-            img.height,
-          );
-          updateDocument(nextDoc, `Insert Picture ${file.name}`);
-          setSelectedObjectId(objectId);
-          setMessage(`Picture inserted: ${file.name}`);
+          if (selectedObject && selectedObject.type === 'image-frame') {
+            const assetId = selectedObject.assetId || createId('asset');
+            const updatedAsset: AssetReference = {
+              id: assetId,
+              sha256: '',
+              mediaType: file.type || 'image/png',
+              byteSize: file.size,
+              originalName: file.name,
+              packageEntry: `assets/${assetId}.png`,
+              dataUrl,
+            };
+            const updatedImageObj: ImageFrameObject = {
+              ...selectedObject,
+              assetId,
+              name: `تصویر (${file.name})`,
+            };
+            const nextDoc: RePageDocument = {
+              ...document,
+              assets: {
+                ...document.assets,
+                [assetId]: updatedAsset,
+              },
+              objects: {
+                ...document.objects,
+                [selectedObject.id]: updatedImageObj,
+              },
+            };
+            updateDocument(nextDoc, `Replace Picture ${file.name}`);
+            setMessage(`Picture replaced: ${file.name}`);
+          } else {
+            const { document: nextDoc, objectId } = addImageFrame(
+              document,
+              activePageId,
+              file.name,
+              dataUrl,
+              img.width,
+              img.height,
+            );
+            updateDocument(nextDoc, `Insert Picture ${file.name}`);
+            setSelectedObjectId(objectId);
+            setEditingObjectId(null);
+            setMessage(`Picture inserted: ${file.name}`);
+          }
         };
         img.src = dataUrl;
       };
       reader.readAsDataURL(file);
     },
-    [activePageId, document, updateDocument],
+    [activePageId, document, selectedObject, updateDocument],
   );
 
   // Handle Double Click on Text Frame, Shape or Image Frame
   const handleObjectDoubleClicked = React.useCallback((objectId: string) => {
     const obj = document.objects[objectId];
-    if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle')) {
+    if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle' || obj.type === 'table')) {
       setSelectedObjectId(objectId);
       setEditingObjectId(objectId);
-      setMessage(obj.type === 'rectangle' ? 'Editing Shape Text. Press ESC to exit.' : 'Editing Text Frame. Press ESC to exit.');
+      setMessage(obj.type === 'table' ? 'Editing Table Cells. Press ESC to exit.' : obj.type === 'rectangle' ? 'Editing Shape Text. Press ESC to exit.' : 'Editing Text Frame. Press ESC to exit.');
     } else if (obj && obj.type === 'image-frame') {
       setSelectedObjectId(objectId);
       imageFileInputRef.current?.click();
@@ -466,49 +585,139 @@ export function App() {
 
   const [isFormatPainterActive, setIsFormatPainterActive] = React.useState(false);
 
-  const handleCut = React.useCallback(() => {
-    try {
-      window.document.execCommand('cut');
-      setMessage('Cut to clipboard');
-    } catch {
-      setMessage('Cut operation');
-    }
-  }, []);
+  const getTargetStoryId = React.useCallback(() => {
+    return editingObject && editingObject.type === 'text-frame'
+      ? editingObject.storyId
+      : selectedObject && selectedObject.type === 'text-frame'
+      ? selectedObject.storyId
+      : PRIMARY_STORY_ID;
+  }, [editingObject, selectedObject]);
 
-  const handleCopy = React.useCallback(() => {
-    try {
-      window.document.execCommand('copy');
-      setMessage('Copied to clipboard');
-    } catch {
-      setMessage('Copy operation');
+  const getStoryPlainText = (story?: import('../domain/document/types').TextStory): string => {
+    if (!story || !story.content || !Array.isArray(story.content.content)) return '';
+    let txt = '';
+    for (const p of story.content.content) {
+      if (!p.content) continue;
+      for (const r of p.content) {
+        if (r.type === 'text' && typeof r.text === 'string') {
+          txt += r.text;
+        }
+      }
     }
+    return txt;
+  };
+
+  const activeEditorRef = React.useRef<import('@tiptap/react').Editor | null>(null);
+
+  const handleCut = React.useCallback(async () => {
+    if (activeEditorRef.current) {
+      const { from, to } = activeEditorRef.current.state.selection;
+      if (from !== to) {
+        const text = activeEditorRef.current.state.doc.textBetween(from, to);
+        await copySelection(text);
+        activeEditorRef.current.chain().focus().deleteSelection().run();
+        setMessage('Cut selection to clipboard');
+        return;
+      }
+    }
+    const storyId = getTargetStoryId();
+    const story = document.stories[storyId];
+    const fullText = getStoryPlainText(story);
+    const domSel = typeof window !== 'undefined' ? window.getSelection() : null;
+    const selText = domSel?.toString() || '';
+
+    let start = 0;
+    let end = 0;
+
+    if (selText && fullText.includes(selText)) {
+      start = fullText.indexOf(selText);
+      end = start + selText.length;
+    } else if (domSel && domSel.anchorOffset !== undefined) {
+      start = Math.min(domSel.anchorOffset, fullText.length);
+      end = Math.min(Math.max(domSel.focusOffset, start + 1), fullText.length);
+    } else {
+      start = 0;
+      end = fullText.length;
+    }
+
+    if (selText) {
+      await copySelection(selText);
+    }
+    try { window.document.execCommand('cut'); } catch {}
+
+    const { doc: nextDoc } = await cutSelection(document, { storyId, start, end, text: selText });
+    updateDocument(nextDoc, 'Cut selection');
+    setMessage('Cut selection to clipboard');
+  }, [document, getTargetStoryId, updateDocument]);
+
+  const handleCopy = React.useCallback(async () => {
+    if (activeEditorRef.current) {
+      const { from, to } = activeEditorRef.current.state.selection;
+      if (from !== to) {
+        const text = activeEditorRef.current.state.doc.textBetween(from, to);
+        await copySelection(text);
+        setMessage('Copied selection to clipboard');
+        return;
+      }
+    }
+    const domSel = typeof window !== 'undefined' ? window.getSelection() : null;
+    const selText = domSel?.toString() || '';
+    if (selText) {
+      await copySelection(selText);
+    } else {
+      try { window.document.execCommand('copy'); } catch {}
+    }
+    setMessage('Copied selection to clipboard');
   }, []);
 
   const handlePaste = React.useCallback(
     async (mode: 'all' | 'special' | 'text-only' | 'merge' = 'all') => {
-      try {
-        if (mode === 'special') {
-          setMessage('Paste Special dialog');
-          return;
-        }
-        if (navigator.clipboard?.readText) {
-          const text = await navigator.clipboard.readText();
-          if (text) {
-            setPendingChar(text);
-            setTimeout(() => setPendingChar(null), 50);
-            setMessage(`Pasted text (${mode})`);
-            return;
-          }
-        }
-        window.document.execCommand('paste');
-        setMessage(`Pasted (${mode})`);
-      } catch {
-        window.document.execCommand('paste');
-        setMessage('Pasted content');
+      let clipText = '';
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+        try { clipText = await navigator.clipboard.readText(); } catch {}
       }
+      if (clipText && activeEditorRef.current) {
+        activeEditorRef.current.chain().focus().insertContent(clipText).run();
+        setMessage(`Pasted text (${mode})`);
+        return;
+      }
+      const storyId = getTargetStoryId();
+      const story = document.stories[storyId];
+      const fullText = getStoryPlainText(story);
+      const domSel = typeof window !== 'undefined' ? window.getSelection() : null;
+      const selText = domSel?.toString() || '';
+
+      let start = 0;
+      let end = 0;
+
+      if (selText && fullText.includes(selText)) {
+        start = fullText.indexOf(selText);
+        end = start + selText.length;
+      } else if (domSel && domSel.anchorOffset !== undefined) {
+        start = Math.min(domSel.anchorOffset, fullText.length);
+        end = start;
+      }
+
+      if (clipText) {
+        const nextDoc = mode === 'text-only'
+          ? await pasteUnformatted(document, { storyId, start, end })
+          : pasteText(document, { storyId, start, end }, clipText);
+        updateDocument(nextDoc, 'Paste clipboard content');
+        setMessage(`Pasted text (${mode})`);
+        return;
+      }
+      try { window.document.execCommand('paste'); } catch {}
+      setMessage(`Pasted content (${mode})`);
     },
-    [],
+    [document, getTargetStoryId, updateDocument],
   );
+
+  React.useEffect(() => {
+    commandRegistry.setHandler('edit.cut', handleCut);
+    commandRegistry.setHandler('edit.copy', handleCopy);
+    commandRegistry.setHandler('edit.paste', () => void handlePaste('all'));
+    commandRegistry.setHandler('edit.pasteUnformatted', () => void handlePaste('text-only'));
+  }, [handleCut, handleCopy, handlePaste]);
 
   const handleFormatPainter = React.useCallback(() => {
     if (isFormatPainterActive) {
@@ -531,38 +740,154 @@ export function App() {
   const [highlightColor, setHighlightColor] = useState<string | null>(null);
   const [fontColor, setFontColor] = useState('#172119');
   const [showFontDialog, setShowFontDialog] = useState(false);
+  const [detectedScript, setDetectedScript] = useState<'urdu' | 'latin'>('urdu');
+  const [activeUrduFont, setActiveUrduFont] = useState<string>('Noto Nastaliq Urdu');
+  const [activeEnglishFont, setActiveEnglishFont] = useState<string>('Calibri');
+
+  const [recentUrduFonts, setRecentUrduFonts] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('repage_recent_urdu_fonts');
+      return saved ? JSON.parse(saved) : ['Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq'];
+    } catch {
+      return ['Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq'];
+    }
+  });
+
+  const [recentEnglishFonts, setRecentEnglishFonts] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('repage_recent_english_fonts');
+      return saved ? JSON.parse(saved) : ['Calibri', 'Aptos', 'Arial'];
+    } catch {
+      return ['Calibri', 'Aptos', 'Arial'];
+    }
+  });
+
+  const handleUrduFontChange = React.useCallback((font: string) => {
+    setActiveUrduFont(font);
+    setActiveFontFamily(font);
+    setRecentUrduFonts((prev) => {
+      const next = [font, ...prev.filter((f) => f !== font)].slice(0, 5);
+      try { localStorage.setItem('repage_recent_urdu_fonts', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().setFontFamily(font).run();
+    }
+  }, []);
+
+  const handleEnglishFontChange = React.useCallback((font: string) => {
+    setActiveEnglishFont(font);
+    setActiveFontFamily(font);
+    setRecentEnglishFonts((prev) => {
+      const next = [font, ...prev.filter((f) => f !== font)].slice(0, 5);
+      try { localStorage.setItem('repage_recent_english_fonts', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().setFontFamily(font).run();
+    }
+  }, []);
 
   const handleToggleBold = React.useCallback(() => {
     setIsBold((prev) => !prev);
-    try { window.document.execCommand('bold'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().toggleBold().run();
+    }
   }, []);
 
   const handleToggleItalic = React.useCallback(() => {
     setIsItalic((prev) => !prev);
-    try { window.document.execCommand('italic'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().toggleItalic().run();
+    }
   }, []);
 
   const handleToggleUnderline = React.useCallback(() => {
     setIsUnderline((prev) => !prev);
-    try { window.document.execCommand('underline'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().toggleUnderline().run();
+    }
   }, []);
 
   const handleToggleStrikethrough = React.useCallback(() => {
     setIsStrikethrough((prev) => !prev);
-    try { window.document.execCommand('strikethrough'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().toggleStrike().run();
+    }
   }, []);
 
   const handleToggleSubscript = React.useCallback(() => {
     setIsSubscript((prev) => !prev);
     if (!isSubscript) setIsSuperscript(false);
-    try { window.document.execCommand('subscript'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().toggleSubscript().run();
+    }
   }, [isSubscript]);
 
   const handleToggleSuperscript = React.useCallback(() => {
     setIsSuperscript((prev) => !prev);
     if (!isSuperscript) setIsSubscript(false);
-    try { window.document.execCommand('superscript'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().toggleSuperscript().run();
+    }
   }, [isSuperscript]);
+
+  const handleFontFamilyChange = React.useCallback((family: string) => {
+    setActiveFontFamily(family);
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().setFontFamily(family).run();
+    }
+  }, []);
+
+  const handleFontSizeChange = React.useCallback((size: number) => {
+    setActiveFontSize(size);
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().setMark('textStyle', { fontSize: `${size}px` }).run();
+    }
+  }, []);
+
+  const handleHighlightColorChange = React.useCallback((col: string | null) => {
+    setHighlightColor(col);
+    if (activeEditorRef.current) {
+      if (col) {
+        activeEditorRef.current.chain().focus().setHighlight({ color: col }).run();
+      } else {
+        activeEditorRef.current.chain().focus().unsetHighlight().run();
+      }
+    }
+  }, []);
+
+  const handleFontColorChange = React.useCallback((color: string) => {
+    setFontColor(color);
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().setColor(color).run();
+    }
+  }, []);
+
+  const handleAlignmentChange = React.useCallback(
+    (alignment: TextAlignment) => {
+      setActiveAlignment(alignment);
+      const storyId = getTargetStoryId();
+      const story = document.stories[storyId];
+      if (story) {
+        const updatedRichText = {
+          ...story.content,
+          content: story.content.content.map((p) => ({ ...p, alignment })),
+        };
+        updateDocument(
+          {
+            ...document,
+            stories: {
+              ...document.stories,
+              [storyId]: { ...story, content: updatedRichText },
+            },
+          },
+          `Set paragraph alignment to ${alignment}`,
+        );
+      }
+    },
+    [document, getTargetStoryId, updateDocument],
+  );
 
   const handleChangeCase = React.useCallback(
     (mode: 'sentence' | 'lowercase' | 'uppercase' | 'capitalize' | 'toggle') => {
@@ -580,7 +905,9 @@ export function App() {
     setIsSuperscript(false);
     setHighlightColor(null);
     setFontColor('#172119');
-    try { window.document.execCommand('removeFormat'); } catch {}
+    if (activeEditorRef.current) {
+      activeEditorRef.current.chain().focus().unsetAllMarks().clearNodes().run();
+    }
     setMessage('Cleared formatting');
   }, []);
 
@@ -617,6 +944,18 @@ export function App() {
   const handleSortParagraphs = React.useCallback(() => {
     setMessage('Sorted paragraphs alphabetically');
   }, []);
+
+  const handleApplyQuickUrduPreset = React.useCallback(() => {
+    setActiveFontFamily('Noto Nastaliq Urdu');
+    setActiveFontSize(14);
+    setActiveDirection('rtl');
+    setActiveAlignment('right');
+    setLineHeight(1.5);
+    const storyId = getTargetStoryId();
+    const nextDoc = applyStyleToStory(document, storyId, 'normal');
+    updateDocument(nextDoc, 'Apply Quick Urdu Preset');
+    setMessage('Applied Quick Urdu Paragraph Preset (Noto Nastaliq 14pt, RTL, 1.5 spacing)');
+  }, [document, getTargetStoryId, updateDocument]);
 
   const handleToggleFormattingMarks = React.useCallback(() => {
     setShowFormattingMarks((prev) => !prev);
@@ -697,6 +1036,15 @@ export function App() {
             if (tool === 'image') imageFileInputRef.current?.click();
           }}
           onInsertShape={(kind) => handleAddRectangle(kind)}
+          keyboardMode={keyboardMode}
+          onKeyboardModeChange={setKeyboardMode}
+          isTransliterationEnabled={isTransliterationEnabled}
+          onToggleTransliteration={() => setIsTransliterationEnabled((prev) => !prev)}
+          showVisualKeyboard={!isKeyboardMinimized}
+          onToggleVisualKeyboard={() => setIsKeyboardMinimized((prev) => !prev)}
+          numeralSystem={numeralSystem}
+          onNumeralSystemChange={setNumeralSystem}
+          onApplyQuickUrduPreset={handleApplyQuickUrduPreset}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={history.canUndo()}
@@ -711,9 +1059,16 @@ export function App() {
           onSaveAsDocument={() => void handleSaveAsNative()}
           onShowRecentFiles={() => setShowRecent(!showRecent)}
           activeFontFamily={activeFontFamily}
-          onFontFamilyChange={setActiveFontFamily}
+          onFontFamilyChange={handleFontFamilyChange}
+          detectedScript={detectedScript}
+          activeUrduFont={activeUrduFont}
+          onUrduFontChange={handleUrduFontChange}
+          recentUrduFonts={recentUrduFonts}
+          activeEnglishFont={activeEnglishFont}
+          onEnglishFontChange={handleEnglishFontChange}
+          recentEnglishFonts={recentEnglishFonts}
           activeFontSize={activeFontSize}
-          onFontSizeChange={setActiveFontSize}
+          onFontSizeChange={handleFontSizeChange}
           isBold={isBold}
           onToggleBold={handleToggleBold}
           isItalic={isItalic}
@@ -731,16 +1086,16 @@ export function App() {
           isSuperscript={isSuperscript}
           onToggleSuperscript={handleToggleSuperscript}
           highlightColor={highlightColor}
-          onHighlightColorChange={setHighlightColor}
+          onHighlightColorChange={handleHighlightColorChange}
           fontColor={fontColor}
-          onFontColorChange={setFontColor}
+          onFontColorChange={handleFontColorChange}
           onChangeCase={handleChangeCase}
           onClearFormatting={handleClearFormatting}
           onOpenFontDialog={() => setShowFontDialog(true)}
           isKashidaEnabled={isKashidaEnabled}
           onToggleKashida={() => setIsKashidaEnabled(!isKashidaEnabled)}
           activeAlignment={activeAlignment}
-          onAlignmentChange={setActiveAlignment}
+          onAlignmentChange={handleAlignmentChange}
           activeDirection={activeDirection}
           onDirectionChange={setActiveDirection}
           isBulletList={isBulletList}
@@ -758,9 +1113,15 @@ export function App() {
           onParagraphShadingChange={setParagraphShading}
           onSelectParagraphBorder={handleSelectParagraphBorder}
           onOpenParagraphDialog={() => setShowParagraphDialog(true)}
-          onApplyStyle={(styleId) => setMessage(`Applied quick style: ${styleId}`)}
+          onApplyStyle={(styleId) => {
+            const storyId = getTargetStoryId();
+            const nextDoc = applyStyleToStory(document, storyId, styleId);
+            updateDocument(nextDoc, `Apply style ${styleId}`);
+            setMessage(`Applied quick style: ${styleId}`);
+          }}
           onOpenFind={() => setIsNavigationPaneOpen(true)}
           onOpenReplace={() => setIsNavigationPaneOpen(true)}
+          onOpenSelectionPane={() => setIsSelectionPaneOpen(true)}
           onSelectAll={() => {
             try { window.document.execCommand('selectAll'); } catch {}
             setMessage('Selected all content');
@@ -809,12 +1170,46 @@ export function App() {
             }
           }}
           onToggleSelectionPane={() => setIsSelectionPaneOpen((prev) => !prev)}
-          onInsertTable={() => {
-            updateDocument(addTableObject(document, activePageId), 'Insert Table');
+          onInsertTable={(rows, cols) => handleAddTable(rows, cols)}
+          onInsertTableRowAbove={() => {
+            if (selectedObjectId) {
+              updateDocument(insertTableRow(document, selectedObjectId, activeTableCell.rowIndex, 'above'), 'Insert Table Row Above');
+            }
+          }}
+          onInsertTableRowBelow={() => {
+            if (selectedObjectId) {
+              updateDocument(insertTableRow(document, selectedObjectId, activeTableCell.rowIndex, 'below'), 'Insert Table Row Below');
+            }
+          }}
+          onInsertTableColLeft={() => {
+            if (selectedObjectId) {
+              updateDocument(insertTableColumn(document, selectedObjectId, activeTableCell.colIndex, 'left'), 'Insert Table Column Left');
+            }
+          }}
+          onInsertTableColRight={() => {
+            if (selectedObjectId) {
+              updateDocument(insertTableColumn(document, selectedObjectId, activeTableCell.colIndex, 'right'), 'Insert Table Column Right');
+            }
+          }}
+          onDeleteTableRow={() => {
+            if (selectedObjectId) {
+              updateDocument(deleteTableRow(document, selectedObjectId, activeTableCell.rowIndex), 'Delete Table Row');
+            }
+          }}
+          onDeleteTableCol={() => {
+            if (selectedObjectId) {
+              updateDocument(deleteTableColumn(document, selectedObjectId, activeTableCell.colIndex), 'Delete Table Column');
+            }
+          }}
+          onDeleteTable={() => {
+            if (selectedObjectId) {
+              updateDocument(deleteObject(document, selectedObjectId), 'Delete Table');
+              setSelectedObjectId(null);
+            }
           }}
           onOpenStylesManager={() => setShowStylesManager(true)}
           onOpenDocStats={() => setShowDocStats(true)}
-          onInsertToc={() => updateDocument(insertTocCommand(document), 'Insert Table of Contents')}
+          onInsertToc={() => updateDocument(insertTocCommand(document, activePageId), 'Insert Table of Contents')}
           onInsertCaption={() => {
             if (selectedObjectId) {
               updateDocument(addCaptionToObject(document, selectedObjectId, 'figure', 'نمونہ کیپشن'), 'Add Caption');
@@ -822,21 +1217,81 @@ export function App() {
               setMessage('Please select an object to attach a caption');
             }
           }}
-          onInsertBookmark={() => updateDocument(addBookmarkCommand(document, 'بک مارک ۱', 0), 'Add Bookmark')}
+          onInsertBookmark={() => {
+            const count = Object.keys(document.bookmarks || {}).length + 1;
+            const name = `بک مارک ${count}`;
+            updateDocument(addBookmarkCommand(document, name, 0), 'Add Bookmark');
+            setMessage(`Bookmark "${name}" added`);
+          }}
           onInsertIndex={() => {
             const idx = generateSubjectIndex(document);
-            const docWithIndex = {
+            const storyId = 'index-story';
+            const indexRichText = buildIndexRichTextDocument(idx);
+            const pageId = activePageId;
+            const page = document.pages[pageId];
+
+            let docWithIndex: RePageDocument = {
               ...document,
               stories: {
                 ...document.stories,
-                'index-story': {
-                  id: 'index-story',
+                [storyId]: {
+                  id: storyId,
                   name: 'Subject Index',
-                  content: buildIndexRichTextDocument(idx),
+                  content: indexRichText,
                 },
               },
             };
+
+            if (page) {
+              const existingIndexObjId = page.objectOrder.find((objId) => {
+                const obj = document.objects[objId];
+                return obj && obj.type === 'text-frame' && obj.storyId === storyId;
+              });
+
+              if (!existingIndexObjId) {
+                const indexObjId = `index_frame_${Date.now()}`;
+                const indexFrame: PageObject = {
+                  id: indexObjId,
+                  pageId,
+                  name: 'اشاریہ (Subject Index)',
+                  type: 'text-frame',
+                  storyId,
+                  fontFamily: 'Noto Nastaliq Urdu',
+                  fontSize: 14,
+                  color: '#0f172a',
+                  lineHeight: 1.8,
+                  padding: { top: 8, right: 8, bottom: 8, left: 8 },
+                  locked: false,
+                  hidden: false,
+                  opacity: 1,
+                  frame: {
+                    x: page.margins.left,
+                    y: page.margins.top + 210,
+                    width: page.width - page.margins.left - page.margins.right,
+                    height: 160,
+                    rotation: 0,
+                  },
+                };
+
+                docWithIndex = {
+                  ...docWithIndex,
+                  objects: {
+                    ...docWithIndex.objects,
+                    [indexObjId]: indexFrame,
+                  },
+                  pages: {
+                    ...docWithIndex.pages,
+                    [pageId]: {
+                      ...page,
+                      objectOrder: [...page.objectOrder, indexObjId],
+                    },
+                  },
+                };
+              }
+            }
+
             updateDocument(docWithIndex, 'Insert Subject Index');
+            setMessage('Subject Index placed on page layout canvas');
           }}
           onOpenCharacterSubstitution={() => setShowCharSub(true)}
           onOpenKeyboardEditor={() => setShowKeyboardEditor(true)}
@@ -944,6 +1399,33 @@ export function App() {
                   });
                 }}
                 onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
+                onUpdateTableCell={handleUpdateTableCell}
+                onActiveTableCellChange={(rIdx, cIdx) => setActiveTableCell({ rowIndex: rIdx, colIndex: cIdx })}
+                onEditorReady={(editor) => {
+                  activeEditorRef.current = editor;
+                }}
+                onSelectionChange={(info) => {
+                  if (info.isBold !== undefined) setIsBold(info.isBold);
+                  if (info.isItalic !== undefined) setIsItalic(info.isItalic);
+                  if (info.isUnderline !== undefined) setIsUnderline(info.isUnderline);
+                  if (info.fontFamily) setActiveFontFamily(info.fontFamily);
+                  if (info.fontSize) setActiveFontSize(info.fontSize);
+                  if (info.color) setFontColor(info.color);
+                  if (info.selectedText) {
+                    const hasUrdu = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(info.selectedText);
+                    if (hasUrdu) setDetectedScript('urdu');
+                    else if (/[a-zA-Z]/.test(info.selectedText)) setDetectedScript('latin');
+                  } else if (activeEditorRef.current) {
+                    const { from } = activeEditorRef.current.state.selection;
+                    if (from > 1) {
+                      const charBefore = activeEditorRef.current.state.doc.textBetween(from - 1, from);
+                      const isUrdu = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(charBefore);
+                      const isLatin = /[a-zA-Z]/.test(charBefore);
+                      if (isUrdu) setDetectedScript('urdu');
+                      else if (isLatin) setDetectedScript('latin');
+                    }
+                  }
+                }}
               />
             ) : (
             <div

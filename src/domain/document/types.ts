@@ -256,6 +256,7 @@ export interface RePageDocument {
   masterPages?: Record<MasterPageId, MasterPage> | undefined;
   sections?: SectionBreak[];
   footnotes?: Record<string, FootnoteEntry>;
+  endnotes?: Record<string, FootnoteEntry>;
   headerFooterConfig?: HeaderFooterConfig;
   bookmarks?: Record<string, Bookmark>;
   captions?: Record<string, Caption>;

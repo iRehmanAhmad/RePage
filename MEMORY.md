@@ -15,14 +15,14 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: RePage UX/UI Modernization (Phases UX-0 through UX-8 **Complete**).
+- **Current Milestone**: Ribbon & Object System Milestone — **Foundation Substantially Implemented (M6 IN PROGRESS)** (Canvas object re-selection, unclipped table picker, active-cell tracking, canonical references & page workflows, safe paste, Urdu Quick Styles, diacritic-aware find/replace).
 - **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED.
-- **MS Word 365 Home & Insert Tabs Reorganization**:
-  - **Home Tab Groups**: Complete official MS Word 365 layout: `Clipboard` | `Font` | `Paragraph` | `Styles` | `Editing` | `Add-ins`.
-    - **Styles Group**: Quick Styles gallery cards (*Normal*, *No Spacing*, *Heading 1*, *Heading 2*, *Title*), up/down scroll controls, and bottom-right ↘️ Styles launcher (`StylesManagerModal.tsx`).
-    - **Editing Group**: **Find (`🔍 Find ▼`)** (`Ctrl+F`), **Replace (`c🔁b Replace`)** (`Ctrl+H`), **Select (`↖️ Select ▼`)** (*Select All*, *Select Objects*).
-    - **Add-ins Group**: **Add-ins (`▦ Add-ins`)** extension launcher.
-  - **Insert Tab Reorganization**: Moved Tools (Text Box 📝, Shapes/Rectangle 📐, Picture 🖼️) into the **Insert Tab** under Illustrations & Text Boxes, alongside Pages, Tables, Footnotes, and References.
+- **Urdu-first Home Ribbon Architecture (ADR-0005)**:
+  - Group Structure: `Urdu Input | Clipboard | Font | Paragraph | Urdu Styles | Editing`.
+  - Urdu UI: Groups begin from the right side (RTL order).
+  - Scope: Home contains only frequent, working actions; advanced features (OCR, dictionary, character substitution, keyboard layout editor, text normalization) reside strictly in **Urdu Tools** (`🌐`).
+  - Command Discipline: Every Home action updates canonical document via commands (`editor/commands/`).
+  - Button Disposition Matrix (`HOME_RIBBON_INVENTORY.md`): 24 keep, 15 implement, 5 move, 13 remove, 1 defer. Add-ins deferred until plugin model exists.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions

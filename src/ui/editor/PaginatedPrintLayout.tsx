@@ -23,6 +23,10 @@ export interface PaginatedPrintLayoutProps {
   onObjectModified: (objectId: string, coords: any) => void;
   onCommitStory: (storyId: string, content: any) => void;
   onRequestBodyFocus?: () => void;
+  onEditorReady?: ((editor: any) => void) | undefined;
+  onSelectionChange?: ((info: any) => void) | undefined;
+  onUpdateTableCell?: ((tableId: string, rowIndex: number, colIndex: number, text: string) => void) | undefined;
+  onActiveTableCellChange?: ((rowIndex: number, colIndex: number) => void) | undefined;
 }
 
 export function PaginatedPrintLayout({
@@ -42,6 +46,10 @@ export function PaginatedPrintLayout({
   onObjectModified,
   onCommitStory,
   onRequestBodyFocus,
+  onEditorReady,
+  onSelectionChange,
+  onUpdateTableCell,
+  onActiveTableCellChange,
 }: PaginatedPrintLayoutProps) {
   const primaryStoryId = 'primary-body-story';
   const primaryStory = document.stories[primaryStoryId] || {
@@ -93,6 +101,9 @@ export function PaginatedPrintLayout({
         const isEditingTextBoxOnPage = Boolean(
           editingTextBox?.pageId === pageId && editingStory,
         );
+        const editingObj = editingObjectId ? document.objects[editingObjectId] : null;
+        const editingTable = editingObj && editingObj.type === 'table' ? editingObj : null;
+        const isEditingTableOnPage = Boolean(editingTable?.pageId === pageId);
 
         return (
           <div
@@ -156,7 +167,8 @@ export function PaginatedPrintLayout({
                 right: `${page.margins.right}pt`,
                 bottom: `${page.margins.bottom}pt`,
                 left: `${page.margins.left}pt`,
-                zIndex: 5,
+                zIndex: 10,
+                pointerEvents: editingObjectId ? 'none' : 'auto',
               }}
             >
               {isActive ? (
@@ -169,6 +181,8 @@ export function PaginatedPrintLayout({
                   pendingChar={!editingObjectId ? pendingChar : null}
                   focusRequest={isActive ? bodyEditorFocusRequest : 0}
                   onCommit={(updatedContent) => onCommitStory(primaryStoryId, updatedContent)}
+                  onEditorReady={onEditorReady}
+                  onSelectionChange={onSelectionChange}
                 />
               ) : (
                 <div
@@ -193,7 +207,7 @@ export function PaginatedPrintLayout({
               style={{
                 position: 'absolute',
                 inset: 0,
-                zIndex: 10,
+                zIndex: 20,
                 pointerEvents: editingObjectId ? 'none' : 'auto',
               }}
             >
@@ -210,7 +224,7 @@ export function PaginatedPrintLayout({
                 }}
                 onObjectDoubleClicked={(id) => {
                   const targetObj = document.objects[id];
-                  if (targetObj?.type === 'text-frame' || targetObj?.type === 'rectangle') {
+                  if (targetObj?.type === 'text-frame' || targetObj?.type === 'rectangle' || targetObj?.type === 'table') {
                     onSelectObject(id);
                     onEditObject(id);
                   }
@@ -236,7 +250,167 @@ export function PaginatedPrintLayout({
                     onCommitStory(sid, updatedContent);
                   }}
                   onClose={() => onEditObject(null)}
+                  onEditorReady={onEditorReady}
+                  onSelectionChange={onSelectionChange}
                 />
+              )}
+
+              {isEditingTableOnPage && editingTable && (
+                <>
+                  {/* Click-outside backdrop to commit and exit edit mode */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      zIndex: 30,
+                      background: 'rgba(0,0,0,0.01)',
+                      cursor: 'default',
+                    }}
+                    onClick={() => onEditObject(null)}
+                  />
+
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: `${editingTable.frame.x}pt`,
+                      top: `${editingTable.frame.y - 32}pt`,
+                      width: `${editingTable.frame.width}pt`,
+                      minHeight: `${editingTable.frame.height + 36}pt`,
+                      zIndex: 35,
+                      backgroundColor: '#ffffff',
+                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.25)',
+                      borderRadius: '6px',
+                      border: '2px solid #0284c7',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '6px',
+                    }}
+                  >
+                    {/* Header Control Bar */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '4px 8px',
+                        marginBottom: '6px',
+                        background: '#f0f9ff',
+                        borderRadius: '4px',
+                        borderBottom: '1px solid #bae6fd',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onEditObject(null);
+                          onSelectObject(editingTable.id);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#0369a1',
+                          background: '#ffffff',
+                          border: '1px solid #7dd3fc',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                        title="Exit text edit mode and enable dragging/resizing table on canvas"
+                      >
+                        <span>✥</span>
+                        <span>جدول منتقل کریں (Move Table)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onEditObject(null)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#ffffff',
+                          background: '#0284c7',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span>✓</span>
+                        <span>مکمل (Done)</span>
+                      </button>
+                    </div>
+
+                    <div style={{ flex: 1, overflow: 'auto' }}>
+                      <table
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderCollapse: 'collapse',
+                          direction: 'rtl',
+                        }}
+                      >
+                        <tbody>
+                          {editingTable.rows.map((row, rIdx) => (
+                            <tr key={row.id}>
+                              {row.cells.map((cell, cIdx) => {
+                                let text = '';
+                                const contentObj = cell.content as { content?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
+                                if (contentObj?.content) {
+                                  text = contentObj.content
+                                    .map((p) => p.content ? p.content.map((run) => (run.type === 'text' ? run.text || '' : '')).join('') : '')
+                                    .join(' ');
+                                }
+                                return (
+                                  <td
+                                    key={cell.id}
+                                    style={{
+                                      border: `1px solid ${editingTable.borderColor || '#cbd5e1'}`,
+                                      padding: '4px 6px',
+                                      backgroundColor: cell.backgroundColor || '#ffffff',
+                                      direction: 'rtl',
+                                      verticalAlign: 'middle',
+                                    }}
+                                  >
+                                    <input
+                                      type="text"
+                                      value={text}
+                                      onFocus={() => onActiveTableCellChange?.(rIdx, cIdx)}
+                                      onChange={(e) => onUpdateTableCell?.(editingTable.id, rIdx, cIdx, e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Escape') {
+                                          e.preventDefault();
+                                          onEditObject(null);
+                                        }
+                                      }}
+                                      style={{
+                                        width: '100%',
+                                        border: 'none',
+                                        outline: 'none',
+                                        background: 'transparent',
+                                        direction: 'rtl',
+                                        fontFamily: activeFontFamily,
+                                        fontSize: '13px',
+                                        color: '#0f172a',
+                                        textAlign: 'right',
+                                      }}
+                                    />
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
               )}
 
             {/* Footer Region */}

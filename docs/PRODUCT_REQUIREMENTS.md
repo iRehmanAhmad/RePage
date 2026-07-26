@@ -4,9 +4,9 @@ Status: baseline specification
 
 ## 1. Product definition
 
-UrduPage is a desktop-first page-layout and publishing application optimized for Urdu Nastaliq and mixed RTL/LTR documents. It should feel approachable to a first-time user while retaining the precision needed by publishers, newspaper staff, teachers, poets, offices, and designers.
+RePage is a desktop-first word-processing and page-publishing application optimized for Urdu Nastaliq and mixed RTL/LTR documents. It should feel approachable to a first-time user writing ordinary text while retaining the precision needed by publishers, newspaper staff, teachers, poets, offices, and designers.
 
-The first product is a frame-based desktop-publishing editor. It is not initially a complete word processor with automatic book pagination, references, mail merge, or Microsoft Word compatibility.
+The primary product direction is a **Word-style Urdu word processor first**, with InPage-style professional frame layout second. Blank documents open ready for immediate document body typing; text frames and text boxes are inserted deliberately for floating or constrained layout objects.
 
 ## 2. Target users
 
@@ -26,8 +26,8 @@ The first product is a frame-based desktop-publishing editor. It is not initiall
 ## 3. Core jobs to be done
 
 1. Create a correctly sized page or choose a template.
-2. Place and precisely arrange Urdu text, images, and decorative elements.
-3. Type or paste Unicode Urdu without damaged joining or bidi behavior.
+2. Type or paste Unicode Urdu immediately into document body text or positioned frames without damaged joining or bidi behavior.
+3. Place and precisely arrange Urdu text, images, and decorative elements.
 4. Save work safely and recover from an accidental close or crash.
 5. Reopen the document on another supported platform without layout drift.
 6. Export predictable images and PDFs for sharing and printing.
@@ -36,7 +36,10 @@ The first product is a frame-based desktop-publishing editor. It is not initiall
 
 ## 4. Product principles
 
-- **Urdu first:** Urdu is a primary design input, not an RTL checkbox added later.
+- **Urdu first:** Urdu is a primary design input, not an RTL checkbox added later. Home is optimized for ordinary Urdu writing first, then professional layout.
+- **Home tab scope:** Home contains only frequent, fully working actions. Advanced features (OCR, dictionary, character correction, keyboard editor, and normalization) remain under **Urdu Tools** (`🌐`).
+- **Command discipline:** Every Home action must update the canonical document through commands (`editor/commands/`); UI-only state or direct browser editing shortcuts are prohibited.
+- **Deferred extensions:** Add-ins are deferred until a genuine plugin runtime model exists.
 - **Local first:** core authoring works offline and without registration.
 - **Safe by default:** autosave, recovery, validation, migrations, and clear destructive-action warnings.
 - **Progressive complexity:** common actions are obvious; precision tools remain available.

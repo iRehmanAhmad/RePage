@@ -99,7 +99,7 @@ export interface Translations {
 export const DICTIONARY: Record<UiLanguage, Translations> = {
   ur: {
     tabFile: 'فائل (File)',
-    tabHome: 'اہم',
+    tabHome: 'ہوم',
     tabInsert: 'درج کریں',
     tabUrduTools: 'اردو آلات',
     tabPageLayout: 'صفحہ بندی',

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Subscript from '@tiptap/extension-subscript';
@@ -15,6 +15,18 @@ import { canonicalToTiptapHtml, tiptapHtmlToCanonical } from '../../domain/rich-
 import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
 
+export interface TextSelectionInfo {
+  isBold: boolean;
+  isItalic: boolean;
+  isUnderline: boolean;
+  fontFamily?: string;
+  fontSize?: number;
+  color?: string;
+  selectedText: string;
+  from: number;
+  to: number;
+}
+
 export interface TextEditorOverlayProps {
   frame: Rect;
   story: TextStory;
@@ -26,6 +38,8 @@ export interface TextEditorOverlayProps {
   pendingChar?: string | null;
   onCommit: (updatedContent: RichTextDocument) => void;
   onClose: () => void;
+  onEditorReady?: ((editor: Editor | null) => void) | undefined;
+  onSelectionChange?: ((selectionInfo: TextSelectionInfo) => void) | undefined;
 }
 
 export function TextEditorOverlay({
@@ -39,6 +53,8 @@ export function TextEditorOverlay({
   pendingChar,
   onCommit,
   onClose,
+  onEditorReady,
+  onSelectionChange,
 }: TextEditorOverlayProps) {
   const fontDef = getFontDefinition(fontFamily);
   const lastPendingCharacter = useRef<string | null>(null);
@@ -77,7 +93,31 @@ export function TextEditorOverlay({
       const updatedRichText = tiptapHtmlToCanonical(currentEditor.getHTML(), 'rtl');
       onCommit(updatedRichText);
     },
+    onSelectionUpdate: ({ editor: currentEditor }) => {
+      const { from, to } = currentEditor.state.selection;
+      const isCollapsed = from === to;
+      const selectedText = isCollapsed ? '' : currentEditor.state.doc.textBetween(from, to);
+
+      onSelectionChange?.({
+        isBold: currentEditor.isActive('bold'),
+        isItalic: currentEditor.isActive('italic'),
+        isUnderline: currentEditor.isActive('underline'),
+        fontFamily: currentEditor.getAttributes('textStyle').fontFamily || fontFamily,
+        fontSize: currentEditor.getAttributes('textStyle').fontSize || fontSize,
+        color: currentEditor.getAttributes('textStyle').color || color,
+        selectedText,
+        from,
+        to,
+      });
+    },
   });
+
+  useEffect(() => {
+    if (editor && onEditorReady) {
+      onEditorReady(editor);
+      return () => onEditorReady(null);
+    }
+  }, [editor, onEditorReady]);
 
   // Handle pending character insertion from VisualKeyboard or virtual inputs
   useEffect(() => {
@@ -120,9 +160,21 @@ export function TextEditorOverlay({
         boxShadow: 'none',
         padding: '4px 6px',
         overflow: 'auto',
+        userSelect: 'text',
+        WebkitUserSelect: 'text',
+        pointerEvents: 'auto',
       }}
     >
-      <EditorContent editor={editor} />
+      <EditorContent
+        editor={editor}
+        style={{
+          width: '100%',
+          height: '100%',
+          userSelect: 'text',
+          WebkitUserSelect: 'text',
+          pointerEvents: 'auto',
+        }}
+      />
     </div>
   );
 }

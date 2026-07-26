@@ -217,3 +217,177 @@ export function addTableObject(
     },
   };
 }
+
+/**
+ * Inserts a row above or below a specified row index in a TableObject.
+ */
+export function insertTableRow(
+  doc: RePageDocument,
+  tableId: string,
+  targetRowIndex: number = 0,
+  position: 'above' | 'below' = 'below',
+): RePageDocument {
+  const table = doc.objects[tableId];
+  if (!table || table.type !== 'table') return doc;
+
+  const colCount = table.rows[0]?.cells.length || 3;
+  const insertIndex = position === 'above' ? targetRowIndex : targetRowIndex + 1;
+  const newRowId = createId('row');
+
+  const newCells: TableCell[] = [];
+  for (let c = 0; c < colCount; c++) {
+    newCells.push({
+      id: `cell_${newRowId}_${c}`,
+      content: { type: 'doc', content: [paragraph(`خانہ ${insertIndex + 1},${c + 1}`, 'rtl')] },
+      backgroundColor: '#ffffff',
+    });
+  }
+
+  const updatedRows = [...table.rows];
+  updatedRows.splice(insertIndex, 0, { id: newRowId, cells: newCells });
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [tableId]: {
+        ...table,
+        rows: updatedRows,
+        frame: {
+          ...table.frame,
+          height: updatedRows.length * 32,
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Deletes a row at a specified row index in a TableObject.
+ */
+export function deleteTableRow(
+  doc: RePageDocument,
+  tableId: string,
+  rowIndex: number = 0,
+): RePageDocument {
+  const table = doc.objects[tableId];
+  if (!table || table.type !== 'table' || table.rows.length <= 1) return doc;
+
+  const updatedRows = table.rows.filter((_, idx) => idx !== rowIndex);
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [tableId]: {
+        ...table,
+        rows: updatedRows,
+        frame: {
+          ...table.frame,
+          height: updatedRows.length * 32,
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Inserts a column to the left or right of a specified column index in a TableObject.
+ */
+export function insertTableColumn(
+  doc: RePageDocument,
+  tableId: string,
+  targetColIndex: number = 0,
+  position: 'left' | 'right' = 'right',
+): RePageDocument {
+  const table = doc.objects[tableId];
+  if (!table || table.type !== 'table') return doc;
+
+  const insertIndex = position === 'left' ? targetColIndex : targetColIndex + 1;
+
+  const updatedRows = table.rows.map((row, rIdx) => {
+    const newCell: TableCell = {
+      id: `cell_${rIdx}_${createId('col')}`,
+      content: { type: 'doc', content: [paragraph(`خانہ ${rIdx + 1},${insertIndex + 1}`, 'rtl')] },
+      backgroundColor: '#ffffff',
+    };
+    const nextCells = [...row.cells];
+    nextCells.splice(insertIndex, 0, newCell);
+    return { ...row, cells: nextCells };
+  });
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [tableId]: {
+        ...table,
+        rows: updatedRows,
+      },
+    },
+  };
+}
+
+/**
+ * Deletes a column at a specified column index in a TableObject.
+ */
+export function deleteTableColumn(
+  doc: RePageDocument,
+  tableId: string,
+  colIndex: number = 0,
+): RePageDocument {
+  const table = doc.objects[tableId];
+  if (!table || table.type !== 'table') return doc;
+  if ((table.rows[0]?.cells.length || 0) <= 1) return doc;
+
+  const updatedRows = table.rows.map((row) => ({
+    ...row,
+    cells: row.cells.filter((_, idx) => idx !== colIndex),
+  }));
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [tableId]: {
+        ...table,
+        rows: updatedRows,
+      },
+    },
+  };
+}
+
+/**
+ * Updates properties of a specific cell in a TableObject.
+ */
+export function updateTableCell(
+  doc: RePageDocument,
+  tableId: string,
+  rowIndex: number,
+  colIndex: number,
+  updatedProps: Partial<TableCell>,
+): RePageDocument {
+  const table = doc.objects[tableId];
+  if (!table || table.type !== 'table') return doc;
+  if (!table.rows[rowIndex] || !table.rows[rowIndex].cells[colIndex]) return doc;
+
+  const updatedRows = table.rows.map((row, rIdx) => {
+    if (rIdx !== rowIndex) return row;
+    const updatedCells = row.cells.map((cell, cIdx) => {
+      if (cIdx !== colIndex) return cell;
+      return { ...cell, ...updatedProps };
+    });
+    return { ...row, cells: updatedCells };
+  });
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [tableId]: {
+        ...table,
+        rows: updatedRows,
+      },
+    },
+  };
+}

@@ -7,6 +7,7 @@ export interface FindMatch {
 export interface FindReplaceOptions {
   matchCase?: boolean;
   ignoreAerab?: boolean;
+  matchVariants?: boolean;
 }
 
 // Urdu Aerab / diacritic character set regex range (U+064B - U+065F, U+0670)
@@ -17,7 +18,14 @@ export function stripAerab(input: string): string {
 }
 
 /**
- * Searches for query substring occurrences within input text with support for case & aerab options.
+ * Normalizes Arabic-to-Urdu character variants for flexible matching (ك -> ک, ي -> ی).
+ */
+export function normalizeVariants(input: string): string {
+  return input.replace(/ك/g, 'ک').replace(/ي/g, 'ی');
+}
+
+/**
+ * Searches for query substring occurrences within input text with support for case, aerab & variant options.
  */
 export function findInUrduText(
   text: string,
@@ -26,7 +34,7 @@ export function findInUrduText(
 ): FindMatch[] {
   if (!text || !query) return [];
 
-  const { matchCase = false, ignoreAerab = false } = options;
+  const { matchCase = false, ignoreAerab = false, matchVariants = false } = options;
 
   let targetText = text;
   let searchQuery = query;
@@ -39,6 +47,11 @@ export function findInUrduText(
   if (ignoreAerab) {
     targetText = stripAerab(targetText);
     searchQuery = stripAerab(searchQuery);
+  }
+
+  if (matchVariants) {
+    targetText = normalizeVariants(targetText);
+    searchQuery = normalizeVariants(searchQuery);
   }
 
   const matches: FindMatch[] = [];

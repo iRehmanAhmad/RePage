@@ -27,6 +27,20 @@ class CommandRegistry {
     return this.commands.get(id);
   }
 
+  public setHandler(id: string, execute: (...args: any[]) => void | Promise<void>): void {
+    const existing = this.commands.get(id);
+    if (existing) {
+      existing.execute = execute;
+    } else {
+      this.commands.set(id, {
+        id,
+        label: id,
+        category: 'edit',
+        execute,
+      });
+    }
+  }
+
   public getAll(): CommandDefinition[] {
     return Array.from(this.commands.values());
   }
@@ -47,3 +61,45 @@ class CommandRegistry {
 }
 
 export const commandRegistry = new CommandRegistry();
+
+// Default Registration of Clipboard Commands
+commandRegistry.register({
+  id: 'edit.cut',
+  label: 'Cut Selection',
+  category: 'edit',
+  shortcut: 'Ctrl+X',
+  icon: '✂️',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'edit.copy',
+  label: 'Copy Selection',
+  category: 'edit',
+  shortcut: 'Ctrl+C',
+  icon: '📄',
+  isUndoable: false,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'edit.paste',
+  label: 'Paste',
+  category: 'edit',
+  shortcut: 'Ctrl+V',
+  icon: '📋',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'edit.pasteUnformatted',
+  label: 'Keep Text Only',
+  category: 'edit',
+  shortcut: 'Ctrl+Shift+V',
+  icon: '📄',
+  isUndoable: true,
+  execute: () => {},
+});
+

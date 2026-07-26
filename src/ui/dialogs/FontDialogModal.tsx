@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getFontCategoryBadge } from '../../domain/unicode/fontRegistry';
 
 export interface FontProps {
   fontFamily: string;
@@ -126,21 +127,30 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
               <div>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Font:</label>
                 <div style={{ border: '1px solid var(--panel-border)', borderRadius: '4px', height: '110px', overflowY: 'auto', background: 'var(--panel-bg)', marginTop: '4px' }}>
-                  {FONT_FAMILIES.map((fam) => (
-                    <div
-                      key={fam}
-                      onClick={() => setFontFamily(fam)}
-                      style={{
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                        backgroundColor: fontFamily === fam ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                        color: fontFamily === fam ? 'var(--emerald-accent)' : 'var(--text-main)',
-                      }}
-                    >
-                      {fam}
-                    </div>
-                  ))}
+                  {FONT_FAMILIES.map((fam) => {
+                    const badge = getFontCategoryBadge(fam);
+                    return (
+                      <div
+                        key={fam}
+                        onClick={() => setFontFamily(fam)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          backgroundColor: fontFamily === fam ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                          color: fontFamily === fam ? 'var(--emerald-accent)' : badge.isUnavailable ? '#dc2626' : 'var(--text-main)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <span style={{ fontFamily: fam }}>{fam}</span>
+                        <span style={{ fontSize: '9px', opacity: 0.8, color: badge.isUnavailable ? '#dc2626' : 'var(--text-muted)' }}>
+                          {badge.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

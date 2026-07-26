@@ -367,16 +367,26 @@ button, input, select, textarea {
   position: relative;
   z-index: 102;
   overflow: visible;
+  scrollbar-width: thin;
+}
+
+.ribbon-toolbar-body::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ribbon-toolbar-body::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 2px;
 }
 
 .ribbon-group-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   height: 64px;
   position: relative;
   z-index: 103;
-  overflow: visible;
+  flex-wrap: nowrap;
 }
 
 /* MS Word Ribbon Group Card Container */
@@ -618,6 +628,17 @@ button, input, select, textarea {
   -webkit-user-select: text;
 }
 
+/* Microsoft Word Style Text Selection Highlight */
+.ProseMirror ::selection {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.ProseMirror-selectednode {
+  outline: 2px solid #2563eb !important;
+  background: rgba(37, 99, 235, 0.15) !important;
+}
+
 .smart-delete-preview {
   background: transparent;
   outline: none;
@@ -831,4 +852,42 @@ button, input, select, textarea {
 .range-slider {
   width: 100%;
   accent-color: var(--emerald-accent);
+}
+
+/* Ribbon Layout Responsiveness (1024px through 1920px) */
+@media (min-width: 1441px) and (max-width: 1920px) {
+  .ribbon-toolbar-body {
+    padding: 4px 16px;
+  }
+  .ribbon-group-row {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 1201px) and (max-width: 1440px) {
+  .ribbon-toolbar-body {
+    padding: 4px 10px;
+  }
+  .ribbon-group-row {
+    gap: 5px;
+  }
+  .ribbon-group-box {
+    padding: 2px 5px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .ribbon-toolbar-body {
+    padding: 4px 6px;
+  }
+  .ribbon-group-row {
+    gap: 4px;
+  }
+  .ribbon-group-box {
+    padding: 2px 4px;
+  }
+  .ribbon-action-btn {
+    padding: 3px 6px;
+    font-size: 9.5px;
+  }
 }

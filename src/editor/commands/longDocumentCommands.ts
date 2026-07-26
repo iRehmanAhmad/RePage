@@ -74,21 +74,103 @@ export function addFootnoteCommand(
 }
 
 /**
- * Inserts or updates auto-generated Table of Contents into a story.
+ * Adds an endnote entry linked to a document page.
  */
-export function insertTocCommand(doc: RePageDocument, storyId = 'toc-story'): RePageDocument {
-  const tocEntries = generateTableOfContents(doc);
-  const tocRichText = buildTocRichTextDocument(tocEntries);
+export function addEndnoteCommand(
+  doc: RePageDocument,
+  pageId: string,
+  text: string,
+): RePageDocument {
+  const endnotes = doc.endnotes ? { ...doc.endnotes } : {};
+  const number = Object.keys(endnotes).length + 1;
+  const endnoteId = `en_${number}`;
+
+  const newEndnote: FootnoteEntry = {
+    id: endnoteId,
+    number,
+    text,
+    pageId,
+  };
 
   return {
     ...doc,
-    stories: {
-      ...doc.stories,
-      [storyId]: {
-        id: storyId,
-        name: 'Table of Contents',
-        content: tocRichText,
-      },
+    endnotes: {
+      ...endnotes,
+      [endnoteId]: newEndnote,
     },
   };
+}
+
+/**
+ * Inserts or updates auto-generated Table of Contents into a story and places a visible text frame object on the target page layout canvas.
+ */
+export function insertTocCommand(doc: RePageDocument, targetPageId?: string, storyId = 'toc-story'): RePageDocument {
+  const tocEntries = generateTableOfContents(doc);
+  const tocRichText = buildTocRichTextDocument(tocEntries);
+  const pageId = targetPageId || doc.pageOrder[0] || 'page-1';
+  const page = doc.pages[pageId];
+
+  const updatedStories = {
+    ...doc.stories,
+    [storyId]: {
+      id: storyId,
+      name: 'Table of Contents',
+      content: tocRichText,
+    },
+  };
+
+  let updatedDoc: RePageDocument = {
+    ...doc,
+    stories: updatedStories,
+  };
+
+  if (page) {
+    const existingTocObjId = page.objectOrder.find((objId) => {
+      const obj = doc.objects[objId];
+      return obj && obj.type === 'text-frame' && obj.storyId === storyId;
+    });
+
+    if (!existingTocObjId) {
+      const tocObjId = `toc_frame_${Date.now()}`;
+      const tocFrame: import('../../domain/document/types').TextFrameObject = {
+        id: tocObjId,
+        pageId,
+        name: 'فہرست عنوانات (Table of Contents)',
+        type: 'text-frame',
+        storyId,
+        fontFamily: 'Noto Nastaliq Urdu',
+        fontSize: 14,
+        color: '#0f172a',
+        lineHeight: 1.8,
+        padding: { top: 8, right: 8, bottom: 8, left: 8 },
+        locked: false,
+        hidden: false,
+        opacity: 1,
+        frame: {
+          x: page.margins.left,
+          y: page.margins.top + 20,
+          width: page.width - page.margins.left - page.margins.right,
+          height: 180,
+          rotation: 0,
+        },
+      };
+
+      updatedDoc = {
+        ...updatedDoc,
+        objects: {
+          ...updatedDoc.objects,
+          [tocObjId]: tocFrame,
+        },
+        pages: {
+          ...updatedDoc.pages,
+          [pageId]: {
+            ...page,
+            objectOrder: [...page.objectOrder, tocObjId],
+          },
+        },
+      };
+    }
+  }
+
+  return updatedDoc;
 }

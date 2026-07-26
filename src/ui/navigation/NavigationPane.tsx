@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { PageId, RePageDocument } from '../../domain/document/types';
 import { extractHeadingTree, reorderHeadingSection, type HeadingNode } from '../../domain/document/headingNavigationEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { findInUrduText, replaceInUrduText } from '../../domain/rich-text/findReplace';
 
 export interface NavigationPaneProps {
   isOpen: boolean;
@@ -30,6 +31,42 @@ export function NavigationPane({
 }: NavigationPaneProps) {
   const [activeTab, setActiveTab] = useState<NavTab>('pages');
   const [searchQuery, setSearchQuery] = useState('');
+  const [replaceQuery, setReplaceQuery] = useState('');
+  const [ignoreAerab, setIgnoreAerab] = useState(true);
+  const [matchVariants, setMatchVariants] = useState(true);
+  const [replaceMsg, setReplaceMsg] = useState('');
+
+  const handleReplaceAll = () => {
+    if (!searchQuery || !onUpdateDocument) return;
+    const updatedStories = { ...document.stories };
+    let totalCount = 0;
+
+    for (const [storyId, story] of Object.entries(updatedStories)) {
+      if (story.content?.content) {
+        const nextContent = { ...story.content };
+        nextContent.content = nextContent.content.map((p) => {
+          if (p.content) {
+            const nextRuns = p.content.map((run) => {
+              if (run.type === 'text' && typeof run.text === 'string') {
+                const matches = findInUrduText(run.text, searchQuery, { ignoreAerab, matchVariants });
+                if (matches.length > 0) {
+                  totalCount += matches.length;
+                  return { ...run, text: replaceInUrduText(run.text, searchQuery, replaceQuery, { ignoreAerab, matchVariants }) };
+                }
+              }
+              return run;
+            });
+            return { ...p, content: nextRuns };
+          }
+          return p;
+        });
+        updatedStories[storyId] = { ...story, content: nextContent };
+      }
+    }
+
+    onUpdateDocument({ ...document, stories: updatedStories });
+    setReplaceMsg(lang === 'ur' ? `${totalCount} مقامات تبدیل کر دیے گئے` : `Replaced ${totalCount} occurrences`);
+  };
 
   if (!isOpen) return null;
 
@@ -152,7 +189,6 @@ export function NavigationPane({
         position: 'relative',
       }}
     >
-      {/* Right Resizer Drag Handle */}
       <div
         onMouseDown={handleMouseDownResize}
         title="Drag to resize Navigation Pane width"
@@ -168,7 +204,6 @@ export function NavigationPane({
         }}
       />
 
-      {/* Pane Header */}
       <div
         style={{
           display: 'flex',
@@ -198,12 +233,11 @@ export function NavigationPane({
         </button>
       </div>
 
-      {/* Search Input Box */}
       <div style={{ padding: '8px 12px', borderBottom: '1px solid #1e293b' }}>
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => { setSearchQuery(e.target.value); setReplaceMsg(''); }}
           placeholder={lang === 'ur' ? 'دستاویز میں تلاش کریں...' : 'Search document...'}
           style={{
             width: '100%',
@@ -218,7 +252,6 @@ export function NavigationPane({
         />
       </div>
 
-      {/* Sub-tabs: Headings | Pages | Results */}
       <div
         style={{
           display: 'flex',
@@ -241,7 +274,7 @@ export function NavigationPane({
             cursor: 'pointer',
           }}
         >
-          {lang === 'ur' ? 'سرخی (Headings)' : 'Headings'}
+          {lang === 'ur' ? 'سرخی' : 'Headings'}
         </button>
         <button
           type="button"
@@ -258,7 +291,7 @@ export function NavigationPane({
             cursor: 'pointer',
           }}
         >
-          {lang === 'ur' ? 'صفحات (Pages)' : 'Pages'}
+          {lang === 'ur' ? 'صفحات' : 'Pages'}
         </button>
         <button
           type="button"
@@ -275,11 +308,10 @@ export function NavigationPane({
             cursor: 'pointer',
           }}
         >
-          {lang === 'ur' ? 'نتائج (Results)' : 'Results'}
+          {lang === 'ur' ? 'تلاش و تبدیل' : 'Find & Replace'}
         </button>
       </div>
 
-      {/* Tab Content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
         {activeTab === 'pages' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
@@ -334,11 +366,69 @@ export function NavigationPane({
         )}
 
         {activeTab === 'results' && (
-          <div style={{ padding: '8px 4px', color: '#94a3b8', fontSize: '11px' }}>
-            {searchQuery ? (
-              <span>{lang === 'ur' ? `تلاش برائے: "${searchQuery}"` : `Searching for "${searchQuery}"...`}</span>
-            ) : (
-              <span>{lang === 'ur' ? 'تلاش کی عبارت ٹائپ کریں' : 'Type to search document text'}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', color: '#f8fafc' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', color: '#94a3b8' }}>
+                {lang === 'ur' ? 'تبدیل کریں بذریعہ:' : 'Replace with:'}
+              </label>
+              <input
+                type="text"
+                value={replaceQuery}
+                onChange={(e) => setReplaceQuery(e.target.value)}
+                placeholder={lang === 'ur' ? 'متبادل متن...' : 'Replacement text...'}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#1e293b',
+                  color: '#f8fafc',
+                  border: '1px solid #334155',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '4px 0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '10px', color: '#cbd5e1' }}>
+                <input
+                  type="checkbox"
+                  checked={ignoreAerab}
+                  onChange={(e) => setIgnoreAerab(e.target.checked)}
+                />
+                <span>{lang === 'ur' ? 'اعراب نظر انداز کریں' : 'Ignore Diacritics/Aerab'}</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '10px', color: '#cbd5e1' }}>
+                <input
+                  type="checkbox"
+                  checked={matchVariants}
+                  onChange={(e) => setMatchVariants(e.target.checked)}
+                />
+                <span>{lang === 'ur' ? 'حروف یکساں رکھیں (ك=ک, ي=ی)' : 'Match Character Variants'}</span>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleReplaceAll}
+              disabled={!searchQuery}
+              style={{
+                padding: '6px',
+                backgroundColor: searchQuery ? '#0284c7' : '#334155',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: 600,
+                cursor: searchQuery ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {lang === 'ur' ? 'تمام تبدیل کریں' : 'Replace All'}
+            </button>
+
+            {replaceMsg && (
+              <div style={{ padding: '4px', color: '#10b981', fontSize: '10px', textAlign: 'center', fontWeight: 600 }}>
+                {replaceMsg}
+              </div>
             )}
           </div>
         )}

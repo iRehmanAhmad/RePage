@@ -36,9 +36,11 @@ describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspecto
     expect(screen.getByText('Urdu Tools')).toBeInTheDocument();
 
     // MS Word Home Ribbon Group Captions
+    expect(screen.getByText('Urdu Input')).toBeInTheDocument();
     expect(screen.getByText('Clipboard')).toBeInTheDocument();
     expect(screen.getByText('Font')).toBeInTheDocument();
     expect(screen.getByText('Paragraph')).toBeInTheDocument();
+    expect(screen.getByText('Urdu Styles')).toBeInTheDocument();
 
     // Right Sidebar Properties Inspector Header
     expect(screen.getByText('⚙ Properties')).toBeInTheDocument();
@@ -50,9 +52,11 @@ describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspecto
     const langSelect = screen.getByTitle('Software Menu Language');
     fireEvent.change(langSelect, { target: { value: 'ur' } });
 
-    // Verify translated Urdu tab titles & properties inspector header
+    // Verify translated Urdu tab titles, group captions, and properties inspector header
     expect(screen.getAllByText('فائل (File)')[0]).toBeInTheDocument();
-    expect(screen.getByText('اہم')).toBeInTheDocument();
+    expect(screen.getByText('ہوم')).toBeInTheDocument();
+    expect(screen.getByText('اردو ان پٹ')).toBeInTheDocument();
+    expect(screen.getByText('اردو اسٹائلز')).toBeInTheDocument();
     expect(screen.getByText('⚙ خواص')).toBeInTheDocument();
   }, 15000);
 });

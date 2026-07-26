@@ -1,8 +1,90 @@
 # Detailed Implementation Plan
 
-Status: Approved sequencing baseline (Phases 0 through 9 / Milestones M0 through M5 COMPLETE)
+Status: Approved sequencing baseline (M0 through M5 COMPLETE; Milestone M6 — Urdu-first Home Ribbon IN PROGRESS)
 
 The plan is gate-driven. A later phase may be researched early, but production feature work must not bypass unresolved data-loss, typography, or export gates.
+
+## Active Workstream — Milestone M6: Urdu-first Home Ribbon
+
+Duration: 8–10 weeks for one developer. Focus: making Home ribbon controls real and safe through canonical commands, Urdu-native authoring ergonomics, and strict button discipline.
+
+### M6 Phase 0 — Confirm product direction and scope (COMPLETE)
+
+- Resolve conflict between frame-first DTP and Word-style authoring: RePage is a Word-style Urdu word processor first, professional layout second.
+- Home is optimized for ordinary Urdu writing first, then professional layout.
+- Urdu Tools remains the home for advanced features: OCR, dictionary, character correction, keyboard editor, and normalization.
+- Home contains only frequent, working actions.
+- Every Home action must update the canonical document through commands; no UI-only state or direct browser editing shortcuts.
+- Add-ins are deferred until a genuine plugin model exists.
+- Deliverables: updated `PRODUCT_REQUIREMENTS.md`, `IMPLEMENTATION_PLAN.md`, `ADR-0005: Urdu-first Home-ribbon design`, and `HOME_RIBBON_INVENTORY.md`.
+
+### M6 Phase 1 — Remove misleading and incomplete controls
+
+- Reduce Home tab to controls that genuinely work.
+- Remove or hide until implemented: Add-ins, Text Effects, Change Case, Sort A–Z, Multilevel List, Format Painter, Paragraph borders and shading, Advanced underline styles, Paste Special variants that do not behave differently, Quick Styles that only show a message.
+- Keep initially: Paste, Cut, Copy, Font family and size, Bold, Italic, Underline, Font color and clear formatting, RTL/LTR direction, Alignment, Kashida justification, Bullets, numbering, indent, line spacing, Find, Replace, Select.
+- Exit gate: no visible button can merely display a message while claiming to edit the document.
+
+### M6 Phase 2 — Build the new Urdu-first Home layout
+
+- Information structure: `Urdu Input | Clipboard | Font | Paragraph | Urdu Styles | Editing`.
+- Urdu UI: groups begin from right side (RTL order). English UI retains LTR ordering.
+- Urdu Input group: Navees / CRULP / English mode selector, Roman Urdu transliteration switch, Visual keyboard show/hide, Urdu vs Western numerals, Quick Urdu paragraph preset.
+- Clipboard group: Paste, Cut, Copy, Paste clean Unicode.
+- Font group: Installed Urdu font selector, Font size, Grow/shrink font, Bold, Italic, Underline, Highlight and font color, Clear formatting.
+- Paragraph group: RTL/LTR direction, Right, centre, left, justify, Kashida justify, Bullets and numbering, Indent, Line spacing.
+- Urdu Styles group: عام متن, عنوان ۱, عنوان ۲, شاعری, اقتباس.
+- Editing group: Find, Replace, Select.
+- Exit gate: fits clearly at 1280px width, defined overflow strategy at 1024px, no clipped style cards.
+
+### M6 Phase 3 — Connect Home controls to real document commands
+
+- Mutation flow: Home control → command registry → canonical document update → undo/redo → autosave → editor refresh.
+- Selection-aware font and paragraph commands.
+- Caret state detection.
+- Undoable formatting transactions and save/reopen persistence.
+- No direct `document.execCommand()` as normal mutation mechanism.
+- Disabled controls when no text/compatible object selected.
+- Special Urdu requirements: RTL direction separate from alignment; Kashida explicit formatting metadata (no destructive tatweel insertion); non-destructive mark preservation; visual order preserved on save/reopen.
+- Exit gate: formatting selected Urdu paragraph, undoing, saving, reopening, and exporting produces identical result.
+
+### M6 Phase 4 — Urdu input, fonts and safe paste
+
+- Urdu input: Home-level mode selector for Navees, CRULP phonetic, English, Roman Urdu transliteration. Visual keyboard toggle.
+- Fonts: Categories for Bundled verified fonts, Installed local fonts, Unavailable fonts (clearly marked), Manage fonts. No proprietary fonts presented as included.
+- Safe paste: Keep formatting, Match document formatting, Plain Unicode text, Inspect character variants (preview + confirmation).
+- Exit gate: pasted Urdu retains correct joining, mixed-direction text, Urdu punctuation, numerals, ZWNJ, ZWJ, RLM and LRM.
+
+### M6 Phase 5 — Real Urdu styles and editing tools
+
+- Canonical paragraph/character styles (Stable ID, Font reference, Size, Direction, Alignment, Spacing, Line height, Kashida behaviour, Save/export support).
+- Initial Urdu style set: عام متن, عنوان ۱, عنوان ۲, شاعری, اقتباس. Real Nastaliq previews instead of `AaBb`.
+- Find & Replace: Diacritic-aware matching, optional character-variant matching, clear search scope, safe Replace All preview.
+- Exit gate: styles apply to real selected text, persist in `.urdup`, and appear correctly after reopen.
+
+### M6 Phase 6 — Full Urdu localization and RTL interface
+
+- Rename `اہم` to `ہوم`.
+- Complete Urdu translations for ribbons, dialogs, menus, tooltips, ARIA labels.
+- Mirror ribbon group order and dropdown placement in Urdu mode.
+- Default to Urdu locale when OS locale is Urdu/Pakistan.
+- Exit gate: Urdu mode has no unexplained English labels in Home experience.
+
+### M6 Phase 7 — Accessibility, responsive behaviour and QA
+
+- Resolution testing (1024×768, 1280×720, 1366×768, 1920×1080, 200% scale, light/dark/high-contrast themes).
+- Scenario matrix: Urdu-only, English-only, Mixed Urdu/English, URLs/dates/currency, Poetry, Quranic marks/honorifics, copy/paste across sources, keyboard-only, screen readers, undo/redo/autosave/recovery.
+- Validation: `npm run check:utf8`, `npm run lint`, `npm run build`, `npm run test`.
+- Exit gate: all automated tests pass, zero regressions across resolution matrix.
+
+### M6 Phase 8 — Small user validation release
+
+- User panel: 5 InPage users, 5 Urdu writers/teachers/students, 3 publishing operators.
+- 4 key tasks: type letter, paste/clean Urdu, format poetry page, bilingual heading.
+- Success targets: 80% basic completion, 90% keyboard switch discovery, 0 Unicode corruption, 70% preference over current workflow.
+- Exit gate: user validation metrics met.
+
+---
 
 ## Phase 0 — Baseline and prototype quarantine
 

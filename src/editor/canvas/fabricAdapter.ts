@@ -455,6 +455,94 @@ export class FabricCanvasAdapter {
             originY: 'top',
           });
         }
+      } else if (obj.type === 'table') {
+        const rowCount = Math.max(1, obj.rows.length);
+        const colCount = Math.max(1, obj.rows[0]?.cells.length || 1);
+        const cellH = obj.frame.height / rowCount;
+        const cellW = obj.frame.width / colCount;
+
+        const groupObjects: fabric.FabricObject[] = [];
+
+        // Outer border
+        groupObjects.push(
+          new fabric.Rect({
+            left: 0,
+            top: 0,
+            width: obj.frame.width,
+            height: obj.frame.height,
+            fill: 'rgba(255, 255, 255, 0.95)',
+            stroke: obj.borderColor || '#cbd5e1',
+            strokeWidth: obj.borderWidth || 1,
+            originX: 'left',
+            originY: 'top',
+          }),
+        );
+
+        // Internal row dividers
+        for (let r = 1; r < rowCount; r++) {
+          groupObjects.push(
+            new fabric.Line([0, r * cellH, obj.frame.width, r * cellH], {
+              stroke: obj.borderColor || '#cbd5e1',
+              strokeWidth: obj.borderWidth || 1,
+              originX: 'left',
+              originY: 'top',
+            }),
+          );
+        }
+
+        // Internal column dividers
+        for (let c = 1; c < colCount; c++) {
+          groupObjects.push(
+            new fabric.Line([c * cellW, 0, c * cellW, obj.frame.height], {
+              stroke: obj.borderColor || '#cbd5e1',
+              strokeWidth: obj.borderWidth || 1,
+              originX: 'left',
+              originY: 'top',
+            }),
+          );
+        }
+
+        // Cell text
+        const fontDef = getFontDefinition('Noto Nastaliq Urdu');
+        obj.rows.forEach((row, r) => {
+          row.cells.forEach((cell, c) => {
+            let cellText = '';
+            const contentObj = cell.content as { content?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
+            if (contentObj?.content) {
+              cellText = contentObj.content
+                .map((p) => p.content ? p.content.map((run) => (run.type === 'text' ? run.text || '' : '')).join('') : '')
+                .join(' ');
+            }
+            if (cellText.trim()) {
+              groupObjects.push(
+                new fabric.Textbox(cellText, {
+                  left: c * cellW + 4,
+                  top: r * cellH + Math.max(0, cellH / 2 - 10),
+                  width: Math.max(10, cellW - 8),
+                  fontSize: 12,
+                  fontFamily: fontDef.family,
+                  fill: '#1e293b',
+                  textAlign: 'right',
+                  originX: 'left',
+                  originY: 'top',
+                  editable: false,
+                }),
+              );
+            }
+          });
+        });
+
+        fabricObj = new fabric.Group(groupObjects, {
+          left: obj.frame.x,
+          top: obj.frame.y,
+          width: obj.frame.width,
+          height: obj.frame.height,
+          angle: obj.frame.rotation,
+          opacity: obj.opacity,
+          selectable: !obj.locked,
+          originX: 'left',
+          originY: 'top',
+        });
       }
 
       if (fabricObj) {

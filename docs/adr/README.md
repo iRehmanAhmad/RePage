@@ -21,6 +21,7 @@ Each ADR includes context, decision, consequences, alternatives, validation, and
 | [0002](0002-hybrid-canvas-dom-editor.md) | Fabric geometry with DOM rich-text editing | Accepted |
 | [0003](0003-desktop-shell-strategy.md) | Shared web core with gated Tauri desktop shell | Accepted |
 | [0004](0004-local-first-collaboration-later.md) | Offline local publishing precedes collaboration | Accepted |
+| [0005](0005-urdu-first-home-ribbon.md) | Urdu-first Home-ribbon design and command scope | Accepted |
 
 ## Template
 

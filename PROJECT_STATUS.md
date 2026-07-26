@@ -4,9 +4,16 @@ Last updated: 2026-07-26
 
 ## Current phase
 
-**M6 — Interactive Editing & UI Polish: IN PROGRESS** (M0 Foundation, M2 Urdu Typography Beta, M3 Document Production Beta, M4 Desktop Release Candidate, M5 Collaboration Preview: COMPLETE)
+**Ribbon & Object System Milestone (M6) — Foundation Substantially Implemented (M6 IN PROGRESS)**
 
-The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, Milestone 4 Desktop Release Candidate, and Milestone 5 Collaboration Preview are complete. M6 Interactive Editing & UI Polish is in progress, covering MS Word–style ribbon UI, Quick Access Toolbar, interactive canvas text editing via double-click activation and Visual Keyboard typing, the `addTextFrame` document command, and MS Word 365 Home tab features (Clipboard & Advanced Font Engine).
+Phases 0 through 5 are substantially implemented, with ongoing refinement & validation for Milestone 6:
+- **Phase 0 — Safe Editor Mechanics**: Layer z-index ordering updated in `PaginatedPrintLayout.tsx` (Fabric Canvas at `zIndex: 20`, Body Editor at `zIndex: 10`) so clicks on text boxes, shapes, images, and tables immediately select them even when selection is cleared. Blank space clicks deselect objects and return focus to body editor.
+- **Phase 1 — Text Box & Selection Foundation**: Text boxes insert in selection state without forcing inline edit mode. Added Enter/Escape edit toggle and Delete/Backspace removal.
+- **Phase 2 — Vector Shapes & Validated Image Import**: Vector path rendering for 13 shape kinds with editable text inside shape stories. Validated picture import (PNG/JPEG/WebP/SVG, 25MB max size) and image replacement.
+- **Phase 3 — Vector Table Objects & DOM Table Editor Overlay**: 10x8 interactive ribbon grid picker (unclipped via `overflow: visible`), active-cell position tracking (`activeTableCell`) for ribbon `Row Above`, `Row Below`, `Col Left`, `Col Right`, `Delete Row`, `Delete Col` actions, vector canvas grid rendering, and DOM Table Editor overlay.
+- **Phase 4 — Urdu Input, Fonts, & Safe Paste**: Home-level `Urdu Input` group (`اردو انپٹ`) with layout mode selector, Roman Urdu transliteration toggle, visual keyboard toggle, and numeral system switcher; script-aware dual font dropdowns (Urdu & English) with independent recent font tracking; safe paste options with Arabic/Urdu character variant inspection.
+- **Phase 5 — Real Urdu Styles & Editing Tools**: Native Urdu Quick Styles (`عام متن`, `عنوان ۱`, `عنوان ۲`, `شاعری`, `اقتباس`) with real Nastaliq preview cards in Home Ribbon; diacritic-aware (`ignoreAerab`) and variant-aware (`ك`=`ک`, `ي`=`ی`) Find & Replace engine in Navigation Pane with safe Replace All across document stories.
+- **Canonical References & Page Operations**: Footnotes (`addFootnoteCommand`), TOC (`insertTocCommand`), Bookmarks (`addBookmarkCommand`), and Page Operations (`addPage`, `removePage`) linked to canonical document state, fully undoable, saved to `.urdup` and reopened cleanly.
 
 ## Completed capabilities (M0–M5 Exit Gates Passed, M6 In Progress)
 
