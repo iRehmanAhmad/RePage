@@ -17,13 +17,12 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
 - **Current Milestone**: RePage UX/UI Modernization (Phases UX-0 through UX-8 **Complete**).
 - **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED.
-- **MS Word–Style UI**: Quick Access Toolbar (QAT), centered document title, Backstage File menu (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), Selection Pane (`SelectionPane.tsx`), statusbar with centered keyboard toggle & zoom slider, 7-tab MS Word ribbon with dynamic Contextual Tabs (Shape Format 🎨, Picture Format 🖼️, Table Design 📊).
-- **Word-Style Authoring Surface & Automatic Pagination (Phases UX-2 & UX-3)**: Continuous document story typing with `DocumentBodyEditor.tsx`, Tiptap converter (`tiptapConverter.ts`), automatic paper sheet pagination engine (`paginationEngine.ts`), section breaks (`sectionEngine.ts`), multi-page print layout (`PaginatedPrintLayout.tsx`), and document rulers (`DocumentRulers.tsx`).
-- **Inserted Objects, Text Boxes & Wrapping (Phase UX-4)**: Text wrapping engine (`textWrapEngine.ts`), Z-order layer reordering, single/multi-object alignments, table object insertion (`addTableObject`), image crop bounds, and Selection & Layers side pane (`SelectionPane.tsx`).
-- **Long-Document Features (Phase UX-5)**: Heading navigation & section reordering (`headingNavigationEngine.ts`), Table of Contents (`tocEngine.ts`), page-anchored footnotes (`longDocumentCommands.ts`), figure/table/equation captions (`captionEngine.ts`), subject index generator (`indexEngine.ts`), styles manager (`StylesManagerModal.tsx`), and document statistics (`DocumentStatsModal.tsx`).
-- **Urdu-Native Authoring Excellence (Phase UX-6)**: Character & punctuation substitution engine (`characterSubstitutionEngine.ts`), Arabic to native Urdu letter conversion modal (`CharacterSubstitutionModal.tsx`), diacritic-aware search (`findReplace.ts`), custom keyboard layout editor (`customKeyboardEngine.ts`, `KeyboardLayoutEditorModal.tsx`), and redesigned visual keyboard with diacritic modifier row.
-- **Review and Collaboration UX (Phase UX-7)**: Track Changes engine (`trackChangesEngine.ts`), Reviewing Pane (`ReviewingPane.tsx`), Accept/Reject revisions, Document Compare engine (`documentCompareEngine.ts`), Version History snapshots (`versionHistoryEngine.ts`, `VersionHistoryModal.tsx`), Share & Permissions dialog (`ShareDialogModal.tsx`), and Editing/Reviewing/Viewing mode switcher.
-- **Accessibility and Customization (Phase UX-8)**: Accessibility checker (`accessibilityChecker.ts`), Read Aloud text-to-speech (`readAloudEngine.ts`, `ReadAloudToolbar.tsx`), Focus Mode, Touch Mode, High-Contrast themes, 200% UI scaling (`accessibilitySettings.ts`), and Ribbon Key Tips (`Alt` navigation badges).
+- **MS Word 365 Home & Insert Tabs Reorganization**:
+  - **Home Tab Groups**: Complete official MS Word 365 layout: `Clipboard` | `Font` | `Paragraph` | `Styles` | `Editing` | `Add-ins`.
+    - **Styles Group**: Quick Styles gallery cards (*Normal*, *No Spacing*, *Heading 1*, *Heading 2*, *Title*), up/down scroll controls, and bottom-right ↘️ Styles launcher (`StylesManagerModal.tsx`).
+    - **Editing Group**: **Find (`🔍 Find ▼`)** (`Ctrl+F`), **Replace (`c🔁b Replace`)** (`Ctrl+H`), **Select (`↖️ Select ▼`)** (*Select All*, *Select Objects*).
+    - **Add-ins Group**: **Add-ins (`▦ Add-ins`)** extension launcher.
+  - **Insert Tab Reorganization**: Moved Tools (Text Box 📝, Shapes/Rectangle 📐, Picture 🖼️) into the **Insert Tab** under Illustrations & Text Boxes, alongside Pages, Tables, Footnotes, and References.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions

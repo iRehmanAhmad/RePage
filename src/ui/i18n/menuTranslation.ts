@@ -35,6 +35,16 @@ export interface Translations {
   shape: string;
   imageFrame: string;
 
+  // Clipboard Actions
+  cut: string;
+  copy: string;
+  paste: string;
+  pasteSpecial: string;
+  formatPainter: string;
+  keepSourceFormatting: string;
+  mergeFormatting: string;
+  keepTextOnly: string;
+
   // Home Ribbon
   fontFamily: string;
   fontSize: string;
@@ -119,6 +129,15 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     shape: 'شکل',
     imageFrame: 'تصویر فریم',
 
+    cut: 'کٹ (Cut)',
+    copy: 'کاپی (Copy)',
+    paste: 'پیسٹ (Paste)',
+    pasteSpecial: 'خاص پیسٹ (Paste Special)',
+    formatPainter: 'فارمیٹ پینٹر (Format Painter)',
+    keepSourceFormatting: 'سورس فارمیٹ رکھیں',
+    mergeFormatting: 'فارمیٹ ضم کریں',
+    keepTextOnly: 'صرف متن رکھیں',
+
     fontFamily: 'اردو رسم الخط',
     fontSize: 'سائز',
     bold: 'جلی',
@@ -194,6 +213,15 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     textFrame: 'Text Box',
     shape: 'Shape',
     imageFrame: 'Image Frame',
+
+    cut: 'Cut',
+    copy: 'Copy',
+    paste: 'Paste',
+    pasteSpecial: 'Paste Special',
+    formatPainter: 'Format Painter',
+    keepSourceFormatting: 'Keep Source Formatting',
+    mergeFormatting: 'Merge Formatting',
+    keepTextOnly: 'Keep Text Only',
 
     fontFamily: 'Font Family',
     fontSize: 'Size',

@@ -201,16 +201,12 @@ export function PaginatedPrintLayout({
                 page={page}
                 objects={visibleObjects}
                 stories={document.stories}
+                assets={document.assets}
                 selectedObjectId={selectedObjectId}
+                editingObjectId={editingObjectId}
                 onObjectModified={onObjectModified}
                 onSelectionChanged={(id) => {
                   onSelectObject(id);
-                  if (id) {
-                    const targetObj = document.objects[id];
-                    if (targetObj?.type === 'text-frame' || targetObj?.type === 'rectangle') {
-                      onEditObject(id);
-                    }
-                  }
                 }}
                 onObjectDoubleClicked={(id) => {
                   const targetObj = document.objects[id];

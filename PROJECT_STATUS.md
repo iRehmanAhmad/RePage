@@ -1,12 +1,12 @@
 # Project Status
 
-Last updated: 2026-07-25
+Last updated: 2026-07-26
 
 ## Current phase
 
 **M6 — Interactive Editing & UI Polish: IN PROGRESS** (M0 Foundation, M2 Urdu Typography Beta, M3 Document Production Beta, M4 Desktop Release Candidate, M5 Collaboration Preview: COMPLETE)
 
-The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, Milestone 4 Desktop Release Candidate, and Milestone 5 Collaboration Preview are complete. M6 Interactive Editing & UI Polish is in progress, covering MS Word–style ribbon UI, Quick Access Toolbar, interactive canvas text editing via double-click activation and Visual Keyboard typing, and the `addTextFrame` document command.
+The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 Document Production Beta, Milestone 4 Desktop Release Candidate, and Milestone 5 Collaboration Preview are complete. M6 Interactive Editing & UI Polish is in progress, covering MS Word–style ribbon UI, Quick Access Toolbar, interactive canvas text editing via double-click activation and Visual Keyboard typing, the `addTextFrame` document command, and MS Word 365 Home tab features (Clipboard & Advanced Font Engine).
 
 ## Completed capabilities (M0–M5 Exit Gates Passed, M6 In Progress)
 
@@ -19,14 +19,13 @@ The clean strict-TypeScript Foundation, Urdu Typography Beta (M2), Milestone 3 D
 - Multi-platform packaging pipeline (`DISTRIBUTION.md`, `verify-distribution.js`, `.github/workflows/release-distribution.yml`) producing Windows NSIS, macOS DMG, and Linux AppImage/DEB/RPM installers.
 - Signed application update manager (`updateManager.ts`), release channels (`stable`/`beta`), Ed25519 signature verification, failed-update rollback policy, and explicit user-driven document migration policy.
 - Collaboration CRDT document mapping (`crdtDoc.ts`), ephemeral awareness (`awareness.ts`), conflict resolution (`conflictEngine.ts`), content-addressed asset transfer (`assetTransferEngine.ts`), WebRTC networking (`networkProvider.ts`), identity & authorization (`authEngine.ts`), and collaboration UX (`RemoteCollaboratorOverlay.tsx`, `CollaborationBar.tsx`, `CommentsPanel.tsx`).
-- **MS Word–style UI shell**: Quick Access Toolbar (QAT) with `localStorage` persistence and 11 configurable tools (`qatEngine.ts`, `StudioHeader.tsx`), centered document title input, 7-tab MS Word ribbon (`MsWordRibbon.tsx`) with File, Home, Insert, Urdu Tools, Page Layout, Collaboration, Export & View tabs, grouped tool cards with bottom captions (Clipboard, Font, Paragraph, Tools, Pages, Illustrations, Footnotes, Proofing, Page Setup).
-- **Interactive canvas text editing**: Double-click text frame → Tiptap rich-text overlay (`TextEditorOverlay.tsx`) with `pendingChar` prop for Visual Keyboard character insertion, `onObjectDoubleClicked` callback in `FabricCanvasAdapter`, `addTextFrame` document command (`documentCommands.ts`), auto-creation and activation of text frames from Ribbon Text tool.
-- **Visual Keyboard**: 3-row QWERTY layout (`VisualKeyboard.tsx`), CRULP Phonetic / Navees Phonetic / English / Native OS modes (`keyboardLayouts.ts`), Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
-- **Theme & i18n**: Dark/light/system theme engine (`themeEngine.ts`), English/Urdu menu language toggle (`menuTranslation.ts`) with full dictionary.
-- **RePage UX/UI Modernization Shell**: Word-style Urdu word processor direction. CommandRegistry dispatcher (`commandRegistry.ts`), File Backstage Overlay (`FileBackstageOverlay.tsx`), left Navigation Pane (`NavigationPane.tsx`, `Ctrl+F`), Selection Pane (`SelectionPane.tsx`), "Text Frame" renamed to "Text Box" across UI, `addTextBox` & `addTableObject` commands, status bar centered keyboard button and zoom slider.
-- **Phase UX-3 (Automatic Pagination & Print Layout)**: `paginationEngine.ts` auto-repagination and Urdu/English page number formatting, `sectionEngine.ts` section breaks & page setup, `PaginatedPrintLayout.tsx` paper sheet layout projection, and `DocumentRulers.tsx`.
-- **Phase UX-4 (Inserted Objects & Text Boxes)**: `textWrapEngine.ts` exclusionary zones, `objectCommands.ts` Z-ordering & alignments, `SelectionPane.tsx` layers & lock/visibility toggles, and dynamic Contextual Ribbon Tabs (`Shape Format` 🎨, `Picture Format` 🖼️, `Table Design` 📊).
-- 172 passing automated unit and integration tests across 58 test suites (`vitest`).
+- **MS Word 365 Home & Insert Tabs Reorganization**:
+  - **Home Tab Groups**: Complete official MS Word 365 layout: `Clipboard` | `Font` | `Paragraph` | `Styles` | `Editing` | `Add-ins`.
+    - **Styles Group**: Quick Styles gallery cards (*Normal*, *No Spacing*, *Heading 1*, *Heading 2*, *Title*), up/down scroll controls, and bottom-right ↘️ Styles launcher (`StylesManagerModal.tsx`).
+    - **Editing Group**: **Find (`🔍 Find ▼`)** (`Ctrl+F`), **Replace (`c🔁b Replace`)** (`Ctrl+H`), **Select (`↖️ Select ▼`)** (*Select All*, *Select Objects*).
+    - **Add-ins Group**: **Add-ins (`▦ Add-ins`)** extension launcher.
+  - **Insert Tab Reorganization**: Moved Tools (Text Box 📝, Shapes/Rectangle 📐, Picture 🖼️) into the **Insert Tab** under Illustrations & Text Boxes, alongside Pages, Tables, Footnotes, and References.
+- 210 passing automated unit and integration tests across 86 test suites (`vitest`).
 
 ## RePage UX Modernization Roadmap Progress
 

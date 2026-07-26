@@ -13,6 +13,25 @@ export interface ItalicMark {
 
 export interface UnderlineMark {
   type: 'underline';
+  style?: 'single' | 'double' | 'thick' | 'dotted' | 'dashed' | 'wave' | undefined;
+  color?: string | undefined;
+}
+
+export interface StrikethroughMark {
+  type: 'strikethrough';
+}
+
+export interface SubscriptMark {
+  type: 'subscript';
+}
+
+export interface SuperscriptMark {
+  type: 'superscript';
+}
+
+export interface HighlightMark {
+  type: 'highlight';
+  color: string;
 }
 
 export interface FontFamilyMark {
@@ -35,14 +54,26 @@ export interface CharacterSpacingMark {
   value: number;
 }
 
+export interface TextEffectMark {
+  type: 'textEffect';
+  shadow?: boolean | undefined;
+  glow?: boolean | undefined;
+  outline?: string | undefined;
+}
+
 export type TextMark =
   | BoldMark
   | ItalicMark
   | UnderlineMark
+  | StrikethroughMark
+  | SubscriptMark
+  | SuperscriptMark
+  | HighlightMark
   | FontFamilyMark
   | FontSizeMark
   | ColorMark
-  | CharacterSpacingMark;
+  | CharacterSpacingMark
+  | TextEffectMark;
 
 export interface TextRun {
   type: 'text';
@@ -56,12 +87,25 @@ export interface HardBreakNode {
 
 export type InlineNode = TextRun | HardBreakNode;
 
+export interface ParagraphBorder {
+  side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all';
+  color?: string | undefined;
+  width?: number | undefined;
+  style?: 'solid' | 'dashed' | 'dotted' | 'double' | undefined;
+}
+
 export interface ParagraphNode {
-  type: 'paragraph';
+  type: 'paragraph' | 'bulletList' | 'orderedList' | 'listItem';
   direction?: TextDirection | undefined;
   alignment?: TextAlignment | undefined;
   lineHeight?: number | undefined;
+  spaceBefore?: number | undefined;
+  spaceAfter?: number | undefined;
   paragraphSpacing?: number | undefined;
+  indentLevel?: number | undefined;
+  firstLineIndent?: number | undefined;
+  backgroundColor?: string | undefined;
+  border?: ParagraphBorder | undefined;
   content: InlineNode[];
 }
 
@@ -74,11 +118,25 @@ export interface RichTextDocument {
 export const textMarkSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('bold') }),
   z.object({ type: z.literal('italic') }),
-  z.object({ type: z.literal('underline') }),
-  z.object({ type: z.literal('fontFamily'), family: z.string().min(1) }),
+  z.object({
+    type: z.literal('underline'),
+    style: z.enum(['single', 'double', 'thick', 'dotted', 'dashed', 'wave']).optional(),
+    color: z.string().optional(),
+  }),
+  z.object({ type: z.literal('strikethrough') }),
+  z.object({ type: z.literal('subscript') }),
+  z.object({ type: z.literal('superscript') }),
+  z.object({ type: z.literal('highlight'), color: z.string() }),
+  z.object({ type: z.literal('fontFamily'), family: z.string() }),
   z.object({ type: z.literal('fontSize'), size: z.number().positive() }),
-  z.object({ type: z.literal('color'), color: z.string().min(1) }),
+  z.object({ type: z.literal('color'), color: z.string() }),
   z.object({ type: z.literal('characterSpacing'), value: z.number() }),
+  z.object({
+    type: z.literal('textEffect'),
+    shadow: z.boolean().optional(),
+    glow: z.boolean().optional(),
+    outline: z.string().optional(),
+  }),
 ]);
 
 export const textRunSchema = z.object({
@@ -93,12 +151,25 @@ export const hardBreakNodeSchema = z.object({
 
 export const inlineNodeSchema = z.discriminatedUnion('type', [textRunSchema, hardBreakNodeSchema]);
 
+export const paragraphBorderSchema = z.object({
+  side: z.enum(['bottom', 'top', 'left', 'right', 'box', 'all']),
+  color: z.string().optional(),
+  width: z.number().optional(),
+  style: z.enum(['solid', 'dashed', 'dotted', 'double']).optional(),
+});
+
 export const paragraphNodeSchema = z.object({
-  type: z.literal('paragraph'),
+  type: z.enum(['paragraph', 'bulletList', 'orderedList', 'listItem']),
   direction: z.enum(['rtl', 'ltr', 'auto']).optional(),
   alignment: z.enum(['start', 'center', 'end', 'justify', 'left', 'right']).optional(),
   lineHeight: z.number().positive().optional(),
+  spaceBefore: z.number().nonnegative().optional(),
+  spaceAfter: z.number().nonnegative().optional(),
   paragraphSpacing: z.number().nonnegative().optional(),
+  indentLevel: z.number().nonnegative().optional(),
+  firstLineIndent: z.number().optional(),
+  backgroundColor: z.string().optional(),
+  border: paragraphBorderSchema.optional(),
   content: z.array(inlineNodeSchema),
 });
 

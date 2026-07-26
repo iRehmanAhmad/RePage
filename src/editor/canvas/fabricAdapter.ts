@@ -50,6 +50,8 @@ export class FabricCanvasAdapter {
       height,
       selection: true,
       preserveObjectStacking: true,
+      perPixelTargetFind: false,
+      targetFindTolerance: 6,
     });
 
     // Configure modern MS Word 365 style handles (solid white circular handles with blue border)
@@ -108,6 +110,8 @@ export class FabricCanvasAdapter {
     objects: PageObject[],
     stories?: Record<string, import('../../domain/document/types').TextStory>,
     selectedObjectId?: string | null,
+    assets?: Record<string, import('../../domain/document/types').AssetReference>,
+    editingObjectId?: string | null,
   ): void {
     if (!this.canvas) return;
 
@@ -131,7 +135,7 @@ export class FabricCanvasAdapter {
         const baseOpts = {
           left: 0,
           top: 0,
-          fill: obj.fill,
+          fill: (!obj.fill || obj.fill === 'transparent') ? 'rgba(255, 255, 255, 0.0001)' : obj.fill,
           stroke: obj.stroke,
           strokeWidth: obj.strokeWidth,
           originX: 'left' as const,
@@ -268,7 +272,8 @@ export class FabricCanvasAdapter {
         }
 
         let shapeTextContent = '';
-        if (obj.storyId && stories && stories[obj.storyId]?.content?.content) {
+        const isEditing = editingObjectId && editingObjectId === obj.id;
+        if (!isEditing && obj.storyId && stories && stories[obj.storyId]?.content?.content) {
           shapeTextContent = stories[obj.storyId]!.content.content
             .map((p) => p.content.map((run) => (run.type === 'text' ? run.text : '')).join(''))
             .join('\n');
@@ -297,6 +302,8 @@ export class FabricCanvasAdapter {
             angle: obj.frame.rotation,
             opacity: obj.opacity,
             selectable: !obj.locked,
+            originX: 'left',
+            originY: 'top',
           });
         } else {
           shapeVector.set({
@@ -305,6 +312,8 @@ export class FabricCanvasAdapter {
             angle: obj.frame.rotation,
             opacity: obj.opacity,
             selectable: !obj.locked,
+            originX: 'left',
+            originY: 'top',
           });
           fabricObj = shapeVector;
         }
@@ -313,41 +322,139 @@ export class FabricCanvasAdapter {
         const overflowText = obj.overflow ? ' [+] ⚠️' : '';
         const seqBadge = obj.sequenceIndex !== undefined ? ` [#${obj.sequenceIndex + 1}]` : '';
 
-        let displayContent = 'اردو متن';
-        if (stories && stories[obj.storyId]?.content?.content) {
+        const isEditing = editingObjectId && editingObjectId === obj.id;
+        let displayContent = '';
+        if (!isEditing && stories && stories[obj.storyId]?.content?.content) {
           displayContent = stories[obj.storyId]!.content.content
             .map((p) => p.content.map((run) => (run.type === 'text' ? run.text : '')).join(''))
             .join('\n');
         }
 
-        fabricObj = new fabric.Textbox(`${displayContent}${seqBadge}${overflowText}`, {
-          left: obj.frame.x,
-          top: obj.frame.y,
+        const frameRect = new fabric.Rect({
+          left: 0,
+          top: 0,
           width: obj.frame.width,
           height: obj.frame.height,
-          angle: obj.frame.rotation,
-          fill: obj.overflow ? '#dc2626' : obj.color,
-          fontSize: obj.fontSize,
-          fontFamily: fontDef.family,
-          textAlign: 'right',
-          opacity: obj.opacity,
-          selectable: !obj.locked,
-          editable: false, // Rich text DOM overlay handles interactive editing on double click
-        });
-      } else if (obj.type === 'image-frame') {
-        fabricObj = new fabric.Rect({
-          left: obj.frame.x,
-          top: obj.frame.y,
-          width: obj.frame.width,
-          height: obj.frame.height,
-          angle: obj.frame.rotation,
-          fill: '#e2e8f0',
-          stroke: '#94a3b8',
+          fill: 'rgba(255, 255, 255, 0.0001)',
+          stroke: '#0284c7',
           strokeWidth: 1,
           strokeDashArray: [4, 4],
-          opacity: obj.opacity,
-          selectable: !obj.locked,
+          originX: 'left',
+          originY: 'top',
         });
+
+        const fullText = `${displayContent}${isEditing ? '' : seqBadge}${isEditing ? '' : overflowText}`;
+        if (fullText.trim()) {
+          const textObj = new fabric.Textbox(fullText, {
+            left: 4,
+            top: 4,
+            width: Math.max(10, obj.frame.width - 8),
+            fill: obj.overflow ? '#dc2626' : obj.color,
+            fontSize: obj.fontSize,
+            fontFamily: fontDef.family,
+            textAlign: 'right',
+            originX: 'left',
+            originY: 'top',
+            editable: false,
+          });
+
+          fabricObj = new fabric.Group([frameRect, textObj], {
+            left: obj.frame.x,
+            top: obj.frame.y,
+            width: obj.frame.width,
+            height: obj.frame.height,
+            angle: obj.frame.rotation,
+            opacity: obj.opacity,
+            selectable: !obj.locked,
+            originX: 'left',
+            originY: 'top',
+          });
+        } else {
+          frameRect.set({
+            left: obj.frame.x,
+            top: obj.frame.y,
+            angle: obj.frame.rotation,
+            opacity: obj.opacity,
+            selectable: !obj.locked,
+            originX: 'left',
+            originY: 'top',
+          });
+          fabricObj = frameRect;
+        }
+      } else if (obj.type === 'image-frame') {
+        const asset = obj.assetId && assets ? assets[obj.assetId] : undefined;
+        if (asset?.dataUrl) {
+          const imgElement = new Image();
+          imgElement.src = asset.dataUrl;
+
+          const imgWidth = imgElement.naturalWidth || obj.frame.width || 100;
+          const imgHeight = imgElement.naturalHeight || obj.frame.height || 100;
+
+          const scaleX = obj.frame.width / imgWidth;
+          const scaleY = obj.frame.height / imgHeight;
+
+          const fabricImg = new fabric.Image(imgElement, {
+            left: obj.frame.x,
+            top: obj.frame.y,
+            scaleX,
+            scaleY,
+            angle: obj.frame.rotation,
+            opacity: obj.opacity,
+            selectable: !obj.locked,
+            originX: 'left',
+            originY: 'top',
+          });
+
+          imgElement.onload = () => {
+            if (this.canvas && fabricImg && imgElement.naturalWidth) {
+              fabricImg.set({
+                scaleX: obj.frame.width / imgElement.naturalWidth,
+                scaleY: obj.frame.height / imgElement.naturalHeight,
+              });
+              this.canvas.renderAll();
+            }
+          };
+
+          fabricObj = fabricImg;
+        } else {
+          // Placeholder Image Frame
+          const placeholderRect = new fabric.Rect({
+            left: 0,
+            top: 0,
+            width: obj.frame.width,
+            height: obj.frame.height,
+            fill: '#f8fafc',
+            stroke: '#0284c7',
+            strokeWidth: 1.5,
+            strokeDashArray: [4, 4],
+            originX: 'left',
+            originY: 'top',
+          });
+          const fontDef = getFontDefinition('Noto Nastaliq Urdu');
+          const placeholderText = new fabric.Textbox('🖼️ تصویر لاؤ (ڈبل کلک کریں)', {
+            left: 4,
+            top: Math.max(0, obj.frame.height / 2 - 14),
+            width: Math.max(10, obj.frame.width - 8),
+            fontSize: 14,
+            fontFamily: fontDef.family,
+            fill: '#0284c7',
+            textAlign: 'center',
+            originX: 'left',
+            originY: 'top',
+            editable: false,
+          });
+          fabricObj = new fabric.Group([placeholderRect, placeholderText], {
+            left: obj.frame.x,
+            top: obj.frame.y,
+            width: obj.frame.width,
+            height: obj.frame.height,
+            angle: obj.frame.rotation,
+            opacity: obj.opacity,
+            selectable: !obj.locked,
+            originX: 'left',
+            originY: 'top',
+          });
+        }
       }
 
       if (fabricObj) {

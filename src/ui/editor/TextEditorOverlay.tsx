@@ -1,6 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import Highlight from '@tiptap/extension-highlight';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import FontFamily from '@tiptap/extension-font-family';
 import type { Rect, TextStory } from '../../domain/document/types';
 import type { RichTextDocument } from '../../domain/rich-text/types';
 import { getFontDefinition } from '../../domain/unicode/fontRegistry';
@@ -37,7 +44,18 @@ export function TextEditorOverlay({
   const lastPendingCharacter = useRef<string | null>(null);
 
   const editor = useEditor({
-    extensions: [StarterKit, SmartDeletePreview, BidiVisualCursor],
+    extensions: [
+      StarterKit,
+      Underline,
+      Subscript,
+      Superscript,
+      Highlight.configure({ multicolor: true }),
+      TextStyle,
+      Color,
+      FontFamily,
+      SmartDeletePreview,
+      BidiVisualCursor,
+    ],
     content: canonicalToTiptapHtml(story.content),
     autofocus: 'end',
     editorProps: {

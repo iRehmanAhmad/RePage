@@ -1,6 +1,8 @@
 import { createBlankPage } from '../../domain/document/createDocument';
 import { createId } from '../../domain/document/ids';
 import type {
+  AssetReference,
+  ImageFrameObject,
   ObjectId,
   PageId,
   Rect,
@@ -288,5 +290,67 @@ export function deleteObject(document: RePageDocument, objectId: ObjectId): RePa
     pages: nextPages,
     objects: nextObjects,
   });
+}
+
+export function addImageFrame(
+  document: RePageDocument,
+  pageId: PageId,
+  originalName?: string,
+  dataUrl?: string,
+  width: number = 240,
+  height: number = 180,
+): { document: RePageDocument; objectId: ObjectId } {
+  const page = document.pages[pageId];
+  if (!page) {
+    throw new Error(`Page ${pageId} does not exist.`);
+  }
+
+  const assetId = createId('asset');
+  const objectId = createId('object');
+
+  const asset: AssetReference = {
+    id: assetId,
+    sha256: '',
+    mediaType: dataUrl?.startsWith('data:image/svg') ? 'image/svg+xml' : 'image/png',
+    byteSize: dataUrl?.length || 0,
+    originalName: originalName || 'picture.png',
+    packageEntry: `assets/${assetId}.png`,
+    ...(dataUrl ? { dataUrl } : {}),
+  };
+
+  const imageFrame: ImageFrameObject = {
+    id: objectId,
+    pageId,
+    type: 'image-frame',
+    name: originalName ? `تصویر (${originalName})` : 'تصویر (Image Frame)',
+    frame: {
+      x: 72,
+      y: 100,
+      width: Math.min(page.width - 144, width),
+      height: Math.min(page.height - 200, height),
+      rotation: 0,
+    },
+    locked: false,
+    hidden: false,
+    opacity: 1,
+    assetId: dataUrl ? assetId : null,
+    fit: 'contain',
+  };
+
+  const nextAssets = dataUrl
+    ? { ...document.assets, [assetId]: asset }
+    : document.assets;
+
+  const nextDoc = touch({
+    ...document,
+    pages: {
+      ...document.pages,
+      [pageId]: { ...page, objectOrder: [...page.objectOrder, objectId] },
+    },
+    objects: { ...document.objects, [objectId]: imageFrame },
+    assets: nextAssets,
+  });
+
+  return { document: nextDoc, objectId };
 }
 

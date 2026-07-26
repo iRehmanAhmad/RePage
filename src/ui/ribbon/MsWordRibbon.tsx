@@ -1,6 +1,11 @@
 import React, { useState, useRef } from 'react';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 import type { ShapeKind, TextWrapMode, ViewMode } from '../../domain/document/types';
+import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
+import { FontColorPalette } from './FontColorPalette';
+import { HighlightColorPalette } from './HighlightColorPalette';
+import { ParagraphShadingPalette } from './ParagraphShadingPalette';
+import { ParagraphBordersMenu } from './ParagraphBordersMenu';
 
 export type ActiveTool = 'select' | 'text' | 'rectangle' | 'image' | 'pan';
 export type RibbonTab =
@@ -35,8 +40,8 @@ export interface MsWordRibbonProps {
   onFontSizeChange: (size: number) => void;
   isKashidaEnabled: boolean;
   onToggleKashida: () => void;
-  activeAlignment: string;
-  onAlignmentChange: (align: string) => void;
+  activeAlignment: TextAlignment;
+  onAlignmentChange: (align: TextAlignment) => void;
   onAddPage: () => void;
   onRemovePage: () => void;
   onAddFootnote: () => void;
@@ -82,6 +87,57 @@ export interface MsWordRibbonProps {
   isFocusMode?: boolean;
   onToggleInspector?: () => void;
   isInspectorOpen?: boolean;
+  onCut?: () => void;
+  onCopy?: () => void;
+  onPaste?: (mode?: 'all' | 'special' | 'text-only' | 'merge') => void;
+  onFormatPainter?: () => void;
+  isFormatPainterActive?: boolean;
+  isBold?: boolean;
+  onToggleBold?: () => void;
+  isItalic?: boolean;
+  onToggleItalic?: () => void;
+  isUnderline?: boolean;
+  onToggleUnderline?: () => void;
+  underlineStyle?: 'single' | 'double' | 'thick' | 'dotted' | 'dashed' | 'wave';
+  onUnderlineStyleChange?: (style: 'single' | 'double' | 'thick' | 'dotted' | 'dashed' | 'wave') => void;
+  underlineColor?: string;
+  onUnderlineColorChange?: (color: string) => void;
+  isStrikethrough?: boolean;
+  onToggleStrikethrough?: () => void;
+  isSubscript?: boolean;
+  onToggleSubscript?: () => void;
+  isSuperscript?: boolean;
+  onToggleSuperscript?: () => void;
+  highlightColor?: string | null;
+  onHighlightColorChange?: (color: string | null) => void;
+  fontColor?: string;
+  onFontColorChange?: (color: string) => void;
+  onChangeCase?: (mode: 'sentence' | 'lowercase' | 'uppercase' | 'capitalize' | 'toggle') => void;
+  onClearFormatting?: () => void;
+  onOpenFontDialog?: () => void;
+  activeDirection?: TextDirection;
+  onDirectionChange?: (dir: TextDirection) => void;
+  isBulletList?: boolean;
+  onToggleBulletList?: () => void;
+  isOrderedList?: boolean;
+  onToggleOrderedList?: () => void;
+  onDecreaseIndent?: () => void;
+  onIncreaseIndent?: () => void;
+  onSortParagraphs?: () => void;
+  showFormattingMarks?: boolean;
+  onToggleFormattingMarks?: () => void;
+  lineHeight?: number;
+  onLineHeightChange?: (height: number) => void;
+  paragraphShading?: string | null;
+  onParagraphShadingChange?: (color: string | null) => void;
+  onSelectParagraphBorder?: (side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all' | 'none') => void;
+  onOpenParagraphDialog?: () => void;
+  activeStyleId?: string;
+  onApplyStyle?: (styleId: string) => void;
+  onOpenFind?: () => void;
+  onOpenReplace?: () => void;
+  onSelectAll?: () => void;
+  onOpenAddins?: () => void;
 }
 
 export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
@@ -89,10 +145,10 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   lang,
   activeTool,
   onSelectTool,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
+  onUndo: _onUndo,
+  onRedo: _onRedo,
+  canUndo: _canUndo,
+  canRedo: _canRedo,
   onOpenDocument,
   onSaveDocument,
   onSaveAsDocument,
@@ -101,7 +157,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onFontFamilyChange,
   activeFontSize,
   onFontSizeChange,
-  isKashidaEnabled,
+  isKashidaEnabled: _isKashidaEnabled,
   onToggleKashida,
   activeAlignment,
   onAlignmentChange,
@@ -130,7 +186,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onToggleSelectionPane,
   onInsertTable,
   onOpenStylesManager,
-  onOpenDocStats,
+  onOpenDocStats: _onOpenDocStats,
   onInsertToc,
   onInsertCaption,
   onInsertBookmark,
@@ -151,11 +207,84 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onToggleInspector,
   isInspectorOpen = true,
   onInsertShape,
+  onCut,
+  onCopy,
+  onPaste,
+  onFormatPainter,
+  isFormatPainterActive = false,
+  isBold = false,
+  onToggleBold,
+  isItalic = false,
+  onToggleItalic,
+  isUnderline = false,
+  onToggleUnderline,
+  underlineStyle: _underlineStyle = 'single',
+  onUnderlineStyleChange,
+  underlineColor: _underlineColor = '#000000',
+  onUnderlineColorChange: _onUnderlineColorChange,
+  isStrikethrough = false,
+  onToggleStrikethrough,
+  isSubscript = false,
+  onToggleSubscript,
+  isSuperscript = false,
+  onToggleSuperscript,
+  highlightColor = null,
+  onHighlightColorChange,
+  fontColor = '#172119',
+  onFontColorChange,
+  onChangeCase,
+  onClearFormatting,
+  onOpenFontDialog,
+  activeDirection = 'rtl',
+  onDirectionChange,
+  isBulletList = false,
+  onToggleBulletList,
+  isOrderedList = false,
+  onToggleOrderedList,
+  onDecreaseIndent,
+  onIncreaseIndent,
+  onSortParagraphs,
+  showFormattingMarks = false,
+  onToggleFormattingMarks,
+  lineHeight = 1.5,
+  onLineHeightChange,
+  paragraphShading = null,
+  onParagraphShadingChange,
+  onSelectParagraphBorder,
+  onOpenParagraphDialog,
+  activeStyleId = 'normal',
+  onApplyStyle,
+  onOpenFind,
+  onOpenReplace,
+  onSelectAll,
+  onOpenAddins,
 }) => {
   const [activeTab, setActiveTab] = useState<RibbonTab>('home');
   const [isRibbonCollapsed, setIsRibbonCollapsed] = useState(false);
   const [showShapeGallery, setShowShapeGallery] = useState(false);
+  const [showPasteMenu, setShowPasteMenu] = useState(false);
+  const [showUnderlineMenu, setShowUnderlineMenu] = useState(false);
+  const [showCaseMenu, setShowCaseMenu] = useState(false);
+  const [showFontColorPalette, setShowFontColorPalette] = useState(false);
+  const [showHighlightPalette, setShowHighlightPalette] = useState(false);
+  const [showJustifyMenu, setShowJustifyMenu] = useState(false);
+  const [showLineSpacingMenu, setShowLineSpacingMenu] = useState(false);
+  const [showParagraphShadingPalette, setShowParagraphShadingPalette] = useState(false);
+  const [showParagraphBordersMenu, setShowParagraphBordersMenu] = useState(false);
+  const [showSelectMenu, setShowSelectMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pasteMenuRef = useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (!showPasteMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pasteMenuRef.current && !pasteMenuRef.current.contains(e.target as Node)) {
+        setShowPasteMenu(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [showPasteMenu]);
 
   React.useEffect(() => {
     if (selectedObjectType === 'rectangle' || selectedObjectType === 'text-frame') {
@@ -358,181 +487,950 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         {activeTab === 'home' && (
           <div className="ribbon-group-row">
             {/* Group 1: Clipboard */}
-            <div className="ribbon-group-box">
-              <div className="ribbon-chunk">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="ribbon-action-btn"
-                  title={t.open}
-                >
-                  <span>📂</span>
-                  <span>{t.open}</span>
-                </button>
-                <button onClick={onSaveDocument} className="ribbon-action-btn" title={t.save}>
-                  <span>💾</span>
-                  <span>{t.save}</span>
-                </button>
-                <button onClick={onSaveAsDocument} className="ribbon-action-btn gold" title={t.saveAs}>
-                  <span>💾</span>
-                  <span>{t.saveAs}</span>
-                </button>
-                <button
-                  onClick={onUndo}
-                  disabled={!canUndo}
-                  className={`ribbon-action-btn ${!canUndo ? 'disabled' : ''}`}
-                  title={t.undo}
-                >
-                  <span>↩</span>
-                  <span>{t.undo}</span>
-                </button>
-                <button
-                  onClick={onRedo}
-                  disabled={!canRedo}
-                  className={`ribbon-action-btn ${!canRedo ? 'disabled' : ''}`}
-                  title={t.redo}
-                >
-                  <span>↪</span>
-                  <span>{t.redo}</span>
-                </button>
+            <div className="ribbon-group-box" style={{ justifyContent: 'center' }}>
+              <div className="ribbon-chunk" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {/* MS Word 365 Paste Button with Dropdown Chevron */}
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <button
+                    onClick={() => setShowPasteMenu((prev) => !prev)}
+                    className="ribbon-action-btn"
+                    title={`${t.paste} (${t.pasteSpecial})`}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '2px 6px',
+                      minWidth: '44px',
+                      height: '38px',
+                    }}
+                  >
+                    <span style={{ fontSize: '15px', lineHeight: 1 }}>📋</span>
+                    <span style={{ fontSize: '10px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px', marginTop: '1px' }}>
+                      {t.paste} <span style={{ fontSize: '7px' }}>▼</span>
+                    </span>
+                  </button>
+
+                  {/* Theme-Aware Paste Options Dropdown Menu */}
+                  {showPasteMenu && (
+                    <div
+                      ref={pasteMenuRef}
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 4px)',
+                        left: 0,
+                        zIndex: 9999,
+                        backgroundColor: 'var(--panel-bg)',
+                        color: 'var(--text-main)',
+                        border: '1px solid var(--panel-border)',
+                        borderRadius: '6px',
+                        boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
+                        minWidth: '220px',
+                        padding: '4px 0',
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          onPaste?.('all');
+                          setShowPasteMenu(false);
+                        }}
+                        className="ribbon-menu-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'right', fontSize: '11px' }}
+                      >
+                        <span>📋</span>
+                        <span>{t.paste} (Ctrl+V)</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onPaste?.('special');
+                          setShowPasteMenu(false);
+                        }}
+                        className="ribbon-menu-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'right', fontSize: '11px' }}
+                      >
+                        <span>✨</span>
+                        <span>{t.pasteSpecial}</span>
+                      </button>
+                      <div style={{ height: '1px', backgroundColor: 'var(--panel-border)', margin: '4px 0' }} />
+                      <button
+                        onClick={() => {
+                          onPaste?.('all');
+                          setShowPasteMenu(false);
+                        }}
+                        className="ribbon-menu-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'right', fontSize: '11px' }}
+                      >
+                        <span>🎨</span>
+                        <span>{t.keepSourceFormatting}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onPaste?.('merge');
+                          setShowPasteMenu(false);
+                        }}
+                        className="ribbon-menu-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'right', fontSize: '11px' }}
+                      >
+                        <span>🔀</span>
+                        <span>{t.mergeFormatting}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          onPaste?.('text-only');
+                          setShowPasteMenu(false);
+                        }}
+                        className="ribbon-menu-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'right', fontSize: '11px' }}
+                      >
+                        <span>📄</span>
+                        <span>{t.keepTextOnly}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stacked Cut, Copy, Format Painter Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <button
+                    onClick={onCut}
+                    className="ribbon-action-btn"
+                    title={`${t.cut} (Ctrl+X)`}
+                    style={{ padding: '1px 5px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 500, lineHeight: 1 }}
+                  >
+                    <span>✂️</span>
+                    <span>{t.cut}</span>
+                  </button>
+                  <button
+                    onClick={onCopy}
+                    className="ribbon-action-btn"
+                    title={`${t.copy} (Ctrl+C)`}
+                    style={{ padding: '1px 5px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 500, lineHeight: 1 }}
+                  >
+                    <span>📄</span>
+                    <span>{t.copy}</span>
+                  </button>
+                  <button
+                    onClick={onFormatPainter}
+                    className={`ribbon-action-btn ${isFormatPainterActive ? 'highlight' : ''}`}
+                    title={t.formatPainter}
+                    style={{ padding: '1px 5px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 500, lineHeight: 1 }}
+                  >
+                    <span>🖌️</span>
+                    <span>{t.formatPainter}</span>
+                  </button>
+                </div>
               </div>
               <div className="ribbon-group-caption">{t.grpClipboard}</div>
             </div>
 
             {/* Group 2: Font */}
-            <div className="ribbon-group-box">
-              <div className="ribbon-chunk dir-rtl">
-                <select
-                  value={activeFontFamily}
-                  onChange={(e) => onFontFamilyChange(e.target.value)}
-                  className="ribbon-select"
-                  title={t.fontFamily}
-                >
-                  <option value="Noto Nastaliq Urdu">نستعلیق (Noto Nastaliq)</option>
-                  <option value="Jameel Noori Nastaleeq">جمیل نوری نستعلیق</option>
-                  <option value="Gulzar">گلزار (Gulzar)</option>
-                  <option value="InPage Ali Nastaliq">انپیج علی نستعلیق</option>
-                  <option value="InPage Lahori Nastaliq">انپیج لاہوری نستعلیق</option>
-                </select>
+            <div className="ribbon-group-box" style={{ position: 'relative', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {/* Top Row: Family, Size, Grow A^, Shrink A_v, Change Case Aa, Clear Formatting A🧹 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <select
+                    value={activeFontFamily}
+                    onChange={(e) => onFontFamilyChange(e.target.value)}
+                    className="ribbon-select"
+                    title={t.fontFamily}
+                    style={{ width: '130px', height: '22px', fontSize: '10px' }}
+                  >
+                    <option value="Noto Nastaliq Urdu">نستعلیق (Noto Nastaliq)</option>
+                    <option value="Jameel Noori Nastaleeq">جمیل نوری نستعلیق</option>
+                    <option value="Gulzar">گلزار (Gulzar)</option>
+                    <option value="InPage Ali Nastaliq">انپیج علی نستعلیق</option>
+                    <option value="InPage Lahori Nastaliq">انپیج لاہوری نستعلیق</option>
+                    <option value="Aptos (Body)">Aptos (Body)</option>
+                    <option value="Calibri">Calibri</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                  </select>
 
-                <input
-                  type="number"
-                  value={activeFontSize}
-                  onChange={(e) => onFontSizeChange(Number(e.target.value))}
-                  className="ribbon-number-input"
-                  min={8}
-                  max={144}
-                  title={t.fontSize}
-                />
+                  <input
+                    type="number"
+                    value={activeFontSize}
+                    onChange={(e) => onFontSizeChange(Number(e.target.value))}
+                    className="ribbon-number-input"
+                    min={8}
+                    max={144}
+                    title={t.fontSize}
+                    style={{ width: '42px', height: '22px', fontSize: '10px', textAlign: 'center' }}
+                  />
 
-                <button className="ribbon-action-btn sm-icon" title={t.bold}>
-                  <b>B</b>
-                </button>
-                <button className="ribbon-action-btn sm-icon" title={t.italic}>
-                  <i>I</i>
-                </button>
+                  {/* Increase Font Size A^ */}
+                  <button
+                    onClick={() => {
+                      const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
+                      const next = steps.find((s) => s > activeFontSize) ?? Math.min(activeFontSize + 10, 144);
+                      onFontSizeChange(next);
+                    }}
+                    className="ribbon-action-btn"
+                    title="Increase Font Size (Ctrl+>)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    A<sup>^</sup>
+                  </button>
+
+                  {/* Decrease Font Size A_v */}
+                  <button
+                    onClick={() => {
+                      const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
+                      const prev = [...steps].reverse().find((s) => s < activeFontSize) ?? Math.max(activeFontSize - 2, 8);
+                      onFontSizeChange(prev);
+                    }}
+                    className="ribbon-action-btn"
+                    title="Decrease Font Size (Ctrl+<)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    A<sub>v</sub>
+                  </button>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Change Case Aa ▼ Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowCaseMenu((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Change Case (Aa)"
+                      style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>Aa</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showCaseMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          color: 'var(--text-main)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5)',
+                          minWidth: '160px',
+                          padding: '4px 0',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <button
+                          onClick={() => { onChangeCase?.('sentence'); setShowCaseMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          Sentence case.
+                        </button>
+                        <button
+                          onClick={() => { onChangeCase?.('lowercase'); setShowCaseMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          lowercase
+                        </button>
+                        <button
+                          onClick={() => { onChangeCase?.('uppercase'); setShowCaseMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          UPPERCASE
+                        </button>
+                        <button
+                          onClick={() => { onChangeCase?.('capitalize'); setShowCaseMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          Capitalize Each Word
+                        </button>
+                        <button
+                          onClick={() => { onChangeCase?.('toggle'); setShowCaseMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          tOGGLE cASE
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Clear All Formatting A🧹 */}
+                  <button
+                    onClick={onClearFormatting}
+                    className="ribbon-action-btn"
+                    title="Clear All Formatting"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 600 }}
+                  >
+                    A🧹
+                  </button>
+                </div>
+
+                {/* Bottom Row: B, I, U▼, ab, x₂, x², A▼ (Effects), 🖊️▼ (Highlight), A▼ (Color) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  {/* Bold */}
+                  <button
+                    onClick={onToggleBold}
+                    className={`ribbon-action-btn ${isBold ? 'active' : ''}`}
+                    title="Bold (Ctrl+B)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    <b>B</b>
+                  </button>
+
+                  {/* Italic */}
+                  <button
+                    onClick={onToggleItalic}
+                    className={`ribbon-action-btn ${isItalic ? 'active' : ''}`}
+                    title="Italic (Ctrl+I)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontStyle: 'italic' }}
+                  >
+                    <i>I</i>
+                  </button>
+
+                  {/* Underline U ▼ Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowUnderlineMenu((prev) => !prev)}
+                      className={`ribbon-action-btn ${isUnderline ? 'active' : ''}`}
+                      title="Underline (Ctrl+U)"
+                      style={{ padding: '1px 5px', fontSize: '10px', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <u>U</u>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showUnderlineMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          color: 'var(--text-main)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5)',
+                          minWidth: '150px',
+                          padding: '4px 0',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <button
+                          onClick={() => { onToggleUnderline?.(); onUnderlineStyleChange?.('single'); setShowUnderlineMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
+                        >
+                          Single Line
+                        </button>
+                        <button
+                          onClick={() => { onToggleUnderline?.(); onUnderlineStyleChange?.('double'); setShowUnderlineMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline double' }}
+                        >
+                          Double Line
+                        </button>
+                        <button
+                          onClick={() => { onToggleUnderline?.(); onUnderlineStyleChange?.('wave'); setShowUnderlineMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline wavy' }}
+                        >
+                          Wave Line
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Strikethrough ab */}
+                  <button
+                    onClick={onToggleStrikethrough}
+                    className={`ribbon-action-btn ${isStrikethrough ? 'active' : ''}`}
+                    title="Strikethrough"
+                    style={{ padding: '1px 5px', fontSize: '10px', textDecoration: 'line-through' }}
+                  >
+                    ab
+                  </button>
+
+                  {/* Subscript x₂ */}
+                  <button
+                    onClick={onToggleSubscript}
+                    className={`ribbon-action-btn ${isSubscript ? 'active' : ''}`}
+                    title="Subscript (Ctrl+=)"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                  >
+                    x<sub>2</sub>
+                  </button>
+
+                  {/* Superscript x² */}
+                  <button
+                    onClick={onToggleSuperscript}
+                    className={`ribbon-action-btn ${isSuperscript ? 'active' : ''}`}
+                    title="Superscript (Ctrl+Shift++)"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                  >
+                    x<sup>2</sup>
+                  </button>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Text Effects A▼ */}
+                  <button
+                    className="ribbon-action-btn"
+                    title="Text Effects & Typography"
+                    style={{ padding: '1px 5px', fontSize: '10px', color: '#0284c7', fontWeight: 700 }}
+                  >
+                    A<span style={{ fontSize: '7px' }}>▼</span>
+                  </button>
+
+                  {/* Text Highlight Color 🖊️▼ Palette */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowHighlightPalette((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Text Highlight Color"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>🖊️</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showHighlightPalette && (
+                      <HighlightColorPalette
+                        activeColor={highlightColor || undefined}
+                        onSelectColor={(col) => onHighlightColorChange?.(col)}
+                        onClose={() => setShowHighlightPalette(false)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Font Color A▼ Palette */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowFontColorPalette((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Font Color"
+                      style={{ padding: '1px 4px', fontSize: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px' }}
+                    >
+                      <span style={{ fontWeight: 700, fontSize: '10px' }}>A</span>
+                      <div style={{ width: '12px', height: '3px', backgroundColor: fontColor, borderRadius: '1px' }} />
+                    </button>
+
+                    {showFontColorPalette && (
+                      <FontColorPalette
+                        activeColor={fontColor}
+                        onSelectColor={(col) => onFontColorChange?.(col)}
+                        onClose={() => setShowFontColorPalette(false)}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
+
+              {/* Bottom Right Corner Launcher Button ↗️ */}
+              <button
+                onClick={onOpenFontDialog}
+                title="Font Dialog (Ctrl+D)"
+                style={{
+                  position: 'absolute',
+                  right: '2px',
+                  bottom: '0px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '8px',
+                  color: 'var(--text-muted)',
+                  padding: '0px',
+                }}
+              >
+                ↗️
+              </button>
+
               <div className="ribbon-group-caption">{t.grpFont}</div>
             </div>
 
             {/* Group 3: Paragraph */}
-            <div className="ribbon-group-box">
-              <div className="ribbon-chunk">
-                <div className="ribbon-align-group">
+            <div className="ribbon-group-box" style={{ position: 'relative', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {/* Top Row: Bullets, Numbering, Multilevel, Indents, Directions, Sort, Show/Hide Marks */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  {/* Bullets •= ▼ */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={onToggleBulletList}
+                      className={`ribbon-action-btn ${isBulletList ? 'active' : ''}`}
+                      title="Bullets"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>•=</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+                  </div>
+
+                  {/* Numbering 1 2 3 = ▼ */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={onToggleOrderedList}
+                      className={`ribbon-action-btn ${isOrderedList ? 'active' : ''}`}
+                      title="Numbering"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>1≡</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+                  </div>
+
+                  {/* Multilevel List 1 a i = ▼ */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={onToggleOrderedList}
+                      className="ribbon-action-btn"
+                      title="Multilevel List"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>1a-</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+                  </div>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Decrease Indent ⬅≡ */}
                   <button
-                    onClick={() => onAlignmentChange('start')}
-                    className={`ribbon-align-btn ${activeAlignment === 'start' ? 'active' : ''}`}
+                    onClick={onDecreaseIndent}
+                    className="ribbon-action-btn"
+                    title="Decrease Indent"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    {t.alignRight}
+                    ⬅≡
                   </button>
+
+                  {/* Increase Indent ≡➡️ */}
                   <button
-                    onClick={() => onAlignmentChange('center')}
-                    className={`ribbon-align-btn ${activeAlignment === 'center' ? 'active' : ''}`}
+                    onClick={onIncreaseIndent}
+                    className="ribbon-action-btn"
+                    title="Increase Indent"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    {t.alignCenter}
+                    ≡➡️
                   </button>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Left-to-Right Direction >¶ */}
                   <button
-                    onClick={() => onAlignmentChange('justify')}
-                    className={`ribbon-align-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
+                    onClick={() => onDirectionChange?.('ltr')}
+                    className={`ribbon-action-btn ${activeDirection === 'ltr' ? 'active' : ''}`}
+                    title="Left-to-Right Text Direction"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
                   >
-                    {t.alignJustify}
+                    &gt;¶
+                  </button>
+
+                  {/* Right-to-Left Direction ¶< */}
+                  <button
+                    onClick={() => onDirectionChange?.('rtl')}
+                    className={`ribbon-action-btn ${activeDirection === 'rtl' ? 'active' : ''}`}
+                    title="Right-to-Left Text Direction (Urdu)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    ¶&lt;
+                  </button>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Sort A-Z ↓ */}
+                  <button
+                    onClick={onSortParagraphs}
+                    className="ribbon-action-btn"
+                    title="Sort Paragraphs or Text"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    A-Z↓
+                  </button>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Show/Hide Formatting Marks ¶ */}
+                  <button
+                    onClick={onToggleFormattingMarks}
+                    className={`ribbon-action-btn ${showFormattingMarks ? 'active' : ''}`}
+                    title="Show/Hide Non-Printing Formatting Marks (Ctrl+*)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    ¶
                   </button>
                 </div>
 
-                <button
-                  onClick={onToggleKashida}
-                  className={`ribbon-action-btn ${isKashidaEnabled ? 'active' : ''}`}
-                  title={t.kashida}
-                >
-                  <span>ـ</span>
-                  <span>{t.kashida}</span>
-                </button>
+                {/* Bottom Row: Align Left, Center, Right, Justify, Line Spacing, Shading, Borders */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  {/* Align Left */}
+                  <button
+                    onClick={() => onAlignmentChange?.('left')}
+                    className={`ribbon-action-btn ${activeAlignment === 'left' ? 'active' : ''}`}
+                    title="Align Left (Ctrl+L)"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                  >
+                    ≡
+                  </button>
+
+                  {/* Align Center */}
+                  <button
+                    onClick={() => onAlignmentChange?.('center')}
+                    className={`ribbon-action-btn ${activeAlignment === 'center' ? 'active' : ''}`}
+                    title="Center (Ctrl+E)"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                  >
+                    ≡
+                  </button>
+
+                  {/* Align Right */}
+                  <button
+                    onClick={() => onAlignmentChange?.('right')}
+                    className={`ribbon-action-btn ${activeAlignment === 'right' || activeAlignment === 'start' ? 'active' : ''}`}
+                    title="Align Right (Ctrl+R)"
+                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                  >
+                    ≡
+                  </button>
+
+                  {/* Justify ≡ ▼ Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowJustifyMenu((prev) => !prev)}
+                      className={`ribbon-action-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
+                      title="Justify (Ctrl+J)"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>≡</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showJustifyMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          color: 'var(--text-main)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5)',
+                          minWidth: '150px',
+                          padding: '4px 0',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <button
+                          onClick={() => { onAlignmentChange?.('justify'); setShowJustifyMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          Justify
+                        </button>
+                        <button
+                          onClick={() => { onAlignmentChange?.('justify'); onToggleKashida?.(); setShowJustifyMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          Urdu Kashida Justify (کشیدہ)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Line & Paragraph Spacing ↕≡ ▼ Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowLineSpacingMenu((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Line and Paragraph Spacing"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>↕≡</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showLineSpacingMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          color: 'var(--text-main)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5)',
+                          minWidth: '170px',
+                          padding: '4px 0',
+                          fontSize: '11px',
+                        }}
+                      >
+                        {[1.0, 1.15, 1.5, 2.0, 2.5, 3.0].map((lh) => (
+                          <button
+                            key={lh}
+                            onClick={() => { onLineHeightChange?.(lh); setShowLineSpacingMenu(false); }}
+                            className="ribbon-menu-item"
+                            style={{
+                              width: '100%',
+                              padding: '5px 12px',
+                              border: 'none',
+                              background: lineHeight === lh ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                              color: lineHeight === lh ? 'var(--emerald-accent)' : 'var(--text-main)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            {lh.toFixed(2)}
+                          </button>
+                        ))}
+                        <div style={{ height: '1px', backgroundColor: 'var(--panel-border)', margin: '4px 0' }} />
+                        <button
+                          onClick={() => { onOpenParagraphDialog?.(); setShowLineSpacingMenu(false); }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          Line Spacing Options...
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Shading / Background Color 🪣 ▼ */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowParagraphShadingPalette((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Paragraph Shading / Background Color"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>🪣</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showParagraphShadingPalette && (
+                      <ParagraphShadingPalette
+                        activeColor={paragraphShading || undefined}
+                        onSelectColor={(col) => onParagraphShadingChange?.(col)}
+                        onClose={() => setShowParagraphShadingPalette(false)}
+                      />
+                    )}
+                  </div>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Borders 🔲 ▼ Dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowParagraphBordersMenu((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Borders"
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <span>🔲</span>
+                      <span style={{ fontSize: '7px' }}>▼</span>
+                    </button>
+
+                    {showParagraphBordersMenu && (
+                      <ParagraphBordersMenu
+                        onSelectBorder={(side) => onSelectParagraphBorder?.(side)}
+                        onClose={() => setShowParagraphBordersMenu(false)}
+                        onOpenBorderDialog={onOpenParagraphDialog}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
+
+              {/* Bottom Right Corner Launcher Button ↘️ */}
+              <button
+                onClick={onOpenParagraphDialog}
+                title="Paragraph Dialog"
+                style={{
+                  position: 'absolute',
+                  right: '2px',
+                  bottom: '0px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '8px',
+                  color: 'var(--text-muted)',
+                  padding: '0px',
+                }}
+              >
+                ↘️
+              </button>
+
               <div className="ribbon-group-caption">{t.grpParagraph}</div>
             </div>
 
-            {/* Group 4: Tools */}
-            <div className="ribbon-group-box">
-              <div className="ribbon-chunk">
-                <button
-                  onClick={() => onSelectTool('select')}
-                  className={`ribbon-action-btn ${activeTool === 'select' ? 'active' : ''}`}
-                  title={t.select}
-                >
-                  <span>↖</span>
-                  <span>{t.select}</span>
-                </button>
+            {/* Group 4: Styles */}
+            <div className="ribbon-group-box" style={{ position: 'relative', minWidth: '320px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', gap: '4px', overflowX: 'hidden', padding: '2px 0' }}>
+                  {[
+                    { id: 'normal', name: 'Normal', preview: 'AaBbCc', tag: '¶ Normal' },
+                    { id: 'no-spacing', name: 'No Spac...', preview: 'AaBbCc', tag: '¶ No Spac...' },
+                    { id: 'heading-1', name: 'Heading 1', preview: 'AaBb', tag: 'Heading 1' },
+                    { id: 'heading-2', name: 'Heading 2', preview: 'AaBb', tag: 'Heading 2' },
+                    { id: 'title', name: 'Title', preview: 'AaBb', tag: 'Title' },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      onClick={() => onApplyStyle?.(st.id)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '56px',
+                        height: '34px',
+                        border: activeStyleId === st.id ? '2px solid var(--emerald-accent)' : '1px solid var(--panel-border)',
+                        borderRadius: '4px',
+                        backgroundColor: activeStyleId === st.id ? 'rgba(16, 185, 129, 0.1)' : '#ffffff',
+                        color: '#172119',
+                        cursor: 'pointer',
+                        padding: '1px 2px',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ fontSize: '10px', lineHeight: 1, fontWeight: st.id.includes('heading') || st.id === 'title' ? 700 : 400, color: st.id.includes('heading') ? '#0284c7' : '#172119' }}>
+                        {st.preview}
+                      </span>
+                      <span style={{ fontSize: '8px', lineHeight: 1, color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '52px' }}>
+                        {st.tag}
+                      </span>
+                    </button>
+                  ))}
+                </div>
 
-                <button
-                  onClick={() => onSelectTool('text')}
-                  className={`ribbon-action-btn ${activeTool === 'text' ? 'active' : ''}`}
-                  title={t.textFrame}
-                >
-                  <span>T</span>
-                  <span>{t.textFrame}</span>
-                </button>
-
-                <button
-                  onClick={() => onSelectTool('rectangle')}
-                  className={`ribbon-action-btn ${activeTool === 'rectangle' ? 'active' : ''}`}
-                  title={t.shape}
-                >
-                  <span>▭</span>
-                  <span>{t.shape}</span>
-                </button>
-
-                <button
-                  onClick={() => onSelectTool('image')}
-                  className={`ribbon-action-btn ${activeTool === 'image' ? 'active' : ''}`}
-                  title={t.imageFrame}
-                >
-                  <span>🖼</span>
-                  <span>{t.imageFrame}</span>
-                </button>
+                {/* Quick Scroll & Launcher */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <button onClick={onOpenStylesManager} className="ribbon-action-btn" title="Scroll Up" style={{ padding: '1px 4px', fontSize: '8px' }}>▲</button>
+                  <button onClick={onOpenStylesManager} className="ribbon-action-btn" title="Scroll Down" style={{ padding: '1px 4px', fontSize: '8px' }}>▼</button>
+                  <button onClick={onOpenStylesManager} className="ribbon-action-btn" title="More Styles" style={{ padding: '1px 4px', fontSize: '8px' }}>▼</button>
+                </div>
               </div>
-              <div className="ribbon-group-caption">{t.grpTools}</div>
+
+              {/* Styles Dialog Launcher Button ↘️ */}
+              <button
+                onClick={onOpenStylesManager}
+                title="Styles Dialog"
+                style={{
+                  position: 'absolute',
+                  right: '2px',
+                  bottom: '0px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '8px',
+                  color: 'var(--text-muted)',
+                  padding: '0px',
+                }}
+              >
+                ↘️
+              </button>
+
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'اسٹائلز' : 'Styles'}</div>
             </div>
 
-            {/* Group 5: Styles & References */}
+            {/* Group 5: Editing */}
             <div className="ribbon-group-box">
-              <div className="ribbon-chunk">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <button
-                  onClick={onOpenStylesManager}
+                  onClick={onOpenFind}
                   className="ribbon-action-btn"
-                  title={lang === 'ur' ? 'اسٹائلز منیجر' : 'Styles Manager'}
+                  title="Find (Ctrl+F)"
+                  style={{ padding: '1px 4px', height: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}
                 >
-                  <span>🎨</span>
-                  <span>{lang === 'ur' ? 'اسٹائلز' : 'Styles'}</span>
+                  <span style={{ fontSize: '9px' }}>🔍</span>
+                  <span>{lang === 'ur' ? 'تلاش' : 'Find'}</span>
+                  <span style={{ fontSize: '6px' }}>▼</span>
                 </button>
+
                 <button
-                  onClick={onOpenDocStats}
+                  onClick={onOpenReplace}
                   className="ribbon-action-btn"
-                  title={lang === 'ur' ? 'دستاویز شماریات' : 'Document Statistics'}
+                  title="Replace (Ctrl+H)"
+                  style={{ padding: '1px 4px', height: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}
                 >
-                  <span>📊</span>
-                  <span>{lang === 'ur' ? 'شماریات' : 'Statistics'}</span>
+                  <span style={{ color: '#0284c7', fontWeight: 700, fontSize: '9px' }}>c🔁b</span>
+                  <span>{lang === 'ur' ? 'تبدیل' : 'Replace'}</span>
+                </button>
+
+                {/* Select Dropdown */}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setShowSelectMenu((prev) => !prev)}
+                    className="ribbon-action-btn"
+                    title="Select"
+                    style={{ padding: '1px 4px', height: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', width: '100%' }}
+                  >
+                    <span style={{ fontSize: '9px' }}>↖️</span>
+                    <span>{lang === 'ur' ? 'انتخاب' : 'Select'}</span>
+                    <span style={{ fontSize: '6px' }}>▼</span>
+                  </button>
+
+                  {showSelectMenu && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 2px)',
+                        left: 0,
+                        zIndex: 9999,
+                        backgroundColor: 'var(--panel-bg)',
+                        color: 'var(--text-main)',
+                        border: '1px solid var(--panel-border)',
+                        borderRadius: '6px',
+                        boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5)',
+                        minWidth: '160px',
+                        padding: '4px 0',
+                        fontSize: '11px',
+                      }}
+                    >
+                      <button
+                        onClick={() => { onSelectAll?.(); setShowSelectMenu(false); }}
+                        className="ribbon-menu-item"
+                        style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                      >
+                        Select All (Ctrl+A)
+                      </button>
+                      <button
+                        onClick={() => { onSelectTool('select'); setShowSelectMenu(false); }}
+                        className="ribbon-menu-item"
+                        style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
+                      >
+                        Select Objects
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'تدوین' : 'Editing'}</div>
+            </div>
+
+            {/* Group 6: Add-ins */}
+            <div className="ribbon-group-box">
+              <div className="ribbon-chunk" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '36px' }}>
+                <button
+                  onClick={onOpenAddins}
+                  className="ribbon-action-btn"
+                  title="Add-ins & Extensions"
+                  style={{ padding: '2px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '10px' }}
+                >
+                  <span style={{ fontSize: '14px', color: '#ea580c' }}>▦</span>
+                  <span>{lang === 'ur' ? 'ایڈ انز' : 'Add-ins'}</span>
                 </button>
               </div>
-              <div className="ribbon-group-caption">{lang === 'ur' ? 'اسٹائل اور شماریات' : 'Styles & Stats'}</div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'ایڈ انز' : 'Add-ins'}</div>
             </div>
           </div>
         )}
@@ -554,15 +1452,27 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
               <div className="ribbon-group-caption">{t.grpPages}</div>
             </div>
 
+            {/* Moved Tools: Illustrations & Text Boxes */}
             <div className="ribbon-group-box">
               <div className="ribbon-chunk">
                 <button
+                  onClick={() => onSelectTool('select')}
+                  className={`ribbon-action-btn ${activeTool === 'select' ? 'active' : ''}`}
+                  title={t.select}
+                >
+                  <span>↖</span>
+                  <span>{t.select}</span>
+                </button>
+
+                <button
                   onClick={() => onSelectTool('text')}
                   className={`ribbon-action-btn ${activeTool === 'text' ? 'active' : ''}`}
+                  title={t.textFrame}
                 >
                   <span>📝</span>
                   <span>{t.textFrame}</span>
                 </button>
+
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   <button
                     onClick={() => setShowShapeGallery((prev) => !prev)}

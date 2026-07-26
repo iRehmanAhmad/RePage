@@ -170,6 +170,7 @@ export interface AssetReference {
   byteSize: number;
   originalName: string;
   packageEntry: string;
+  dataUrl?: string;
 }
 
 export type ViewMode = 'print' | 'web' | 'draft';

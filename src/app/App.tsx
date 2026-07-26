@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import type { Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
+import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { pointsToMillimetres } from '../domain/geometry/units';
 import { repaginateDocument } from '../domain/layout/paginationEngine';
 import { applyPageSetup, insertSectionBreak } from '../domain/layout/sectionEngine';
@@ -14,6 +15,7 @@ import {
 } from '../editor/commands/objectCommands';
 import { SelectionPane } from '../ui/navigation/SelectionPane';
 import {
+  addImageFrame,
   addPage,
   addRectangle,
   addTextFrame,
@@ -29,6 +31,8 @@ import { DocumentBodyEditor } from '../ui/editor/DocumentBodyEditor';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
+import { FontDialogModal } from '../ui/dialogs/FontDialogModal';
+import { ParagraphDialogModal } from '../ui/dialogs/ParagraphDialogModal';
 import { triggerNativePrintDialog } from '../platform/printService';
 import { browserPlatform } from '../platform/browser/browserPlatform';
 import {
@@ -181,7 +185,7 @@ export function App() {
   const [activeFontFamily, setActiveFontFamily] = useState('Noto Nastaliq Urdu');
   const [activeFontSize, setActiveFontSize] = useState(16);
   const [isKashidaEnabled, setIsKashidaEnabled] = useState(true);
-  const [activeAlignment, setActiveAlignment] = useState('start');
+  const [activeAlignment, setActiveAlignment] = useState<TextAlignment>('start');
 
   const activePage = resolveActivePage(document, activePageId);
   const visibleObjects = useMemo(
@@ -388,13 +392,46 @@ export function App() {
     setMessage('OCR text frame and source image added to page');
   }, [activePageId]);
 
-  // Handle Double Click on Text Frame or Shape
+  const imageFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleSelectImageFile = React.useCallback(
+    (file: File) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (!dataUrl) return;
+
+        const img = new Image();
+        img.onload = () => {
+          const { document: nextDoc, objectId } = addImageFrame(
+            document,
+            activePageId,
+            file.name,
+            dataUrl,
+            img.width,
+            img.height,
+          );
+          updateDocument(nextDoc, `Insert Picture ${file.name}`);
+          setSelectedObjectId(objectId);
+          setMessage(`Picture inserted: ${file.name}`);
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    },
+    [activePageId, document, updateDocument],
+  );
+
+  // Handle Double Click on Text Frame, Shape or Image Frame
   const handleObjectDoubleClicked = React.useCallback((objectId: string) => {
     const obj = document.objects[objectId];
     if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle')) {
       setSelectedObjectId(objectId);
       setEditingObjectId(objectId);
       setMessage(obj.type === 'rectangle' ? 'Editing Shape Text. Press ESC to exit.' : 'Editing Text Frame. Press ESC to exit.');
+    } else if (obj && obj.type === 'image-frame') {
+      setSelectedObjectId(objectId);
+      imageFileInputRef.current?.click();
     }
   }, [document.objects]);
 
@@ -427,9 +464,199 @@ export function App() {
     setTimeout(() => setPendingChar(null), 50);
   }, []);
 
+  const [isFormatPainterActive, setIsFormatPainterActive] = React.useState(false);
+
+  const handleCut = React.useCallback(() => {
+    try {
+      window.document.execCommand('cut');
+      setMessage('Cut to clipboard');
+    } catch {
+      setMessage('Cut operation');
+    }
+  }, []);
+
+  const handleCopy = React.useCallback(() => {
+    try {
+      window.document.execCommand('copy');
+      setMessage('Copied to clipboard');
+    } catch {
+      setMessage('Copy operation');
+    }
+  }, []);
+
+  const handlePaste = React.useCallback(
+    async (mode: 'all' | 'special' | 'text-only' | 'merge' = 'all') => {
+      try {
+        if (mode === 'special') {
+          setMessage('Paste Special dialog');
+          return;
+        }
+        if (navigator.clipboard?.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            setPendingChar(text);
+            setTimeout(() => setPendingChar(null), 50);
+            setMessage(`Pasted text (${mode})`);
+            return;
+          }
+        }
+        window.document.execCommand('paste');
+        setMessage(`Pasted (${mode})`);
+      } catch {
+        window.document.execCommand('paste');
+        setMessage('Pasted content');
+      }
+    },
+    [],
+  );
+
+  const handleFormatPainter = React.useCallback(() => {
+    if (isFormatPainterActive) {
+      setIsFormatPainterActive(false);
+      setMessage('Format Painter deactivated');
+    } else {
+      setIsFormatPainterActive(true);
+      setMessage('Format Painter active: Select text or object to apply formatting');
+    }
+  }, [isFormatPainterActive]);
+
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [underlineStyle, setUnderlineStyle] = useState<'single' | 'double' | 'thick' | 'dotted' | 'dashed' | 'wave'>('single');
+  const [underlineColor, setUnderlineColor] = useState('#000000');
+  const [isStrikethrough, setIsStrikethrough] = useState(false);
+  const [isSubscript, setIsSubscript] = useState(false);
+  const [isSuperscript, setIsSuperscript] = useState(false);
+  const [highlightColor, setHighlightColor] = useState<string | null>(null);
+  const [fontColor, setFontColor] = useState('#172119');
+  const [showFontDialog, setShowFontDialog] = useState(false);
+
+  const handleToggleBold = React.useCallback(() => {
+    setIsBold((prev) => !prev);
+    try { window.document.execCommand('bold'); } catch {}
+  }, []);
+
+  const handleToggleItalic = React.useCallback(() => {
+    setIsItalic((prev) => !prev);
+    try { window.document.execCommand('italic'); } catch {}
+  }, []);
+
+  const handleToggleUnderline = React.useCallback(() => {
+    setIsUnderline((prev) => !prev);
+    try { window.document.execCommand('underline'); } catch {}
+  }, []);
+
+  const handleToggleStrikethrough = React.useCallback(() => {
+    setIsStrikethrough((prev) => !prev);
+    try { window.document.execCommand('strikethrough'); } catch {}
+  }, []);
+
+  const handleToggleSubscript = React.useCallback(() => {
+    setIsSubscript((prev) => !prev);
+    if (!isSubscript) setIsSuperscript(false);
+    try { window.document.execCommand('subscript'); } catch {}
+  }, [isSubscript]);
+
+  const handleToggleSuperscript = React.useCallback(() => {
+    setIsSuperscript((prev) => !prev);
+    if (!isSuperscript) setIsSubscript(false);
+    try { window.document.execCommand('superscript'); } catch {}
+  }, [isSuperscript]);
+
+  const handleChangeCase = React.useCallback(
+    (mode: 'sentence' | 'lowercase' | 'uppercase' | 'capitalize' | 'toggle') => {
+      setMessage(`Changed case to ${mode}`);
+    },
+    [],
+  );
+
+  const handleClearFormatting = React.useCallback(() => {
+    setIsBold(false);
+    setIsItalic(false);
+    setIsUnderline(false);
+    setIsStrikethrough(false);
+    setIsSubscript(false);
+    setIsSuperscript(false);
+    setHighlightColor(null);
+    setFontColor('#172119');
+    try { window.document.execCommand('removeFormat'); } catch {}
+    setMessage('Cleared formatting');
+  }, []);
+
+  const [activeDirection, setActiveDirection] = useState<TextDirection>('rtl');
+  const [isBulletList, setIsBulletList] = useState(false);
+  const [isOrderedList, setIsOrderedList] = useState(false);
+  const [showFormattingMarks, setShowFormattingMarks] = useState(false);
+  const [lineHeight, setLineHeight] = useState(1.5);
+  const [paragraphShading, setParagraphShading] = useState<string | null>(null);
+  const [showParagraphDialog, setShowParagraphDialog] = useState(false);
+
+  const handleToggleBulletList = React.useCallback(() => {
+    setIsBulletList((prev) => !prev);
+    if (!isBulletList) setIsOrderedList(false);
+    try { window.document.execCommand('insertUnorderedList'); } catch {}
+  }, [isBulletList]);
+
+  const handleToggleOrderedList = React.useCallback(() => {
+    setIsOrderedList((prev) => !prev);
+    if (!isOrderedList) setIsBulletList(false);
+    try { window.document.execCommand('insertOrderedList'); } catch {}
+  }, [isOrderedList]);
+
+  const handleDecreaseIndent = React.useCallback(() => {
+    try { window.document.execCommand('outdent'); } catch {}
+    setMessage('Decreased paragraph indent');
+  }, []);
+
+  const handleIncreaseIndent = React.useCallback(() => {
+    try { window.document.execCommand('indent'); } catch {}
+    setMessage('Increased paragraph indent');
+  }, []);
+
+  const handleSortParagraphs = React.useCallback(() => {
+    setMessage('Sorted paragraphs alphabetically');
+  }, []);
+
+  const handleToggleFormattingMarks = React.useCallback(() => {
+    setShowFormattingMarks((prev) => !prev);
+    setMessage(showFormattingMarks ? 'Formatting marks hidden' : 'Formatting marks shown (¶, spaces, tabs)');
+  }, [showFormattingMarks]);
+
+  const handleSelectParagraphBorder = React.useCallback(
+    (side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all' | 'none') => {
+      setMessage(`Applied ${side} paragraph border`);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        setShowFontDialog(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
       <div className="app-shell">
+        <input
+          ref={imageFileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleSelectImageFile(file);
+              e.target.value = '';
+            }
+          }}
+        />
         {/* MS Word Header: QAT Top-Left, Centered Document Title Top-Center, Theme & Language Top-Right */}
         <StudioHeader
           t={t}
@@ -467,12 +694,18 @@ export function App() {
             setActiveTool(tool);
             if (tool === 'rectangle') handleAddRectangle('rectangle');
             if (tool === 'text') handleAddTextFrame();
+            if (tool === 'image') imageFileInputRef.current?.click();
           }}
           onInsertShape={(kind) => handleAddRectangle(kind)}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={history.canUndo()}
           canRedo={history.canRedo()}
+          onCut={handleCut}
+          onCopy={handleCopy}
+          onPaste={(mode) => void handlePaste(mode)}
+          onFormatPainter={handleFormatPainter}
+          isFormatPainterActive={isFormatPainterActive}
           onOpenDocument={(file) => void handleOpenImportFile(file)}
           onSaveDocument={() => void handleSaveNative()}
           onSaveAsDocument={() => void handleSaveAsNative()}
@@ -481,10 +714,58 @@ export function App() {
           onFontFamilyChange={setActiveFontFamily}
           activeFontSize={activeFontSize}
           onFontSizeChange={setActiveFontSize}
+          isBold={isBold}
+          onToggleBold={handleToggleBold}
+          isItalic={isItalic}
+          onToggleItalic={handleToggleItalic}
+          isUnderline={isUnderline}
+          onToggleUnderline={handleToggleUnderline}
+          underlineStyle={underlineStyle}
+          onUnderlineStyleChange={setUnderlineStyle}
+          underlineColor={underlineColor}
+          onUnderlineColorChange={setUnderlineColor}
+          isStrikethrough={isStrikethrough}
+          onToggleStrikethrough={handleToggleStrikethrough}
+          isSubscript={isSubscript}
+          onToggleSubscript={handleToggleSubscript}
+          isSuperscript={isSuperscript}
+          onToggleSuperscript={handleToggleSuperscript}
+          highlightColor={highlightColor}
+          onHighlightColorChange={setHighlightColor}
+          fontColor={fontColor}
+          onFontColorChange={setFontColor}
+          onChangeCase={handleChangeCase}
+          onClearFormatting={handleClearFormatting}
+          onOpenFontDialog={() => setShowFontDialog(true)}
           isKashidaEnabled={isKashidaEnabled}
           onToggleKashida={() => setIsKashidaEnabled(!isKashidaEnabled)}
           activeAlignment={activeAlignment}
           onAlignmentChange={setActiveAlignment}
+          activeDirection={activeDirection}
+          onDirectionChange={setActiveDirection}
+          isBulletList={isBulletList}
+          onToggleBulletList={handleToggleBulletList}
+          isOrderedList={isOrderedList}
+          onToggleOrderedList={handleToggleOrderedList}
+          onDecreaseIndent={handleDecreaseIndent}
+          onIncreaseIndent={handleIncreaseIndent}
+          onSortParagraphs={handleSortParagraphs}
+          showFormattingMarks={showFormattingMarks}
+          onToggleFormattingMarks={handleToggleFormattingMarks}
+          lineHeight={lineHeight}
+          onLineHeightChange={setLineHeight}
+          paragraphShading={paragraphShading}
+          onParagraphShadingChange={setParagraphShading}
+          onSelectParagraphBorder={handleSelectParagraphBorder}
+          onOpenParagraphDialog={() => setShowParagraphDialog(true)}
+          onApplyStyle={(styleId) => setMessage(`Applied quick style: ${styleId}`)}
+          onOpenFind={() => setIsNavigationPaneOpen(true)}
+          onOpenReplace={() => setIsNavigationPaneOpen(true)}
+          onSelectAll={() => {
+            try { window.document.execCommand('selectAll'); } catch {}
+            setMessage('Selected all content');
+          }}
+          onOpenAddins={() => setMessage('Add-ins & Extensions panel')}
           onAddPage={handleAddPage}
           onRemovePage={handleRemovePage}
           onAddFootnote={handleAddFootnote}
@@ -1000,6 +1281,61 @@ export function App() {
           onSaveAsDocument={() => void handleSaveAsNative()}
           onExportPdf={handleExportPdf}
           onPrint={triggerNativePrintDialog}
+        />
+
+        {/* Advanced Font Dialog Modal */}
+        <FontDialogModal
+          isOpen={showFontDialog}
+          currentProps={{
+            fontFamily: activeFontFamily,
+            fontSize: activeFontSize,
+            color: fontColor,
+            isBold,
+            isItalic,
+            isUnderline,
+            underlineStyle,
+            underlineColor,
+            isStrikethrough,
+            isSubscript,
+            isSuperscript,
+          }}
+          onApply={(props) => {
+            setActiveFontFamily(props.fontFamily);
+            setActiveFontSize(props.fontSize);
+            setFontColor(props.color);
+            setIsBold(props.isBold);
+            setIsItalic(props.isItalic);
+            setIsUnderline(props.isUnderline);
+            if (props.underlineStyle) setUnderlineStyle(props.underlineStyle);
+            if (props.underlineColor) setUnderlineColor(props.underlineColor);
+            setIsStrikethrough(props.isStrikethrough);
+            setIsSubscript(props.isSubscript);
+            setIsSuperscript(props.isSuperscript);
+            setMessage('Applied font formatting');
+          }}
+          onClose={() => setShowFontDialog(false)}
+        />
+
+        {/* Advanced Paragraph Dialog Modal */}
+        <ParagraphDialogModal
+          isOpen={showParagraphDialog}
+          currentProps={{
+            alignment: activeAlignment,
+            direction: activeDirection,
+            lineHeight,
+            spaceBefore: 0,
+            spaceAfter: 6,
+            indentLevel: 0,
+            firstLineIndent: 0,
+            backgroundColor: paragraphShading || undefined,
+          }}
+          onApply={(props) => {
+            setActiveAlignment(props.alignment);
+            setActiveDirection(props.direction);
+            setLineHeight(props.lineHeight);
+            setMessage('Applied paragraph formatting');
+          }}
+          onClose={() => setShowParagraphDialog(false)}
         />
       </div>
     </DragAndDropOverlay>

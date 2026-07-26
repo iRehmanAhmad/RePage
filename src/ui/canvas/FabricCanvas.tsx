@@ -6,7 +6,9 @@ interface FabricCanvasProps {
   page: Page;
   objects: PageObject[];
   stories?: Record<string, import('../../domain/document/types').TextStory> | undefined;
+  assets?: Record<string, import('../../domain/document/types').AssetReference> | undefined;
   selectedObjectId?: string | null | undefined;
+  editingObjectId?: string | null | undefined;
   onObjectModified?: (objectId: string, frameProps: Partial<Rect>) => void;
   onSelectionChanged?: (objectId: string | null) => void;
   onObjectDoubleClicked?: (objectId: string) => void;
@@ -17,7 +19,9 @@ export function FabricCanvas({
   page,
   objects,
   stories,
+  assets,
   selectedObjectId,
+  editingObjectId,
   onObjectModified,
   onSelectionChanged,
   onObjectDoubleClicked,
@@ -58,12 +62,12 @@ export function FabricCanvas({
     }
   }, [page.width, page.height]);
 
-  // Synchronize objects on canvas when page objects, stories, or selected object change
+  // Synchronize objects on canvas when page objects, stories, assets, selected object, or editing object change
   useEffect(() => {
     if (adapterRef.current) {
-      adapterRef.current.syncObjects(objects, stories, selectedObjectId);
+      adapterRef.current.syncObjects(objects, stories, selectedObjectId, assets, editingObjectId);
     }
-  }, [objects, stories, selectedObjectId]);
+  }, [objects, stories, assets, selectedObjectId, editingObjectId]);
 
   return (
     <div className="canvas-wrapper" style={{ position: 'relative', width: '100%', height: '100%' }}>

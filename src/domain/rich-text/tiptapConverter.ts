@@ -51,7 +51,17 @@ export function canonicalToTiptapHtml(doc: RichTextDocument): string {
             for (const mark of inline.marks) {
               if (mark.type === 'bold') text = `<strong>${text}</strong>`;
               if (mark.type === 'italic') text = `<em>${text}</em>`;
-              if (mark.type === 'underline') text = `<u>${text}</u>`;
+              if (mark.type === 'underline') {
+                const styleAttr = mark.style ? ` style="text-decoration-style: ${mark.style};"` : '';
+                text = `<u${styleAttr}>${text}</u>`;
+              }
+              if (mark.type === 'strikethrough') text = `<s>${text}</s>`;
+              if (mark.type === 'subscript') text = `<sub>${text}</sub>`;
+              if (mark.type === 'superscript') text = `<sup>${text}</sup>`;
+              if (mark.type === 'highlight') text = `<mark style="background-color: ${mark.color}">${text}</mark>`;
+              if (mark.type === 'fontFamily') text = `<span style="font-family: ${mark.family}">${text}</span>`;
+              if (mark.type === 'fontSize') text = `<span style="font-size: ${mark.size}pt">${text}</span>`;
+              if (mark.type === 'color') text = `<span style="color: ${mark.color}">${text}</span>`;
             }
           }
           return text;
@@ -119,6 +129,31 @@ export function tiptapHtmlToCanonical(
         }
         if (tag === 'u') {
           if (!nextMarks.some((m) => m.type === 'underline')) nextMarks.push({ type: 'underline' });
+        }
+        if (tag === 's' || tag === 'del' || tag === 'strike') {
+          if (!nextMarks.some((m) => m.type === 'strikethrough')) nextMarks.push({ type: 'strikethrough' });
+        }
+        if (tag === 'sub') {
+          if (!nextMarks.some((m) => m.type === 'subscript')) nextMarks.push({ type: 'subscript' });
+        }
+        if (tag === 'sup') {
+          if (!nextMarks.some((m) => m.type === 'superscript')) nextMarks.push({ type: 'superscript' });
+        }
+        if (tag === 'mark') {
+          const bg = el.style.backgroundColor || el.getAttribute('color') || '#fef08a';
+          if (!nextMarks.some((m) => m.type === 'highlight')) nextMarks.push({ type: 'highlight', color: bg });
+        }
+        if (tag === 'span') {
+          if (el.style.fontFamily) {
+            nextMarks.push({ type: 'fontFamily', family: el.style.fontFamily });
+          }
+          if (el.style.fontSize) {
+            const sizeVal = parseFloat(el.style.fontSize);
+            if (!isNaN(sizeVal)) nextMarks.push({ type: 'fontSize', size: sizeVal });
+          }
+          if (el.style.color) {
+            nextMarks.push({ type: 'color', color: el.style.color });
+          }
         }
 
         Array.from(el.childNodes).forEach((child) => walk(child, nextMarks));
