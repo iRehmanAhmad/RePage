@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import { substituteDocumentCharacters } from '../../domain/language/characterSubstitutionEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
@@ -18,6 +18,14 @@ export function CharacterSubstitutionModal({
   onCommitDocument,
   lang,
 }: CharacterSubstitutionModalProps) {
+  const [scope, setScope] = useState<'document' | 'story'>('document');
+  const [selectedFixes, setSelectedFixes] = useState<Record<string, boolean>>({
+    arabicKaf: true,
+    arabicYeh: true,
+    tehMarbuta: true,
+    punctuation: true,
+  });
+
   if (!isOpen) return null;
 
   const result = substituteDocumentCharacters(document);
@@ -27,6 +35,9 @@ export function CharacterSubstitutionModal({
     onCommitDocument(result.doc, 'Character & Punctuation Substitution');
     onClose();
   };
+
+  const totalFixes = (selectedFixes.arabicKaf || selectedFixes.arabicYeh || selectedFixes.tehMarbuta ? result.arabicReplacements : 0) +
+    (selectedFixes.punctuation ? result.punctuationReplacements : 0);
 
   return (
     <div
@@ -45,10 +56,10 @@ export function CharacterSubstitutionModal({
     >
       <div
         style={{
-          width: '420px',
+          width: '460px',
           backgroundColor: '#0f172a',
           border: '1px solid #1e293b',
-          borderRadius: '8px',
+          borderRadius: '12px',
           padding: '20px',
           color: '#f8fafc',
           boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
@@ -66,7 +77,7 @@ export function CharacterSubstitutionModal({
           }}
         >
           <h3 style={{ margin: 0, fontSize: '15px', color: '#38bdf8', fontWeight: 700 }}>
-            {isUr ? 'عربی/اردو حروف اور علامات کی اصلاح' : 'Character & Punctuation Correction'}
+            {isUr ? 'حروف اور علامات کی اصلاح (Character Correction)' : 'Character & Punctuation Correction'}
           </h3>
           <button
             type="button"
@@ -83,13 +94,45 @@ export function CharacterSubstitutionModal({
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-          <p style={{ margin: 0, color: '#94a3b8', lineHeight: 1.5 }}>
-            {isUr
-              ? 'یہ ٹول دستاویز میں غیر معیاری عربی حروف (ك، ي، ه) کو اردو کے معیاری حروف (ک، ی، ہ) اور انگریزی علاماتِ اوقاف (؟، ،) سے بدلتا ہے۔'
-              : 'This tool replaces non-standard Arabic characters (ك, ي, ه) with native Urdu characters (ک, ی, ہ) and corrects punctuation marks.'}
-          </p>
+        {/* Scope Selector */}
+        <div
+          style={{
+            backgroundColor: '#020617',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            marginBottom: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ color: '#94a3b8' }}>{isUr ? 'دائرہ کار (Scope):' : 'Scope:'}</span>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="modalScope"
+                value="document"
+                checked={scope === 'document'}
+                onChange={() => setScope('document')}
+              />
+              <span>{isUr ? 'مکمل دستاویز' : 'Whole Document'}</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="modalScope"
+                value="story"
+                checked={scope === 'story'}
+                onChange={() => setScope('story')}
+              />
+              <span>{isUr ? 'موجودہ تحریر' : 'Current Story'}</span>
+            </label>
+          </div>
+        </div>
 
+        {/* Per-Fix Checkbox Review List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
           <div
             style={{
               backgroundColor: '#1e293b',
@@ -100,14 +143,29 @@ export function CharacterSubstitutionModal({
               gap: '8px',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{isUr ? 'عربی حروف کی اصلاحات:' : 'Arabic letter replacements:'}</span>
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedFixes.arabicKaf}
+                  onChange={(e) => setSelectedFixes((prev) => ({ ...prev, arabicKaf: e.target.checked }))}
+                />
+                <span>{isUr ? 'عربی کاف (ك ➔ ک) اور یاء (ي ➔ ی)' : 'Arabic Kaaf & Yaa (ك, ي ➔ ک, ی)'}</span>
+              </span>
               <span style={{ fontWeight: 700, color: '#10b981' }}>{result.arabicReplacements}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{isUr ? 'علاماتِ اوقاف کی اصلاحات:' : 'Punctuation corrections:'}</span>
+            </label>
+
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedFixes.punctuation}
+                  onChange={(e) => setSelectedFixes((prev) => ({ ...prev, punctuation: e.target.checked }))}
+                />
+                <span>{isUr ? 'اردو علاماتِ اوقاف (؟، ،)' : 'Urdu Punctuation (؟, ،)'}</span>
+              </span>
               <span style={{ fontWeight: 700, color: '#38bdf8' }}>{result.punctuationReplacements}</span>
-            </div>
+            </label>
           </div>
         </div>
 
@@ -115,25 +173,19 @@ export function CharacterSubstitutionModal({
           <button
             type="button"
             onClick={handleApplyFixes}
-            disabled={result.arabicReplacements === 0 && result.punctuationReplacements === 0}
+            disabled={totalFixes === 0}
             style={{
-              backgroundColor:
-                result.arabicReplacements > 0 || result.punctuationReplacements > 0
-                  ? '#10b981'
-                  : '#334155',
+              backgroundColor: totalFixes > 0 ? '#10b981' : '#334155',
               color: '#ffffff',
               border: 'none',
               borderRadius: '4px',
               padding: '6px 16px',
               fontSize: '12px',
               fontWeight: 600,
-              cursor:
-                result.arabicReplacements > 0 || result.punctuationReplacements > 0
-                  ? 'pointer'
-                  : 'not-allowed',
+              cursor: totalFixes > 0 ? 'pointer' : 'not-allowed',
             }}
           >
-            {isUr ? 'اصلاحات لاگو کریں' : 'Apply Corrections'}
+            {isUr ? `اصلاحات لاگو کریں (${totalFixes})` : `Apply Fixes (${totalFixes})`}
           </button>
           <button
             type="button"

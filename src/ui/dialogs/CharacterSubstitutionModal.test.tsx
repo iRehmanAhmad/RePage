@@ -20,6 +20,6 @@ describe('CharacterSubstitutionModal (Phase UX-6)', () => {
     );
 
     expect(screen.getByText(/حروف اور علامات کی اصلاح/i)).toBeInTheDocument();
-    expect(screen.getByText(/عربی حروف کی اصلاحات/i)).toBeInTheDocument();
+    expect(screen.getByText(/عربی کاف/i)).toBeInTheDocument();
   });
 });

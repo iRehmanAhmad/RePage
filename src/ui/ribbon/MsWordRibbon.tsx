@@ -3,6 +3,7 @@ import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 import type { ShapeKind, TextWrapMode, ViewMode } from '../../domain/document/types';
 import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
 import { BUNDLED_URDU_FONTS, UNAVAILABLE_INPAGE_FONTS, URDU_FONTS_LIST, WINDOWS_STANDARD_FONTS } from '../../domain/unicode/fontRegistry';
+import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
 import { FontColorPalette } from './FontColorPalette';
 import { HighlightColorPalette } from './HighlightColorPalette';
 
@@ -45,7 +46,7 @@ export interface MsWordRibbonProps {
   onRemovePage: () => void;
   onAddFootnote: () => void;
   onAddEndnote: () => void;
-  onOpenLanguageTools: () => void;
+  onOpenLanguageTools: (tab?: 'spelling' | 'proofread' | 'transliteration' | 'normalization' | 'character-fix') => void;
   onOpenOcr: () => void;
   onExportPdf: () => void;
   onExportEpub: () => void;
@@ -144,8 +145,8 @@ export interface MsWordRibbonProps {
   onOpenReplace?: () => void;
   onSelectAll?: () => void;
   onOpenAddins?: () => void;
-  keyboardMode?: 'native' | 'crulp' | 'navees' | 'english';
-  onKeyboardModeChange?: (mode: 'native' | 'crulp' | 'navees' | 'english') => void;
+  keyboardMode?: KeyboardMode;
+  onKeyboardModeChange?: (mode: KeyboardMode) => void;
   isTransliterationEnabled?: boolean;
   onToggleTransliteration?: () => void;
   showVisualKeyboard?: boolean;
@@ -163,9 +164,11 @@ export interface MsWordRibbonProps {
   recentEnglishFonts?: string[];
 }
 
-export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
+export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab; onTabChange?: (tab: RibbonTab) => void }> = ({
   t,
   lang,
+  activeTab: controlledActiveTab,
+  onTabChange,
   activeTool,
   onSelectTool,
   onUndo: _onUndo,
@@ -306,7 +309,13 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
   onEnglishFontChange,
   recentEnglishFonts = ['Calibri', 'Aptos', 'Arial'],
 }) => {
-  const [activeTab, setActiveTab] = useState<RibbonTab>('home');
+  const [activeTab, setActiveTab] = useState<RibbonTab>(controlledActiveTab || 'home');
+
+  React.useEffect(() => {
+    if (controlledActiveTab) {
+      setActiveTab(controlledActiveTab);
+    }
+  }, [controlledActiveTab]);
   const [isRibbonCollapsed, setIsRibbonCollapsed] = useState(false);
   const [showShapeGallery, setShowShapeGallery] = useState(false);
   const [showPasteMenu, setShowPasteMenu] = useState(false);
@@ -344,6 +353,12 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
 
   const toggleCollapse = () => setIsRibbonCollapsed((prev) => !prev);
 
+  const handleTabSelect = (tab: RibbonTab) => {
+    if (isRibbonCollapsed) setIsRibbonCollapsed(false);
+    setActiveTab(tab);
+    if (onTabChange) onTabChange(tab);
+  };
+
   return (
     <div className="ms-word-ribbon-container">
       {/* Hidden File Input */}
@@ -375,40 +390,28 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
         </button>
 
         <button
-          onClick={() => {
-            if (isRibbonCollapsed) setIsRibbonCollapsed(false);
-            setActiveTab('home');
-          }}
+          onClick={() => handleTabSelect('home')}
           onDoubleClick={toggleCollapse}
           className={`ribbon-tab-btn ${activeTab === 'home' ? 'active' : ''}`}
         >
           <span>🏠</span> {t.tabHome}
         </button>
         <button
-          onClick={() => {
-            if (isRibbonCollapsed) setIsRibbonCollapsed(false);
-            setActiveTab('insert');
-          }}
+          onClick={() => handleTabSelect('insert')}
           onDoubleClick={toggleCollapse}
           className={`ribbon-tab-btn ${activeTab === 'insert' ? 'active' : ''}`}
         >
           <span>➕</span> {t.tabInsert}
         </button>
         <button
-          onClick={() => {
-            if (isRibbonCollapsed) setIsRibbonCollapsed(false);
-            setActiveTab('urdu-tools');
-          }}
+          onClick={() => handleTabSelect('urdu-tools')}
           onDoubleClick={toggleCollapse}
           className={`ribbon-tab-btn ${activeTab === 'urdu-tools' ? 'active' : ''}`}
         >
           <span>🌐</span> {t.tabUrduTools}
         </button>
         <button
-          onClick={() => {
-            if (isRibbonCollapsed) setIsRibbonCollapsed(false);
-            setActiveTab('layout');
-          }}
+          onClick={() => handleTabSelect('layout')}
           onDoubleClick={toggleCollapse}
           className={`ribbon-tab-btn ${activeTab === 'layout' ? 'active' : ''}`}
         >
@@ -539,13 +542,14 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <select
                     value={keyboardMode}
-                    onChange={(e) => onKeyboardModeChange?.(e.target.value as 'native' | 'crulp' | 'navees' | 'english')}
+                    onChange={(e) => onKeyboardModeChange?.(e.target.value as KeyboardMode)}
                     className="ribbon-select"
                     title={lang === 'ur' ? 'اردو کی بورڈ کا انتخاب' : 'Urdu Keyboard Mode'}
                     style={{ width: '90px', height: '22px', fontSize: '10px' }}
                   >
                     <option value="crulp">CRULP صوتی</option>
                     <option value="navees">نفیس (Navees)</option>
+                    <option value="native">{lang === 'ur' ? 'مقامی (OS)' : 'Native (OS)'}</option>
                     <option value="english">English</option>
                   </select>
 
@@ -1915,33 +1919,92 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps> = ({
 
         {/* Tab 3: URDU TOOLS */}
         {activeTab === 'urdu-tools' && (
-          <div className="ribbon-group-row">
-            <div className="ribbon-group-box">
+          <div className="ribbon-group-row" role="toolbar" aria-label="Urdu Authoring Tools Toolbar">
+            {/* Group 1: Proofing & Dictionary */}
+            <div className="ribbon-group-box" role="region" aria-label="Proofing and Dictionary">
               <div className="ribbon-chunk">
-                <button onClick={onOpenLanguageTools} className="ribbon-action-btn highlight">
-                  <span>🌐</span>
+                <button
+                  type="button"
+                  onClick={() => onOpenLanguageTools('spelling')}
+                  className="ribbon-action-btn highlight"
+                  aria-label={`${t.spellcheck} & ${t.dictionary}`}
+                  title={`${t.spellcheck} & ${t.dictionary}`}
+                >
+                  <span aria-hidden="true">🌐</span>
                   <span>{t.spellcheck} & {t.dictionary}</span>
                 </button>
-                <button onClick={onOpenLanguageTools} className="ribbon-action-btn">
-                  <span>✍</span>
+                <button
+                  type="button"
+                  onClick={() => onOpenLanguageTools('proofread')}
+                  className="ribbon-action-btn"
+                  aria-label={`${t.proofread} & ${t.transliteration}`}
+                  title={`${t.proofread} & ${t.transliteration}`}
+                >
+                  <span aria-hidden="true">✍</span>
                   <span>{t.proofread} & {t.transliteration}</span>
                 </button>
               </div>
               <div className="ribbon-group-caption">{t.grpProofing}</div>
             </div>
 
-            <div className="ribbon-group-box">
+            {/* Group 2: Transliteration & Character Normalization */}
+            <div className="ribbon-group-box" role="region" aria-label="Transliteration and Normalization">
               <div className="ribbon-chunk">
-                <button onClick={onOpenCharacterSubstitution} className="ribbon-action-btn highlight" title="Correct Arabic Character Variants to Native Urdu">
-                  <span>🔤</span>
+                <button
+                  type="button"
+                  onClick={onOpenCharacterSubstitution}
+                  className="ribbon-action-btn highlight"
+                  aria-label={lang === 'ur' ? 'حروف کی اصلاح (Fix Characters)' : 'Fix Characters'}
+                  title="Correct Arabic Character Variants (ك, ي, ه) to Native Urdu (ک, ی, ہ)"
+                >
+                  <span aria-hidden="true">🔤</span>
                   <span>{lang === 'ur' ? 'حروف کی اصلاح' : 'Fix Characters'}</span>
                 </button>
-                <button onClick={onOpenKeyboardEditor} className="ribbon-action-btn" title="Custom Keyboard Layout Editor">
-                  <span>⌨️</span>
+              </div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'تحویل و اصلاح' : 'Transliteration & Normalization'}</div>
+            </div>
+
+            {/* Group 3: Keyboard & Input Systems */}
+            <div className="ribbon-group-box" role="region" aria-label="Keyboard Systems">
+              <div className="ribbon-chunk">
+                <button
+                  type="button"
+                  onClick={onOpenKeyboardEditor}
+                  className="ribbon-action-btn"
+                  aria-label={lang === 'ur' ? 'کی بورڈ ایڈیٹر (Custom Keyboard Editor)' : 'Keyboard Editor'}
+                  title="Custom Keyboard Layout Editor"
+                >
+                  <span aria-hidden="true">⌨️</span>
                   <span>{lang === 'ur' ? 'کی بورڈ ایڈیٹر' : 'Keyboard Editor'}</span>
                 </button>
-                <button onClick={onOpenOcr} className="ribbon-action-btn sky">
-                  <span>📷</span>
+                {onToggleVisualKeyboard && (
+                  <button
+                    type="button"
+                    onClick={onToggleVisualKeyboard}
+                    className={`ribbon-action-btn ${showVisualKeyboard ? 'active' : ''}`}
+                    aria-label={lang === 'ur' ? 'اردو کی بورڈ کیشے (Visual Keyboard)' : 'Toggle Visual Keyboard'}
+                    aria-pressed={Boolean(showVisualKeyboard)}
+                    title="Toggle On-screen Visual Keyboard Grid"
+                  >
+                    <span aria-hidden="true">⌨</span>
+                    <span>{lang === 'ur' ? 'آن سکرین کی بورڈ' : 'Visual Keyboard'}</span>
+                  </button>
+                )}
+              </div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'کی بورڈ نظام' : 'Keyboard Systems'}</div>
+            </div>
+
+            {/* Group 4: Scanned Content & OCR */}
+            <div className="ribbon-group-box" role="region" aria-label="Scanned Content and OCR">
+              <div className="ribbon-chunk">
+                <button
+                  type="button"
+                  onClick={onOpenOcr}
+                  className="ribbon-action-btn sky"
+                  aria-label={lang === 'ur' ? 'تصویری متن شناسی (Import Image OCR)' : 'Import Image OCR'}
+                  title="Import scanned image or PDF page for Urdu OCR recognition"
+                >
+                  <span aria-hidden="true">📷</span>
                   <span>{t.ocr}</span>
                 </button>
               </div>

@@ -1,4 +1,6 @@
-export type KeyboardMode = 'native' | 'crulp' | 'navees' | 'english';
+import { loadCustomKeyboardLayouts } from './customKeyboardEngine';
+
+export type KeyboardMode = 'native' | 'crulp' | 'navees' | 'english' | `custom:${string}`;
 
 export interface KeyMapEntry {
   normal: string;
@@ -57,16 +59,25 @@ export const ENGLISH_LATIN_MAP: Record<string, KeyMapEntry> = Object.fromEntries
 );
 
 export function getLayoutMapForMode(mode: KeyboardMode): Record<string, KeyMapEntry> {
-  switch (mode) {
-    case 'navees':
-      return NAVEES_PHONETIC_MAP;
-    case 'english':
-      return ENGLISH_LATIN_MAP;
-    case 'native':
-    case 'crulp':
-    default:
-      return CRULP_PHONETIC_MAP;
+  if (mode === 'navees') return NAVEES_PHONETIC_MAP;
+  if (mode === 'english') return ENGLISH_LATIN_MAP;
+
+  if (typeof mode === 'string' && mode.startsWith('custom:')) {
+    const customId = mode.slice(7);
+    const customLayouts = loadCustomKeyboardLayouts();
+    const found = customLayouts.find((l) => l.id === customId);
+    if (found && found.mappings) {
+      const resolved: Record<string, KeyMapEntry> = { ...CRULP_PHONETIC_MAP };
+      for (const [key, val] of Object.entries(found.mappings)) {
+        if (val && typeof val.normal === 'string' && typeof val.shift === 'string') {
+          resolved[key.toLowerCase()] = { normal: val.normal, shift: val.shift };
+        }
+      }
+      return resolved;
+    }
   }
+
+  return CRULP_PHONETIC_MAP;
 }
 
 export const SPECIAL_URDU_CHARACTERS = [

@@ -69,6 +69,25 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {ocrResult.uncertainWordCount > 0 && (
+            <button
+              onClick={() => {
+                const copy: OcrPageResult = JSON.parse(JSON.stringify(ocrResult));
+                copy.lines.forEach((l) => {
+                  l.words.forEach((w) => {
+                    w.isUncertain = false;
+                  });
+                });
+                copy.uncertainWordCount = 0;
+                setOcrResult(copy);
+              }}
+              className="px-3 py-2 text-xs font-bold bg-amber-700 hover:bg-amber-600 text-white rounded shadow"
+              title="تمام مشکوک الفاظ کو باقاعدہ قبول کریں"
+            >
+              ✓ تمام الفاظ کی تائید کریں (Accept Low Confidence)
+            </button>
+          )}
+
           {onCommitToDocument && (
             <button
               onClick={() => onCommitToDocument(ocrResult)}

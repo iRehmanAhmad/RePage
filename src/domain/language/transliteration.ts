@@ -89,10 +89,21 @@ const URDU_TO_ROMAN_MAP: Record<string, string> = {
   ے: 'e',
 };
 
-export function romanToUrdu(romanInput: string): string {
-  if (!romanInput) return '';
+const LATIN_ABBREVIATIONS = new Set([
+  'http', 'https', 'pdf', 'url', 'html', 'css', 'js', 'json', 'api', 'id',
+  'e.g.', 'i.e.', 'p.s.', 'etc.', 'vs.', 'mr.', 'mrs.', 'dr.', 'prof.'
+]);
 
-  let text = romanInput.toLowerCase();
+const URL_OR_EMAIL_REGEX = /^(https?:\/\/|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|www\.[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+const LATIN_ABBR_REGEX = /^(HTTP|HTTPS|PDF|URL|HTML|CSS|JS|JSON|API|ID|e\.g\.|i\.e\.|p\.s\.|etc\.|vs\.|Mr\.|Mrs\.|Dr\.|Prof\.)$/i;
+
+function transliterateSingleRomanWord(word: string): string {
+  if (!word) return '';
+  if (URL_OR_EMAIL_REGEX.test(word) || LATIN_ABBR_REGEX.test(word) || LATIN_ABBREVIATIONS.has(word.toLowerCase())) {
+    return word; // preserve Latin URL, email, or abbreviation
+  }
+
+  let text = word.toLowerCase();
 
   // Replace digraphs first
   for (const [digraph, urdu] of ROMAN_TO_URDU_DIGRAPHS) {
@@ -111,6 +122,23 @@ export function romanToUrdu(romanInput: string): string {
   }
 
   return result;
+}
+
+export function romanToUrdu(romanInput: string): string {
+  if (!romanInput) return '';
+
+  // Match URLs, emails, words, whitespace, or punctuation
+  const tokenRegex = /(https?:\/\/[^\s،؛؟]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|www\.[^\s،؛؟]+|[a-zA-Z0-9._-]+|\s+|[^\s\w]+)/g;
+  const matches = romanInput.match(tokenRegex) || [romanInput];
+
+  return matches
+    .map((token) => {
+      if (/^\s+$/.test(token) || /^[^\s\w]+$/.test(token)) {
+        return token;
+      }
+      return transliterateSingleRomanWord(token);
+    })
+    .join('');
 }
 
 const URDU_TO_ROMAN_WORDS: Record<string, string> = {

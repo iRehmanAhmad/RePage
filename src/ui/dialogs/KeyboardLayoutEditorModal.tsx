@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   createDefaultCustomLayout,
+  deleteCustomKeyboardLayout,
+  duplicateCustomKeyboardLayout,
+  exportLayoutToJson,
+  importLayoutFromJson,
   saveCustomKeyboardLayout,
+  validateCustomKeyMapping,
   type CustomKeyboardLayout,
 } from '../../domain/unicode/customKeyboardEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
@@ -21,12 +26,19 @@ export function KeyboardLayoutEditorModal({
     createDefaultCustomLayout('میرا کی بورڈ (My Keyboard)'),
   );
   const [activeKey, setActiveKey] = useState<string>('a');
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
   const isUr = lang === 'ur';
 
   const handleKeyMappingChange = (normalChar: string, shiftChar: string) => {
+    if (!validateCustomKeyMapping(normalChar) || !validateCustomKeyMapping(shiftChar)) {
+      setValidationError(isUr ? 'غیر درست حرف درج کیا گیا ہے' : 'Invalid character mapping');
+      return;
+    }
+    setValidationError(null);
     setLayout((prev) => ({
       ...prev,
       mappings: {
@@ -42,6 +54,45 @@ export function KeyboardLayoutEditorModal({
   const handleSave = () => {
     saveCustomKeyboardLayout(layout);
     onClose();
+  };
+
+  const handleDuplicate = () => {
+    const dup = duplicateCustomKeyboardLayout(layout.id);
+    if (dup) {
+      setLayout(dup);
+    }
+  };
+
+  const handleDelete = () => {
+    deleteCustomKeyboardLayout(layout.id);
+    setLayout(createDefaultCustomLayout('میرا کی بورڈ (My Keyboard)'));
+  };
+
+  const handleExport = () => {
+    const json = exportLayoutToJson(layout);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${layout.name.toLowerCase().replace(/\s+/g, '_')}_layout.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const imported = importLayoutFromJson(content);
+      if (imported) {
+        setLayout(imported);
+      } else {
+        setValidationError(isUr ? 'JSON لے آؤٹ امپورٹ ناکام ہو گئی' : 'Failed to import JSON layout');
+      }
+    };
+    reader.readAsText(file);
   };
 
   const currentMapping = layout.mappings[activeKey] || { normal: '', shift: '' };
@@ -63,10 +114,10 @@ export function KeyboardLayoutEditorModal({
     >
       <div
         style={{
-          width: '460px',
+          width: '480px',
           backgroundColor: '#0f172a',
           border: '1px solid #1e293b',
-          borderRadius: '8px',
+          borderRadius: '12px',
           padding: '20px',
           color: '#f8fafc',
           boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
@@ -100,6 +151,93 @@ export function KeyboardLayoutEditorModal({
             ✕
           </button>
         </div>
+
+        {/* Management Toolbar */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '6px',
+            marginBottom: '12px',
+            flexWrap: 'wrap',
+            backgroundColor: '#020617',
+            padding: '6px',
+            borderRadius: '6px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleDuplicate}
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#cbd5e1',
+              border: '1px solid #334155',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '10px',
+              cursor: 'pointer',
+            }}
+          >
+            📋 {isUr ? 'ڈپلیکیٹ' : 'Duplicate'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#f87171',
+              border: '1px solid #334155',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '10px',
+              cursor: 'pointer',
+            }}
+          >
+            🗑️ {isUr ? 'حذف کریں' : 'Delete'}
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#cbd5e1',
+              border: '1px solid #334155',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '10px',
+              cursor: 'pointer',
+            }}
+          >
+            ⬇️ {isUr ? 'ایکسپورٹ JSON' : 'Export JSON'}
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              backgroundColor: '#1e293b',
+              color: '#cbd5e1',
+              border: '1px solid #334155',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '10px',
+              cursor: 'pointer',
+            }}
+          >
+            ⬆️ {isUr ? 'امپورٹ JSON' : 'Import JSON'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImportFile}
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        {validationError && (
+          <div style={{ color: '#f87171', fontSize: '11px', marginBottom: '8px' }}>
+            ⚠️ {validationError}
+          </div>
+        )}
 
         {/* Layout Name Input */}
         <div style={{ marginBottom: '12px' }}>
@@ -165,7 +303,7 @@ export function KeyboardLayoutEditorModal({
           }}
         >
           <span style={{ fontWeight: 700, color: '#38bdf8' }}>
-            {isUr ? `بٹن '${activeKey.toUpperCase()}' کی مائپنگ:` : `Mapping for Key '${activeKey.toUpperCase()}':`}
+            {isUr ? `بٹن '${activeKey.toUpperCase()}' کی میپنگ:` : `Mapping for Key '${activeKey.toUpperCase()}':`}
           </span>
 
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

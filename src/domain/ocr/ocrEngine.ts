@@ -29,9 +29,29 @@ export interface OcrPageResult {
   imageDimensions: { width: number; height: number };
 }
 
+export interface OcrInput {
+  buffer: ArrayBuffer;
+  fileName: string;
+  mimeType?: string | undefined;
+}
+
 export interface OcrOptions {
   uncertaintyThreshold?: number; // Default 75
   language?: string; // Default 'urd'
+}
+
+export function validateOcrInputFile(fileName: string, sizeBytes: number): { isValid: boolean; error?: string } {
+  if (!fileName) return { isValid: false, error: 'نامعلوم فائل (Unknown file name)' };
+  const ext = fileName.toLowerCase().split('.').pop();
+  const allowed = ['png', 'jpg', 'jpeg', 'webp', 'pdf'];
+  if (!ext || !allowed.includes(ext)) {
+    return { isValid: false, error: `غیر تائید شدہ فائل فارمیٹ .${ext} (Unsupported file format. Use PNG, JPEG, WebP, or PDF)` };
+  }
+  const maxBytes = 20 * 1024 * 1024; // 20 MB max
+  if (sizeBytes > maxBytes) {
+    return { isValid: false, error: 'فائل کا سائز 20MB سے زیادہ ہے (File exceeds 20MB limit)' };
+  }
+  return { isValid: true };
 }
 
 // Low-confidence threshold below which words are flagged as uncertain

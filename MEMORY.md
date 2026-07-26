@@ -1,6 +1,6 @@
 # Project Memory
 
-Last reviewed: 2026-07-25
+Last reviewed: 2026-07-26
 
 ## Mission
 
@@ -15,14 +15,14 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Ribbon & Object System Milestone — **Foundation Substantially Implemented (M6 IN PROGRESS)** (Canvas object re-selection, unclipped table picker, active-cell tracking, canonical references & page workflows, safe paste, Urdu Quick Styles, diacritic-aware find/replace).
-- **M5 Exit Gate Audit**: All 6 exit gate criteria PASSED.
-- **Urdu-first Home Ribbon Architecture (ADR-0005)**:
-  - Group Structure: `Urdu Input | Clipboard | Font | Paragraph | Urdu Styles | Editing`.
-  - Urdu UI: Groups begin from the right side (RTL order).
-  - Scope: Home contains only frequent, working actions; advanced features (OCR, dictionary, character substitution, keyboard layout editor, text normalization) reside strictly in **Urdu Tools** (`🌐`).
-  - Command Discipline: Every Home action updates canonical document via commands (`editor/commands/`).
-  - Button Disposition Matrix (`HOME_RIBBON_INVENTORY.md`): 24 keep, 15 implement, 5 move, 13 remove, 1 defer. Add-ins deferred until plugin model exists.
+- **Current Milestone**: Export Engine & Vector PDF Print Production Milestone — **M8 Phase 0 COMPLETE & VERIFIED** (Expanded preflight diagnostic rules for image DPI calculation against physical frame width, page boundary overflow detection, overset text checks, and font license compliance).
+- **M7 Urdu Tools System (ADR-0007)**:
+  - Canonical language mutation command `applyLanguageChangesCommand` operating in reverse offset order to preserve offsets.
+  - Scope isolation (`selection`, `story`, `document`).
+  - Personal dictionary local storage persistence (`repage_personal_dictionary`).
+  - Transliteration guards (protecting Latin abbreviations like `HTTP`, `PDF`, `URL`, `e.g.`, `P.S.`, URLs, emails, dates, and numbers).
+  - Preservation of ZWNJ (`\u200C`), ZWJ (`\u200D`), RLM (`\u200F`), LRM (`\u200E`), Aerab, and honorific glyphs (`ﷺ`).
+  - Extensible `OcrProvider` hierarchy (`MockOcrProvider`, `UnavailableOcrProvider`).
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
@@ -50,11 +50,11 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 ## Present reality
 
 - The application was rebuilt in clean strict-TypeScript under the product name **RePage**.
-- Milestones M0 (Foundation), M1 (Page Layout), M2 (Urdu Typography Beta), M3 (Document Production Beta), M4 (Desktop Release Candidate), and M5 (Collaboration Preview) are COMPLETE.
-- Interactive canvas editing is wired: double-click text frame opens Tiptap overlay, Visual Keyboard types into active story, Ribbon Text Frame tool auto-creates and activates text frames.
+- Milestones M0 (Foundation), M1 (Page Layout), M2 (Urdu Typography Beta), M3 (Document Production Beta), M4 (Desktop Release Candidate), M5 (Collaboration Preview), M6 (Ribbon & Canvas Object Systems), and M7 (Urdu Tools) are COMPLETE.
+- Milestone M8 Phase 0 (Preflight Expansion & Print Production Diagnostics) is COMPLETE.
 - MS Word–style UI shell: QAT with 11 configurable tools, 7-tab ribbon with grouped cards and bottom captions, centered document title, dark/light/system themes, English/Urdu menu language toggle.
-- Visual Keyboard: 3-row QWERTY layout, CRULP/Navees/English/Native modes, Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
-- 158 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner (228 files), and oxlint linter are enforced in `npm run check`.
+- Visual Keyboard: 3-row QWERTY layout, CRULP/Navees/English/Native/Custom modes, Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
+- 254 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner (331 files), and oxlint linter are enforced in `npm run check`.
 
 ## Open decisions
 

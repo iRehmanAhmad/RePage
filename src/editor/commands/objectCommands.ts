@@ -1,6 +1,8 @@
-import type { CropBounds, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextWrapMode } from '../../domain/document/types';
+import type { CropBounds, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextWrapMode, AssetReference } from '../../domain/document/types';
 import { createId } from '../../domain/document/ids';
 import { paragraph } from '../../domain/rich-text/types';
+import type { OcrPageResult } from '../../domain/ocr/ocrEngine';
+import { convertOcrResultToDocumentObjects } from '../../domain/ocr/ocrCorrection';
 
 export type ReorderAction = 'forward' | 'backward' | 'front' | 'back';
 export type AlignmentAction = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
@@ -389,5 +391,49 @@ export function updateTableCell(
         rows: updatedRows,
       },
     },
+  };
+}
+
+/**
+ * Canonical command for OCR placement.
+ * Converts an OCR result into document objects (image frame + text frame + story),
+ * optionally persists the source asset, and adds everything to the page immutably.
+ * Routes through updateDocument for undo/redo/autosave participation.
+ */
+export function addOcrResultCommand(
+  doc: RePageDocument,
+  pageId: PageId,
+  ocrResult: OcrPageResult,
+  sourceAsset?: AssetReference,
+): RePageDocument {
+  const page = doc.pages[pageId];
+  if (!page) return doc;
+
+  const { imageFrame, textFrame, story } = convertOcrResultToDocumentObjects(ocrResult, pageId);
+
+  const nextAssets = { ...doc.assets };
+  if (sourceAsset) {
+    nextAssets[sourceAsset.id] = sourceAsset;
+  }
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [imageFrame.id]: imageFrame,
+      [textFrame.id]: textFrame,
+    },
+    stories: {
+      ...doc.stories,
+      [story.id]: story,
+    },
+    pages: {
+      ...doc.pages,
+      [pageId]: {
+        ...page,
+        objectOrder: [...page.objectOrder, imageFrame.id, textFrame.id],
+      },
+    },
+    assets: nextAssets,
   };
 }

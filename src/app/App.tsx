@@ -10,6 +10,7 @@ import { applyPageSetup, insertSectionBreak } from '../domain/layout/sectionEngi
 import { DocumentRulers } from '../ui/editor/DocumentRulers';
 import { PaginatedPrintLayout } from '../ui/editor/PaginatedPrintLayout';
 import {
+  addOcrResultCommand,
   addTableObject,
   alignPageObjects,
   deleteTableColumn,
@@ -62,8 +63,8 @@ import type { KeyboardMode } from '../domain/unicode/keyboardLayouts';
 // Language & OCR Imports
 import { LanguageToolsPanel } from '../ui/language/LanguageToolsPanel';
 import { OcrCorrectionPanel } from '../ui/ocr/OcrCorrectionPanel';
-import { runUrduOcr, OcrPageResult } from '../domain/ocr/ocrEngine';
-import { convertOcrResultToDocumentObjects } from '../domain/ocr/ocrCorrection';
+import { OcrImportDialog } from '../ui/ocr/OcrImportDialog';
+import { OcrPageResult } from '../domain/ocr/ocrEngine';
 import { exportDocumentToPdfMetadata, exportDocumentToEpub } from '../export/exportEngine';
 
 // Theme, i18n & QAT
@@ -93,6 +94,7 @@ import type { EditMode } from '../domain/document/trackChangesEngine';
 import { addBookmarkCommand, insertTocCommand, addFootnoteCommand, addEndnoteCommand } from '../editor/commands/longDocumentCommands';
 import { addCaptionToObject } from '../domain/document/captionEngine';
 import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/document/indexEngine';
+import { applyLanguageChangesCommand } from '../editor/commands/languageCommands';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -163,6 +165,8 @@ export function App() {
   // Modal & Panel Toggles
   const [showPreflight, setShowPreflight] = useState(false);
   const [showLanguageTools, setShowLanguageTools] = useState(false);
+  const [languageToolsInitialTab, setLanguageToolsInitialTab] = useState<'proofread' | 'dictionary' | 'transliterate' | 'normalize' | 'spelling' | undefined>('proofread');
+  const [activeSelectionRange, setActiveSelectionRange] = useState<{ storyId: string; from: number; to: number; selectedText: string } | null>(null);
   const [showOcrPanel, setShowOcrPanel] = useState(false);
   const [ocrResult, setOcrResult] = useState<OcrPageResult | null>(null);
   const [showRecent, setShowRecent] = useState(false);
@@ -436,37 +440,46 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [document, selectedObjectId, editingObjectId, updateDocument]);
 
-  const handleTriggerOcr = React.useCallback(async () => {
-    const dummyBuffer = new ArrayBuffer(2048);
-    const res = await runUrduOcr(dummyBuffer, 'Urdu_Scan_Page1.png');
-    setOcrResult(res);
-    setShowOcrPanel(true);
+  const [showOcrImportDialog, setShowOcrImportDialog] = useState(false);
+
+  const handleTriggerOcr = React.useCallback(() => {
+    setShowOcrImportDialog(true);
   }, []);
 
+  // Stores the OCR source file buffer for asset persistence
+  const ocrSourceBufferRef = React.useRef<{ buffer: ArrayBuffer; fileName: string } | null>(null);
+
   const handleCommitOcrToCanvas = React.useCallback((finalResult: OcrPageResult) => {
-    const { imageFrame, textFrame, story } = convertOcrResultToDocumentObjects(finalResult, activePageId);
-    setDocumentState((prev) => ({
-      ...prev,
-      objects: {
-        ...prev.objects,
-        [imageFrame.id]: imageFrame,
-        [textFrame.id]: textFrame,
-      },
-      stories: {
-        ...prev.stories,
-        [story.id]: story,
-      },
-      pages: {
-        ...prev.pages,
-        [activePageId]: {
-          ...prev.pages[activePageId]!,
-          objectOrder: [...prev.pages[activePageId]!.objectOrder, imageFrame.id, textFrame.id],
-        },
-      },
-    }));
+    // Build source asset reference if we have a stored buffer
+    let sourceAsset: AssetReference | undefined;
+    const stored = ocrSourceBufferRef.current;
+    if (stored) {
+      const blob = new Blob([stored.buffer]);
+      const ext = stored.fileName.split('.').pop()?.toLowerCase() || 'png';
+      const mediaTypes: Record<string, string> = {
+        png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+        webp: 'image/webp', pdf: 'application/pdf',
+      };
+      sourceAsset = {
+        id: finalResult.sourceAssetId,
+        sha256: `sha256-${stored.buffer.byteLength}-${Date.now()}`, // Placeholder hash for browser
+        mediaType: mediaTypes[ext] || 'application/octet-stream',
+        byteSize: stored.buffer.byteLength,
+        originalName: stored.fileName,
+        packageEntry: `assets/${finalResult.sourceAssetId}.${ext}`,
+        dataUrl: URL.createObjectURL(blob),
+      };
+    }
+
+    // Route through canonical command for undo/redo/autosave
+    updateDocument(
+      addOcrResultCommand(document, activePageId, finalResult, sourceAsset),
+      'Place OCR result on canvas',
+    );
     setShowOcrPanel(false);
     setMessage('OCR text frame and source image added to page');
-  }, [activePageId]);
+    ocrSourceBufferRef.current = null;
+  }, [activePageId, document, updateDocument]);
 
   const imageFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -1131,7 +1144,20 @@ export function App() {
           onRemovePage={handleRemovePage}
           onAddFootnote={handleAddFootnote}
           onAddEndnote={handleAddEndnote}
-          onOpenLanguageTools={() => setShowLanguageTools(true)}
+          onOpenLanguageTools={(tab) => {
+            const targetTab =
+              tab === 'spelling'
+                ? 'spelling'
+                : tab === 'proofread'
+                  ? 'proofread'
+                  : tab === 'transliteration'
+                    ? 'transliterate'
+                    : tab === 'normalization' || tab === 'character-fix'
+                      ? 'normalize'
+                      : 'proofread';
+            setLanguageToolsInitialTab(targetTab);
+            setShowLanguageTools(true);
+          }}
           onOpenOcr={() => void handleTriggerOcr()}
           onExportPdf={handleExportPdf}
           onExportEpub={() => void handleExportEpub()}
@@ -1411,6 +1437,18 @@ export function App() {
                   if (info.fontFamily) setActiveFontFamily(info.fontFamily);
                   if (info.fontSize) setActiveFontSize(info.fontSize);
                   if (info.color) setFontColor(info.color);
+                  if (info.selectedText !== undefined && info.from !== undefined && info.to !== undefined) {
+                    const canonicalFrom = Math.max(0, info.from - 1);
+                    const canonicalTo = Math.max(canonicalFrom, info.to - 1);
+                    const editingObj = editingObjectId ? document.objects[editingObjectId] : null;
+                    const storyId = editingObj && 'storyId' in editingObj && typeof editingObj.storyId === 'string' ? editingObj.storyId : 'primary-body-story';
+                    setActiveSelectionRange({
+                      storyId,
+                      from: canonicalFrom,
+                      to: canonicalTo,
+                      selectedText: info.selectedText,
+                    });
+                  }
                   if (info.selectedText) {
                     const hasUrdu = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(info.selectedText);
                     if (hasUrdu) setDetectedScript('urdu');
@@ -1617,7 +1655,14 @@ export function App() {
         {/* Modal Panels & Overlays */}
         {showLanguageTools && (
           <LanguageToolsPanel
-            initialText="پاکستان کا قومی ترانہ"
+            document={document}
+            activeSelection={activeSelectionRange}
+            initialTab={languageToolsInitialTab}
+            onApplyChanges={(changes) => {
+              const nextDoc = applyLanguageChangesCommand(document, changes);
+              updateDocument(nextDoc, `Apply ${changes.length} Urdu language change(s)`);
+              setMessage(`Applied ${changes.length} language change(s) cleanly`);
+            }}
             onClose={() => setShowLanguageTools(false)}
           />
         )}
@@ -1818,6 +1863,16 @@ export function App() {
             setMessage('Applied paragraph formatting');
           }}
           onClose={() => setShowParagraphDialog(false)}
+        />
+        <OcrImportDialog
+          isOpen={showOcrImportDialog}
+          onClose={() => setShowOcrImportDialog(false)}
+          onRecognitionComplete={(res, fileBuffer, fileName) => {
+            ocrSourceBufferRef.current = fileBuffer ? { buffer: fileBuffer, fileName } : null;
+            setOcrResult(res);
+            setShowOcrPanel(true);
+          }}
+          lang={lang}
         />
       </div>
     </DragAndDropOverlay>
