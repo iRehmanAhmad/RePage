@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AppIcon } from '../ui/icons/AppIcon';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { createId } from '../domain/document/ids';
 import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
@@ -1651,8 +1652,9 @@ export function App() {
               }}
               title={isKeyboardMinimized ? 'Expand Visual Keyboard' : 'Minimize Visual Keyboard'}
             >
-              <span>⌨</span>
-              <span>{isKeyboardMinimized ? 'Expand Keyboard ▲' : 'Minimize Keyboard ▼'}</span>
+              <AppIcon name="keyboard" />
+              <span>{isKeyboardMinimized ? 'Expand Keyboard' : 'Minimize Keyboard'}</span>
+              <AppIcon name={isKeyboardMinimized ? 'chevron-up' : 'chevron-down'} size={12} />
             </button>
           </div>
 

@@ -7,6 +7,7 @@ import { getSectionPageNumberString } from '../../domain/unicode/pageNumbering';
 import { FabricCanvas } from '../canvas/FabricCanvas';
 import { DocumentBodyEditor } from './DocumentBodyEditor';
 import { TextEditorOverlay } from './TextEditorOverlay';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface PaginatedPrintLayoutProps {
   document: RePageDocument;
@@ -189,7 +190,7 @@ export function PaginatedPrintLayout({
                 }}
               >
                 <span>
-                  ✂️ {document.metadata.locale === 'ur-PK' ? 'سیکشن بریک' : 'Section Break'} ({section.breakType === 'next-page' ? (document.metadata.locale === 'ur-PK' ? 'نیا صفحہ' : 'Next Page') : (document.metadata.locale === 'ur-PK' ? 'جاری' : 'Continuous')})
+                  <AppIcon name="cut" size={14} /> {document.metadata.locale === 'ur-PK' ? 'سیکشن بریک' : 'Section Break'} ({section.breakType === 'next-page' ? (document.metadata.locale === 'ur-PK' ? 'نیا صفحہ' : 'Next Page') : (document.metadata.locale === 'ur-PK' ? 'جاری' : 'Continuous')})
                 </span>
                 <span style={{ fontSize: '9px', opacity: 0.85 }}>
                   {document.metadata.locale === 'ur-PK'
@@ -580,7 +581,7 @@ export function PaginatedPrintLayout({
                           cursor: 'pointer',
                         }}
                       >
-                        <span>✓</span>
+                        <AppIcon name="check" size={14} />
                         <span>مکمل (Done)</span>
                       </button>
                     </div>

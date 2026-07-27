@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
 
 export interface ParagraphProps {
@@ -56,7 +57,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
       <div className="modal-card" style={{ width: '540px', padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Paragraph Formatting</h3>
-          <button onClick={onClose} className="modal-close-btn">✕</button>
+          <button onClick={onClose} className="modal-close-btn"><AppIcon name="dismiss" /></button>
         </div>
 
         {/* Tab Header Navigation */}

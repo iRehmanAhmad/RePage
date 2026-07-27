@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import type { PageId, RePageDocument } from '../../domain/document/types';
 import type { ExportFormat, ExportOptions, ExportPageRange } from '../../export/types';
 import { FORMAT_CAPABILITIES } from '../../export/types';
@@ -112,14 +113,14 @@ export const ExportOutputDialog: React.FC<ExportOutputDialogProps> = ({
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#38bdf8' }}>
-            📦 {isUr ? 'برآمد ترتیبات (Output Setup)' : 'Export & Print Output Setup'}
+            <AppIcon name="export" /> {isUr ? 'برآمد ترتیبات (Output Setup)' : 'Export & Print Output Setup'}
           </h3>
           <button
             type="button"
             onClick={onClose}
             style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#94a3b8', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
           >
-            ✕ {isUr ? 'بند کریں' : 'Close'}
+            <AppIcon name="dismiss" /> {isUr ? 'بند کریں' : 'Close'}
           </button>
         </div>
 
@@ -324,7 +325,7 @@ export const ExportOutputDialog: React.FC<ExportOutputDialogProps> = ({
           {readiness.blockingReasonsEn.length > 0 && (
             <div style={{ backgroundColor: '#7f1d1d33', border: '1px solid #ef4444', borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#fca5a5' }}>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                ⛔ {isUr ? 'برآمد بلاک کر دی گئی ہے:' : 'Export Blocked:'}
+                {isUr ? 'برآمد بلاک کر دی گئی ہے:' : 'Export Blocked:'}
               </div>
               <ul style={{ margin: 0, paddingRight: isUr ? '18px' : 0, paddingLeft: isUr ? 0 : '18px' }}>
                 {(isUr ? readiness.blockingReasonsUr : readiness.blockingReasonsEn).map((reason, idx) => (
@@ -338,7 +339,7 @@ export const ExportOutputDialog: React.FC<ExportOutputDialogProps> = ({
           {readiness.canExport && readiness.warningsEn.length > 0 && (
             <div style={{ backgroundColor: '#78350f33', border: '1px solid #f59e0b', borderRadius: '8px', padding: '12px', fontSize: '12px', color: '#fcd34d' }}>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                ⚠️ {isUr ? 'تنبنیہ:' : 'Warnings:'}
+                <AppIcon name="warning" /> {isUr ? 'تنبنیہ:' : 'Warnings:'}
               </div>
               <ul style={{ margin: '0 0 10px 0', paddingRight: isUr ? '18px' : 0, paddingLeft: isUr ? 0 : '18px' }}>
                 {(isUr ? readiness.warningsUr : readiness.warningsEn).map((warn, idx) => (

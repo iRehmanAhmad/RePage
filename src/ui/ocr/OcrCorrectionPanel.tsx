@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OcrPageResult, OcrWordResult } from '../../domain/ocr/ocrEngine';
 import { correctOcrWord } from '../../domain/ocr/ocrCorrection';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface OcrCorrectionPanelProps {
   ocrResult: OcrPageResult;
@@ -45,7 +46,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
       {/* Header */}
       <div className="px-6 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl">📷</span>
+          <AppIcon name="camera" size={20} />
           <div>
             <h2 className="text-base font-bold text-emerald-400">
               اردو تصویر / PDF متن شناسی (Urdu OCR & Correction)
@@ -84,7 +85,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
               className="px-3 py-2 text-xs font-bold bg-amber-700 hover:bg-amber-600 text-white rounded shadow"
               title="تمام مشکوک الفاظ کو باقاعدہ قبول کریں"
             >
-              ✓ تمام الفاظ کی تائید کریں (Accept Low Confidence)
+              <AppIcon name="check" /> تمام الفاظ کی تائید کریں (Accept Low Confidence)
             </button>
           )}
 
@@ -112,7 +113,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
               onClick={onClose}
               className="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700"
             >
-              ✕ بند کریں
+              <AppIcon name="dismiss" /> بند کریں
             </button>
           )}
         </div>
@@ -197,7 +198,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
                         }`}
                       >
                         <span>{w.word}</span>
-                        {w.isUncertain && <span className="text-[10px] text-rose-400">❓</span>}
+                        {w.isUncertain && <AppIcon name="warning" size={12} className="text-rose-400" />}
                         <span className="text-[9px] opacity-60">({w.confidence}%)</span>
                       </button>
                     );

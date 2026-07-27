@@ -85,7 +85,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 
       <div className="sidebar-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>⚙ {t.inspectorProps}</span>
+          <span><AppIcon name="settings" /> {t.inspectorProps}</span>
           <span className="save-badge">
             {selectedObject ? selectedObject.type.toUpperCase() : 'CANVAS'}
           </span>

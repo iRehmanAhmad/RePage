@@ -242,7 +242,7 @@ export function FileBackstageOverlay({
             cursor: 'pointer',
           }}
         >
-          ⚙ {lang === 'ur' ? 'ترتیبات (Options)' : 'Options'}
+          <AppIcon name="settings" /> {lang === 'ur' ? 'ترتیبات (Options)' : 'Options'}
         </button>
       </div>
 

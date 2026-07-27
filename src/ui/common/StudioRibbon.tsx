@@ -46,7 +46,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           className={`ribbon-tool-btn ${!canUndo ? 'disabled' : ''}`}
           title="منسوخ کریں (Undo Ctrl+Z)"
         >
-          <span>↩</span>
+          <AppIcon name="undo" />
           <span>Undo</span>
         </button>
 
@@ -56,7 +56,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           className={`ribbon-tool-btn ${!canRedo ? 'disabled' : ''}`}
           title="دوبارہ کریں (Redo Ctrl+Y)"
         >
-          <span>↪</span>
+          <AppIcon name="redo" />
           <span>Redo</span>
         </button>
 
@@ -68,7 +68,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           className={`ribbon-tool-btn ${activeTool === 'select' ? 'active' : ''}`}
           title="انتخاب آلہ (Select Tool)"
         >
-          <span>↖</span>
+          <AppIcon name="target" />
           <span>Select</span>
         </button>
 
@@ -86,7 +86,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           className={`ribbon-tool-btn ${activeTool === 'rectangle' ? 'active' : ''}`}
           title="مستطیل شکل (Rectangle Tool)"
         >
-          <span>▭</span>
+          <AppIcon name="square" />
           <span>Shape</span>
         </button>
 

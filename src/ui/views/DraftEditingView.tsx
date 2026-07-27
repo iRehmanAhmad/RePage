@@ -1,4 +1,5 @@
 import React from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
 import { DocumentBodyEditor } from '../editor/DocumentBodyEditor';
 
@@ -57,7 +58,7 @@ export const DraftEditingView: React.FC<DraftEditingViewProps> = ({
         }}
       >
         <span style={{ fontWeight: 600, color: '#f59e0b' }}>
-          ✏️ {lang === 'ur' ? 'ڈرافٹ ایڈیٹنگ ویو (صفحہ کے حاشیے اور گرافکس مخفی ہیں)' : 'Draft Editing View (Page margins & graphics hidden)'}
+          <AppIcon name="edit" /> {lang === 'ur' ? 'ڈرافٹ ایڈیٹنگ ویو (صفحہ کے حاشیے اور گرافکس مخفی ہیں)' : 'Draft Editing View (Page margins & graphics hidden)'}
         </span>
         <span>
           {sections.length} {lang === 'ur' ? 'سیکشنز' : 'Section(s)'}
@@ -95,7 +96,7 @@ export const DraftEditingView: React.FC<DraftEditingViewProps> = ({
                   letterSpacing: '0.5px',
                 }}
               >
-                ✂️ --- {lang === 'ur' ? `سیکشن بریک (${section.breakType})` : `Section Break (${section.breakType})`} ---
+                <AppIcon name="cut" /> {lang === 'ur' ? `سیکشن بریک (${section.breakType})` : `Section Break (${section.breakType})`}
               </div>
             )}
 

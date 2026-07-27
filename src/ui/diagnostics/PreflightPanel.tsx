@@ -68,7 +68,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
             gap: '8px',
           }}
         >
-          <span>🔍</span> پری فلائٹ رپورٹ (Preflight Diagnostics)
+          <AppIcon name="search" /> پری فلائٹ رپورٹ (Preflight Diagnostics)
         </h3>
         {onClose && (
           <button

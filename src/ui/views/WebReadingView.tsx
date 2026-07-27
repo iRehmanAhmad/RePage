@@ -1,4 +1,5 @@
 import React from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
 import type { ParagraphNode, TextRun, TextMark } from '../../domain/rich-text/types';
 
@@ -134,7 +135,7 @@ export const WebReadingView: React.FC<WebReadingViewProps> = ({
             {document.metadata.title || (lang === 'ur' ? 'ویب ریڈنگ ویو' : 'Web Reading View')}
           </h1>
           <span style={{ fontSize: '12px', color: '#94a3b8', backgroundColor: '#0f172a', padding: '4px 10px', borderRadius: '12px', border: '1px solid #334155' }}>
-            🌐 {lang === 'ur' ? 'کنٹینیوئس ویب ریڈر' : 'Continuous Web Reader'}
+            <AppIcon name="language" /> {lang === 'ur' ? 'کنٹینیوئس ویب ریڈر' : 'Continuous Web Reader'}
           </span>
         </header>
 

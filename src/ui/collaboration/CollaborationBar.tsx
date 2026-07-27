@@ -25,14 +25,14 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
   const getStatusBadge = () => {
     switch (connectionState) {
       case 'connected':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">● Online</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Online</span>;
       case 'relay-forced':
         return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"><AppIcon name="shield-check" size={14} /> TURN Relay</span>;
       case 'reconnecting':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">⏳ Reconnecting...</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Reconnecting...</span>;
       case 'disconnected':
       default:
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 font-sans">○ Offline</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 font-sans">Offline</span>;
     }
   };
 
@@ -73,7 +73,7 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
           onClick={onToggleComments}
           className="relative px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 rounded text-slate-200 transition-colors"
         >
-          💬 Comments
+          <AppIcon name="comment" size={14} /> Comments
           {unreadCommentsCount > 0 && (
             <span className="ml-1 px-1.5 py-0.2 bg-emerald-500 text-white text-[10px] rounded-full font-bold">
               {unreadCommentsCount}

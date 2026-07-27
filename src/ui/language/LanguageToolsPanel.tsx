@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
 import { getScopeSpans } from '../../domain/language/languageToolScope';
 import type { LanguageChange, LanguageToolScope } from '../../domain/language/types';
@@ -255,7 +256,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             gap: '8px',
           }}
         >
-          <span>🌐</span> اردو زبان کے آلات (Language Tools)
+          <AppIcon name="language" /> اردو زبان کے آلات (Language Tools)
         </h3>
         {onClose && (
           <button
@@ -272,7 +273,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
               fontWeight: 600,
             }}
           >
-            ✕ بند کریں
+            <AppIcon name="dismiss" /> بند کریں
           </button>
         )}
       </div>
@@ -440,7 +441,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
 
             {spellingErrors.length === 0 && proofreadIssues.length === 0 ? (
               <div style={{ padding: '12px', backgroundColor: '#064e3b', border: '1px solid #065f46', borderRadius: '8px', color: '#6ee7b7', textAlign: 'center' }}>
-                ✨ اس دائرہ کار میں املاء اور زبان کی کوئی غلطی نہیں ملی!
+                <AppIcon name="check" /> اس دائرہ کار میں املاء اور زبان کی کوئی غلطی نہیں ملی!
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -335,7 +335,7 @@ button, input, select, textarea {
   align-items: center;
   gap: 2px;
   padding: 0 12px;
-  height: 28px;
+  height: 34px;
   background: var(--panel-header);
   border-bottom: 1px solid var(--panel-border);
   position: relative;
@@ -346,8 +346,9 @@ button, input, select, textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 14px;
-  font-size: 11px;
+  min-height: 34px;
+  padding: 7px 16px;
+  font-size: 13px;
   font-weight: 700;
   border: none;
   background: var(--emerald-accent);
@@ -366,8 +367,9 @@ button, input, select, textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 14px;
-  font-size: 11px;
+  min-height: 34px;
+  padding: 7px 16px;
+  font-size: 13px;
   font-weight: 600;
   border: none;
   background: transparent;
@@ -378,8 +380,8 @@ button, input, select, textarea {
 }
 
 .ribbon-tab-btn .app-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   stroke-width: 1.8;
 }
 
@@ -394,10 +396,10 @@ button, input, select, textarea {
 }
 
 .ribbon-toolbar-body {
-  height: 72px;
+  height: 104px;
   display: flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 6px 12px;
   position: relative;
   z-index: 102;
   overflow: visible;
@@ -416,8 +418,8 @@ button, input, select, textarea {
 .ribbon-group-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 64px;
+  gap: 0;
+  height: 90px;
   position: relative;
   z-index: 103;
   flex-wrap: nowrap;
@@ -428,24 +430,26 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 62px;
+  height: 88px;
   box-sizing: border-box;
-  padding: 3px 6px;
-  border: 1px solid var(--panel-border);
-  background: var(--panel-header);
-  border-radius: 4px;
+  padding: 5px 10px 4px;
+  border: 0;
+  border-right: 1px solid var(--panel-border);
+  background: transparent;
+  border-radius: 0;
   position: relative;
   overflow: visible;
   flex-shrink: 0;
 }
 
 .ribbon-group-caption {
-  font-size: 9px;
+  min-height: 15px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   text-align: center;
-  padding-top: 1px;
-  line-height: 1;
+  padding-top: 3px;
+  line-height: 1.15;
   letter-spacing: 0.03em;
   text-transform: capitalize;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
@@ -454,7 +458,7 @@ button, input, select, textarea {
 .ribbon-chunk {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .ribbon-label-tag {
@@ -472,9 +476,12 @@ button, input, select, textarea {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  min-width: 32px;
+  min-height: 28px;
+  gap: 3px;
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.1;
   font-weight: 600;
   border-radius: 4px;
   border: 1px solid transparent;
@@ -482,6 +489,284 @@ button, input, select, textarea {
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.ribbon-action-btn .app-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+}
+
+.ribbon-font-group {
+  min-width: 340px;
+}
+
+.ribbon-font-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ribbon-font-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+}
+
+.ribbon-font-family {
+  width: 155px !important;
+}
+
+.ribbon-font-latin {
+  width: 132px !important;
+}
+
+.ribbon-font-size {
+  width: 52px !important;
+}
+
+.ribbon-font-row .ribbon-select,
+.ribbon-font-row .ribbon-number-input {
+  height: 30px !important;
+  font-size: 12px !important;
+}
+
+.font-size-stepper {
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+}
+
+.font-size-stepper-glyph {
+  display: inline-flex;
+  align-items: flex-start;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.font-size-stepper-glyph .app-icon {
+  width: 11px;
+  height: 11px;
+  margin-left: -2px;
+}
+
+.ribbon-font-format-row .ribbon-action-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  font-size: 14px !important;
+  flex-direction: row;
+}
+
+.ribbon-font-format-row .ribbon-font-latin {
+  width: 132px !important;
+  min-width: 132px;
+  padding-inline: 7px;
+}
+
+.ribbon-urdu-input-group {
+  min-width: 230px;
+}
+
+.ribbon-urdu-input-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ribbon-input-mode-row,
+.ribbon-input-tools-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ribbon-input-mode-select {
+  width: 135px !important;
+  height: 30px !important;
+  font-size: 12px !important;
+}
+
+.ribbon-input-transliteration {
+  width: 66px;
+  min-width: 66px;
+  height: 30px;
+  min-height: 30px;
+  padding: 2px 5px;
+  flex-direction: row;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.ribbon-input-tools-row {
+  justify-content: space-between;
+}
+
+.ribbon-input-tool {
+  min-width: 66px;
+  height: 30px;
+  min-height: 30px;
+  padding: 2px 4px;
+  flex-direction: row;
+  gap: 4px;
+  font-size: 10px !important;
+  white-space: nowrap;
+}
+
+.ribbon-input-tool .app-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.ribbon-paragraph-group {
+  min-width: 292px;
+}
+
+.ribbon-paragraph-group .ribbon-action-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+
+.ribbon-paragraph-group .ribbon-action-btn .app-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.ribbon-edit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 100px;
+}
+
+.ribbon-editing-group {
+  min-width: 100px;
+}
+
+/* Page Layout: balanced two-row controls avoid tiny, uneven native selects. */
+.ribbon-page-setup-group {
+  min-width: 244px;
+}
+
+.ribbon-page-setup-controls {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  width: 224px;
+}
+
+.ribbon-page-setup-select,
+.ribbon-page-setup-more {
+  width: 100% !important;
+  min-width: 0;
+  height: 29px !important;
+  min-height: 29px;
+  font-size: 11px !important;
+}
+
+.ribbon-page-setup-more {
+  padding: 0;
+  flex-direction: row;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* Four column choices in two compact rows, preserving every column command. */
+.ribbon-columns-group {
+  min-width: 154px;
+}
+
+.ribbon-columns-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 66px);
+  gap: 4px;
+  width: max-content;
+}
+
+.ribbon-column-option {
+  width: 66px;
+  min-width: 66px;
+  height: 29px;
+  min-height: 29px;
+  justify-content: center;
+}
+
+/* Collaboration mode uses the same restrained select treatment as the ribbon. */
+.ribbon-edit-mode-group {
+  min-width: 142px;
+}
+
+.ribbon-edit-mode-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ribbon-edit-mode-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ribbon-edit-mode-select {
+  width: 86px !important;
+  height: 29px !important;
+  font-size: 11px !important;
+  font-weight: 600;
+}
+
+.ribbon-styles-group {
+  width: 230px;
+  min-width: 230px;
+  padding-top: 3px;
+  padding-bottom: 2px;
+}
+
+.ribbon-style-gallery-wrap {
+  width: 100%;
+}
+
+.ribbon-style-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 52px);
+  grid-auto-rows: 27px;
+  gap: 3px;
+  width: max-content;
+  height: 57px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ribbon-style-gallery > button {
+  width: 100% !important;
+  min-width: 0;
+  height: 27px !important;
+}
+
+.ribbon-edit-btn {
+  flex-direction: row;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 100px;
+  min-height: 22px;
+  height: 22px;
+  padding: 2px 5px;
+  font-size: 11px !important;
+}
+
+.ribbon-edit-btn .app-icon {
+  width: 15px;
+  height: 15px;
 }
 
 .ribbon-action-btn:hover {
@@ -544,8 +829,8 @@ button, input, select, textarea {
 .ribbon-select {
   background: var(--bg-studio);
   color: var(--text-main);
-  font-size: 11px;
-  padding: 3px 6px;
+  font-size: 12px;
+  padding: 4px 7px;
   border: 1px solid var(--panel-border);
   border-radius: 4px;
   outline: none;
@@ -555,8 +840,8 @@ button, input, select, textarea {
   width: 50px;
   background: var(--bg-studio);
   color: var(--text-main);
-  font-size: 11px;
-  padding: 3px 4px;
+  font-size: 12px;
+  padding: 4px 5px;
   border: 1px solid var(--panel-border);
   border-radius: 4px;
   text-align: center;
@@ -906,8 +1191,26 @@ button, input, select, textarea {
     gap: 5px;
   }
   .ribbon-group-box {
-    padding: 2px 5px;
+    padding: 4px 6px;
   }
+  .ribbon-urdu-input-group { min-width: 180px; }
+  /* Fill the otherwise-unused top-row space without widening Urdu Input. */
+  .ribbon-input-mode-select { width: 140px !important; }
+  .ribbon-input-transliteration { width: 62px; min-width: 62px; }
+  .ribbon-input-tool { min-width: 61px; font-size: 9.5px !important; }
+  .ribbon-font-group { min-width: 290px; }
+  /* Keep the active Nastaliq font name clear of the native select arrow. */
+  .ribbon-font-family { width: 142px !important; }
+  .ribbon-font-latin,
+  .ribbon-font-format-row .ribbon-font-latin { width: 108px !important; min-width: 108px; }
+  .ribbon-font-size { width: 46px !important; }
+  .ribbon-input-tool { padding-inline: 4px; }
+  /* The two compact icon rows fit comfortably here, releasing space for Font. */
+  .ribbon-paragraph-group { min-width: 210px; }
+  .ribbon-paragraph-group .ribbon-action-btn { width: 28px; min-width: 28px; }
+  .ribbon-styles-group { width: 230px; min-width: 230px; }
+  .ribbon-style-gallery > button { width: 52px !important; }
+  .ribbon-editing-group, .ribbon-edit-stack, .ribbon-edit-btn { width: 80px; min-width: 80px; }
 }
 
 @media (max-width: 1200px) {
@@ -918,10 +1221,25 @@ button, input, select, textarea {
     gap: 4px;
   }
   .ribbon-group-box {
-    padding: 2px 4px;
+    padding: 4px 5px;
   }
   .ribbon-action-btn {
     padding: 3px 6px;
     font-size: 9.5px;
   }
+  .ribbon-urdu-input-group { min-width: 218px; }
+  .ribbon-input-mode-select { width: 132px !important; }
+  .ribbon-input-transliteration { width: 58px; min-width: 58px; }
+  .ribbon-input-tool { min-width: 57px; font-size: 9px !important; }
+  .ribbon-font-group { min-width: 320px; }
+  .ribbon-font-family { width: 154px !important; }
+  .ribbon-font-latin { width: 128px !important; min-width: 128px; }
+  .ribbon-font-size { width: 46px !important; }
+  .font-size-stepper { width: 30px; min-width: 30px; }
+  .ribbon-paragraph-group { min-width: 230px; }
+  .ribbon-paragraph-group .ribbon-action-btn { width: 26px; min-width: 26px; }
+  .ribbon-styles-group { width: 168px; min-width: 168px; }
+  .ribbon-style-gallery { grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
+  .ribbon-style-gallery > button { width: 100% !important; }
+  .ribbon-editing-group, .ribbon-edit-stack, .ribbon-edit-btn { width: 80px; min-width: 80px; }
 }

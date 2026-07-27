@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
 import { getSectionForPage } from '../../domain/layout/sectionEngine';
 import { createId } from '../../domain/document/ids';
@@ -180,14 +181,14 @@ export const HeaderFooterModal: React.FC<HeaderFooterModalProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#38bdf8' }}>
-            📜 {isUr ? 'ہیڈر، فوٹر اور ماسٹر پیج سیٹنگز' : 'Header, Footer & Master Page Setup'}
+            <AppIcon name="document-text" /> {isUr ? 'ہیڈر، فوٹر اور ماسٹر پیج سیٹنگز' : 'Header, Footer & Master Page Setup'}
           </h3>
           <button
             type="button"
             onClick={onClose}
             style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#94a3b8', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
           >
-            ✕ {isUr ? 'بند کریں' : 'Close'}
+            <AppIcon name="dismiss" /> {isUr ? 'بند کریں' : 'Close'}
           </button>
         </div>
 
@@ -289,7 +290,7 @@ export const HeaderFooterModal: React.FC<HeaderFooterModalProps> = ({
             onClick={handleSave}
             style={{ marginTop: '10px', width: '100%', padding: '10px', backgroundColor: '#0284c7', border: '1px solid #38bdf8', color: '#ffffff', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
           >
-            ✓ {isUr ? 'سیٹنگز کا اطلاق کریں' : 'Apply Header/Footer/Master Settings'}
+            <AppIcon name="check" /> {isUr ? 'سیٹنگز کا اطلاق کریں' : 'Apply Header/Footer/Master Settings'}
           </button>
         </div>
       </div>

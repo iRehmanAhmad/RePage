@@ -7,6 +7,7 @@ import {
   ArrowRightRegular,
   ArrowSortDownRegular,
   ArrowSortUpRegular,
+  ArrowSyncRegular,
   ArrowUpRegular,
   ArrowUploadRegular,
   ArrowExportRegular,
@@ -79,12 +80,16 @@ import {
   TextBoldRegular,
   TextBulletListRegular,
   TextColorRegular,
+  TextClearFormattingRegular,
+  TextDirectionHorizontalLtrRegular,
+  TextDirectionHorizontalRtlRegular,
   TextGrammarCheckmarkRegular,
   TextIndentDecreaseRegular,
   TextIndentIncreaseRegular,
   TextItalicRegular,
   TextLineSpacingRegular,
   TextNumberListLtrRegular,
+  TextParagraphRegular,
   TextUnderlineRegular,
   TriangleRegular,
   TranslateRegular,
@@ -101,14 +106,14 @@ export type AppIconName =
   | 'dismiss' | 'warning' | 'check' | 'search' | 'print' | 'settings' | 'image'
   | 'table' | 'delete' | 'copy' | 'cut' | 'paste' | 'clipboard' | 'keyboard'
   | 'eye' | 'eye-off' | 'lock' | 'unlock' | 'chevron-up' | 'arrow-up' | 'arrow-down'
-  | 'arrow-left' | 'arrow-right' | 'sort-up' | 'sort-down' | 'download' | 'upload'
+  | 'arrow-left' | 'arrow-right' | 'sort-up' | 'sort-down' | 'sync' | 'download' | 'upload'
   | 'document-add' | 'text-add' | 'paint' | 'border-all' | 'border-none'
   | 'border-bottom' | 'border-top' | 'border-left' | 'border-right' | 'align-justify'
   | 'align-left' | 'align-right' | 'align-center' | 'indent-increase' | 'indent-decrease'
   | 'line-spacing' | 'bullets' | 'numbered-list' | 'bold' | 'italic' | 'underline'
-  | 'text-color' | 'history' | 'comment' | 'link' | 'ruler' | 'grid' | 'speaker'
+  | 'text-color' | 'direction-ltr' | 'direction-rtl' | 'paragraph-mark' | 'history' | 'comment' | 'link' | 'ruler' | 'grid' | 'speaker'
   | 'play' | 'stop' | 'target' | 'edit' | 'document-text' | 'panel-left' | 'panel-right'
-  | 'more' | 'camera' | 'tag' | 'bookmark' | 'spell-check' | 'square' | 'circle'
+  | 'more' | 'camera' | 'tag' | 'bookmark' | 'spell-check' | 'clear-format' | 'square' | 'circle'
   | 'triangle' | 'star' | 'hexagon' | 'chat' | 'subtract';
 
 export interface AppIconProps extends ComponentProps<'svg'> {
@@ -161,6 +166,7 @@ const icons: Record<AppIconName, ElementType> = {
   'arrow-right': ArrowRightRegular,
   'sort-up': ArrowSortUpRegular,
   'sort-down': ArrowSortDownRegular,
+  sync: ArrowSyncRegular,
   download: ArrowDownloadRegular,
   upload: ArrowUploadRegular,
   'document-add': DocumentAddRegular,
@@ -185,6 +191,10 @@ const icons: Record<AppIconName, ElementType> = {
   italic: TextItalicRegular,
   underline: TextUnderlineRegular,
   'text-color': TextColorRegular,
+  'clear-format': TextClearFormattingRegular,
+  'direction-ltr': TextDirectionHorizontalLtrRegular,
+  'direction-rtl': TextDirectionHorizontalRtlRegular,
+  'paragraph-mark': TextParagraphRegular,
   history: HistoryRegular,
   comment: CommentRegular,
   link: LinkRegular,

@@ -543,7 +543,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   <span>{t.saveAs}</span>
                 </button>
                 <button onClick={onShowRecentFiles} className="ribbon-action-btn">
-                  <span>📜</span>
+                  <AppIcon name="history" />
                   <span>{t.recent}</span>
                 </button>
               </div>
@@ -556,64 +556,61 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
         {activeTab === 'home' && (
           <div className="ribbon-group-row" style={{ direction: lang === 'ur' ? 'rtl' : 'ltr' }}>
             {/* Group 1: Urdu Input */}
-            <div className="ribbon-group-box" style={{ justifyContent: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                {/* Top Row: Mode selector & Transliteration */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="ribbon-group-box ribbon-urdu-input-group" style={{ justifyContent: 'center' }}>
+              <div className="ribbon-urdu-input-stack">
+                <div className="ribbon-input-mode-row">
                   <select
                     value={keyboardMode}
                     onChange={(e) => onKeyboardModeChange?.(e.target.value as KeyboardMode)}
-                    className="ribbon-select"
+                    className="ribbon-select ribbon-input-mode-select"
                     title={lang === 'ur' ? 'اردو کی بورڈ کا انتخاب' : 'Urdu Keyboard Mode'}
-                    style={{ width: '90px', height: '22px', fontSize: '10px' }}
+                    style={{}}
                   >
-                    <option value="crulp">CRULP صوتی</option>
-                    <option value="navees">نفیس (Navees)</option>
-                    <option value="native">{lang === 'ur' ? 'مقامی (OS)' : 'Native (OS)'}</option>
+                    <option value="crulp">CRULP</option>
+                    <option value="navees">Navees</option>
+                    <option value="native">Native (OS)</option>
                     <option value="english">English</option>
                   </select>
 
                   <button
                     onClick={onToggleTransliteration}
-                    className={`ribbon-action-btn ${isTransliterationEnabled ? 'active' : ''}`}
+                    className={`ribbon-action-btn ribbon-input-transliteration ${isTransliterationEnabled ? 'active' : ''}`}
                     title={lang === 'ur' ? 'رومن اردو سے ترجمہ' : 'Roman Urdu Transliteration'}
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 600 }}
+                    style={{}}
                   >
-                    <span>آ ⇄ A</span>
+                    <AppIcon name="language" size={14} />
+                    <span>{lang === 'ur' ? 'رومن' : 'Roman'}</span>
                   </button>
                 </div>
 
-                {/* Bottom Row: Visual Keyboard, Numerals, Quick Preset */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <div className="ribbon-input-tools-row">
                   <button
                     onClick={onToggleVisualKeyboard}
-                    className={`ribbon-action-btn ${showVisualKeyboard ? 'active' : ''}`}
+                    className={`ribbon-action-btn ribbon-input-tool ${showVisualKeyboard ? 'active' : ''}`}
                     title={lang === 'ur' ? 'آن اسکرین کی بورڈ' : 'Visual Keyboard'}
-                    style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                    style={{}}
                   >
-                    <AppIcon name="keyboard" size={14} />
-                    <span style={{ fontSize: '9px' }}>{lang === 'ur' ? 'کی بورڈ' : 'Keyboard'}</span>
+                    <AppIcon name="keyboard" size={16} />
+                    <span>{lang === 'ur' ? 'کی بورڈ' : 'Keyboard'}</span>
                   </button>
 
                   <button
                     onClick={() => onNumeralSystemChange?.(numeralSystem === 'urdu' ? 'western' : 'urdu')}
-                    className="ribbon-action-btn"
+                    className="ribbon-action-btn ribbon-input-tool"
                     title={lang === 'ur' ? 'اعدادی نظام (اردو/مغربی)' : 'Urdu vs Western Numerals'}
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                    style={{}}
                   >
-                    {numeralSystem === 'urdu' ? '۱۲۳' : '123'}
+                    <><span>{numeralSystem === 'urdu' ? '۱۲۳' : '123'}</span><span>{lang === 'ur' ? 'اعداد' : 'Numbers'}</span></>
                   </button>
-
-                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
 
                   <button
                     onClick={onApplyQuickUrduPreset}
-                    className="ribbon-action-btn highlight"
+                    className="ribbon-action-btn ribbon-input-tool highlight"
                     title={lang === 'ur' ? 'اردو پیراگراف کی فوری ترتیبات' : 'Quick Urdu Paragraph Preset'}
-                    style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    style={{}}
                   >
-                    <AppIcon name="target" size={14} />
-                    <span style={{ fontSize: '9px' }}>{lang === 'ur' ? 'فوری پیرا' : 'Quick Preset'}</span>
+                    <AppIcon name="target" size={16} />
+                    <span>{lang === 'ur' ? 'فوری پیرا' : 'Preset'}</span>
                   </button>
                 </div>
               </div>
@@ -694,7 +691,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                         className="ribbon-menu-item"
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'right', fontSize: '11px' }}
                       >
-                        <span>🌐</span>
+                        <AppIcon name="language" />
                         <span>{lang === 'ur' ? 'عربی/اردو حروف اصلاح...' : 'Inspect Character Variants...'}</span>
                       </button>
                     </div>
@@ -725,10 +722,10 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             </div>
 
             {/* Group 2: Font */}
-            <div className="ribbon-group-box" style={{ position: 'relative', justifyContent: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div className="ribbon-group-box ribbon-font-group" style={{ position: 'relative', justifyContent: 'center' }}>
+              <div className="ribbon-font-stack">
                 {/* Top Row: Family, Size, Grow A^, Shrink A_v, Clear Formatting A🧹 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div className="ribbon-font-row">
                   {/* Urdu Font Selector with Recent Urdu Fonts Track */}
                   <select
                     value={activeUrduFont}
@@ -736,7 +733,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       if (onUrduFontChange) onUrduFontChange(e.target.value);
                       else onFontFamilyChange(e.target.value);
                     }}
-                    className="ribbon-select"
+                    className="ribbon-select ribbon-font-family"
                     title={lang === 'ur' ? 'اردو فونٹس' : 'Urdu Font Family'}
                     style={{
                       width: '120px',
@@ -779,19 +776,69 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     </optgroup>
                   </select>
 
-                  {/* English Font Selector with Recent English Fonts Track */}
+                  <input
+                    type="number"
+                    value={activeFontSize}
+                    onChange={(e) => onFontSizeChange(Number(e.target.value))}
+                    className="ribbon-number-input ribbon-font-size"
+                    min={8}
+                    max={144}
+                    title={t.fontSize}
+                    style={{ width: '42px', height: '22px', fontSize: '10px', textAlign: 'center' }}
+                  />
+
+                  {/* Increase Font Size A^ */}
+                  <button
+                    onClick={() => {
+                      const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
+                      const next = steps.find((s) => s > activeFontSize) ?? Math.min(activeFontSize + 10, 144);
+                      onFontSizeChange(next);
+                    }}
+                    className="ribbon-action-btn font-size-stepper"
+                    title="Increase Font Size (Ctrl+>)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    <span className="font-size-stepper-glyph">A<AppIcon name="arrow-up" /></span>
+                  </button>
+
+                  {/* Decrease Font Size A_v */}
+                  <button
+                    onClick={() => {
+                      const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
+                      const prev = [...steps].reverse().find((s) => s < activeFontSize) ?? Math.max(activeFontSize - 2, 8);
+                      onFontSizeChange(prev);
+                    }}
+                    className="ribbon-action-btn font-size-stepper"
+                    title="Decrease Font Size (Ctrl+<)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    <span className="font-size-stepper-glyph">A<AppIcon name="arrow-down" /></span>
+                  </button>
+
+                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
+
+                  {/* Clear All Formatting A🧹 */}
+                  <button
+                    onClick={onClearFormatting}
+                    className="ribbon-action-btn"
+                    title="Clear All Formatting"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 600 }}
+                  >
+                    <AppIcon name="clear-format" size={18} />
+                  </button>
+                </div>
+
+                {/* Bottom Row: B, I, U, 🖊️▼ (Highlight), A▼ (Color) */}
+                <div className="ribbon-font-row ribbon-font-format-row">
                   <select
                     value={activeEnglishFont}
                     onChange={(e) => {
                       if (onEnglishFontChange) onEnglishFontChange(e.target.value);
                       else onFontFamilyChange(e.target.value);
                     }}
-                    className="ribbon-select"
+                    className="ribbon-select ribbon-font-latin"
                     title="English / Latin Font Family"
                     style={{
-                      width: '120px',
-                      height: '22px',
-                      fontSize: '10px',
                       border: detectedScript === 'latin' ? '1px solid #2563eb' : '1px solid var(--panel-border)',
                       boxShadow: detectedScript === 'latin' ? '0 0 0 2px rgba(37, 99, 235, 0.25)' : 'none',
                       transition: 'all 0.15s ease',
@@ -815,60 +862,6 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     </optgroup>
                   </select>
 
-                  <input
-                    type="number"
-                    value={activeFontSize}
-                    onChange={(e) => onFontSizeChange(Number(e.target.value))}
-                    className="ribbon-number-input"
-                    min={8}
-                    max={144}
-                    title={t.fontSize}
-                    style={{ width: '42px', height: '22px', fontSize: '10px', textAlign: 'center' }}
-                  />
-
-                  {/* Increase Font Size A^ */}
-                  <button
-                    onClick={() => {
-                      const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
-                      const next = steps.find((s) => s > activeFontSize) ?? Math.min(activeFontSize + 10, 144);
-                      onFontSizeChange(next);
-                    }}
-                    className="ribbon-action-btn"
-                    title="Increase Font Size (Ctrl+>)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A<sup>^</sup>
-                  </button>
-
-                  {/* Decrease Font Size A_v */}
-                  <button
-                    onClick={() => {
-                      const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
-                      const prev = [...steps].reverse().find((s) => s < activeFontSize) ?? Math.max(activeFontSize - 2, 8);
-                      onFontSizeChange(prev);
-                    }}
-                    className="ribbon-action-btn"
-                    title="Decrease Font Size (Ctrl+<)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
-                  >
-                    A<sub>v</sub>
-                  </button>
-
-                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
-
-                  {/* Clear All Formatting A🧹 */}
-                  <button
-                    onClick={onClearFormatting}
-                    className="ribbon-action-btn"
-                    title="Clear All Formatting"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 600 }}
-                  >
-                    <AppIcon name="dismiss" size={15} />
-                  </button>
-                </div>
-
-                {/* Bottom Row: B, I, U, 🖊️▼ (Highlight), A▼ (Color) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                   {/* Bold */}
                   <button
                     onMouseDown={(e) => e.preventDefault()}
@@ -973,7 +966,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             </div>
 
             {/* Group 3: Paragraph */}
-            <div className="ribbon-group-box" style={{ position: 'relative', justifyContent: 'center' }}>
+            <div className="ribbon-group-box ribbon-paragraph-group" style={{ position: 'relative', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 {/* Top Row: Bullets, Numbering, Indents, Directions, Show/Hide Marks */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -984,7 +977,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Bullets"
                     style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    •=
+                    <AppIcon name="bullets" size={17} />
                   </button>
 
                   {/* Numbering 1≡ */}
@@ -994,7 +987,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Numbering"
                     style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    1≡
+                    <AppIcon name="numbered-list" size={17} />
                   </button>
 
                   <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
@@ -1006,7 +999,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Decrease Indent"
                     style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    ⬅≡
+                    <AppIcon name="indent-decrease" size={16} />
                   </button>
 
                   {/* Increase Indent ≡➡️ */}
@@ -1028,7 +1021,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Left-to-Right Text Direction"
                     style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
                   >
-                    &gt;¶
+                    <AppIcon name="direction-ltr" size={17} />
                   </button>
 
                   {/* Right-to-Left Direction ¶< */}
@@ -1038,20 +1031,11 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Right-to-Left Text Direction (Urdu)"
                     style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
                   >
-                    ¶&lt;
+                    <AppIcon name="direction-rtl" size={17} />
                   </button>
 
                   <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
 
-                  {/* Show/Hide Formatting Marks ¶ */}
-                  <button
-                    onClick={onToggleFormattingMarks}
-                    className={`ribbon-action-btn ${showFormattingMarks ? 'active' : ''}`}
-                    title="Show/Hide Non-Printing Formatting Marks (Ctrl+*)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
-                  >
-                    ¶
-                  </button>
                 </div>
 
                 {/* Bottom Row: Align Left, Center, Right, Justify, Line Spacing */}
@@ -1063,7 +1047,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Align Left (Ctrl+L)"
                     style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    ≡
+                    <AppIcon name="align-left" size={17} />
                   </button>
 
                   {/* Align Center */}
@@ -1073,7 +1057,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Center (Ctrl+E)"
                     style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    ≡
+                    <AppIcon name="align-center" size={17} />
                   </button>
 
                   {/* Align Right */}
@@ -1083,7 +1067,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Align Right (Ctrl+R)"
                     style={{ padding: '1px 5px', fontSize: '10px' }}
                   >
-                    ≡
+                    <AppIcon name="align-right" size={17} />
                   </button>
 
                   {/* Justify ≡ ▼ Dropdown */}
@@ -1094,7 +1078,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       title="Justify (Ctrl+J)"
                       style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
                     >
-                      <span>≡</span>
+                      <AppIcon name="align-justify" size={17} />
                       <AppIcon name="chevron-down" size={10} />
                     </button>
 
@@ -1204,6 +1188,14 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       </div>
                     )}
                   </div>
+                  <button
+                    onClick={onToggleFormattingMarks}
+                    className={`ribbon-action-btn ${showFormattingMarks ? 'active' : ''}`}
+                    title="Show/Hide Non-Printing Formatting Marks (Ctrl+*)"
+                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                  >
+                    <AppIcon name="paragraph-mark" size={17} />
+                  </button>
                 </div>
               </div>
 
@@ -1230,9 +1222,9 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             </div>
 
             {/* Group 5: Urdu Styles */}
-            <div className="ribbon-group-box" style={{ position: 'relative', maxWidth: '310px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', padding: '2px 0' }}>
+            <div className="ribbon-group-box ribbon-styles-group" style={{ position: 'relative' }}>
+              <div className="ribbon-style-gallery-wrap">
+                <div className="ribbon-style-gallery">
                   {[
                     { id: 'normal', name: lang === 'ur' ? 'عام متن' : 'Normal', preview: 'متن', tag: '¶ Nastaliq' },
                     { id: 'heading-1', name: lang === 'ur' ? 'عنوان ۱' : 'Heading 1', preview: 'عنوان ۱', tag: 'H1 24pt' },
@@ -1294,26 +1286,26 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             </div>
 
             {/* Group 5: Editing */}
-            <div className="ribbon-group-box">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            <div className="ribbon-group-box ribbon-editing-group">
+              <div className="ribbon-edit-stack">
                 <button
                   onClick={onOpenFind}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-edit-btn"
                   title="Find (Ctrl+F)"
-                  style={{ padding: '1px 4px', height: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
-                  <span style={{ fontSize: '9px' }}>🔍</span>
+                  <AppIcon name="search" size={13} />
                   <span>{lang === 'ur' ? 'تلاش' : 'Find'}</span>
                   <AppIcon name="chevron-down" size={10} />
                 </button>
 
                 <button
                   onClick={onOpenReplace}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-edit-btn"
                   title="Replace (Ctrl+H)"
-                  style={{ padding: '1px 4px', height: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
-                  <span style={{ color: '#0284c7', fontWeight: 700, fontSize: '9px' }}>c🔁b</span>
+                  <AppIcon name="sync" size={15} />
                   <span>{lang === 'ur' ? 'تبدیل' : 'Replace'}</span>
                 </button>
 
@@ -1321,9 +1313,9 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 <div style={{ position: 'relative' }}>
                   <button
                     onClick={() => setShowSelectMenu((prev) => !prev)}
-                    className="ribbon-action-btn"
+                    className="ribbon-action-btn ribbon-edit-btn"
                     title="Select"
-                    style={{ padding: '1px 4px', height: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', width: '100%' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}
                   >
                     <AppIcon name="target" size={13} />
                     <span>{lang === 'ur' ? 'انتخاب' : 'Select'}</span>
@@ -1402,7 +1394,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className={`ribbon-action-btn ${activeTool === 'select' ? 'active' : ''}`}
                   title={t.select}
                 >
-                  <span>↖</span>
+                  <AppIcon name="target" />
                   <span>{t.select}</span>
                 </button>
 
@@ -1422,7 +1414,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title="Shapes Gallery"
                   >
                   <AppIcon name="paint" />
-                    <span>{t.shape} ▾</span>
+                    <span>{t.shape} <AppIcon name="chevron-down" size={11} /></span>
                   </button>
 
                   {showShapeGallery && (
@@ -1590,7 +1582,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     title={lang === 'ur' ? 'جدول کی پیمائش منتخب کریں' : 'Choose Table Dimensions'}
                   >
                     <AppIcon name="table" />
-                    <span>{lang === 'ur' ? 'جدول (Table)' : 'Table'} ▾</span>
+                    <span>{lang === 'ur' ? 'جدول (Table)' : 'Table'} <AppIcon name="chevron-down" size={11} /></span>
                   </button>
 
                   {showTableGridPicker && (
@@ -1666,7 +1658,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             <div className="ribbon-group-box">
               <div className="ribbon-chunk">
                 <button onClick={onToggleSelectionPane} className="ribbon-action-btn highlight">
-                  <span>📑</span>
+                  <AppIcon name="panel-right" />
                   <span>{lang === 'ur' ? 'انتخابی پینل' : 'Selection Pane'}</span>
                 </button>
               </div>
@@ -1681,7 +1673,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn"
                   title={lang === 'ur' ? 'فہرست مضامین شامل کریں' : 'Insert Table of Contents'}
                 >
-                  <span>📚</span>
+                  <AppIcon name="book-open" />
                   <span>{lang === 'ur' ? 'فہرست' : 'TOC'}</span>
                 </button>
                 <button
@@ -1705,7 +1697,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn"
                   title={lang === 'ur' ? 'بک مارک شامل کریں' : 'Insert Bookmark'}
                 >
-                  <span>🔖</span>
+                  <AppIcon name="bookmark" />
                   <span>{lang === 'ur' ? 'بک مارک' : 'Bookmark'}</span>
                 </button>
                 <button
@@ -1713,7 +1705,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn"
                   title={lang === 'ur' ? 'اشاریہ (انڈیکس) شامل کریں' : 'Insert Index'}
                 >
-                  <span>📖</span>
+                  <AppIcon name="book-open" />
                   <span>{lang === 'ur' ? 'اشاریہ' : 'Index'}</span>
                 </button>
               </div>
@@ -1732,7 +1724,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onSetWrapping && onSetWrapping('inline')}
                   className="ribbon-action-btn"
                 >
-                  <span>🔤</span>
+                  <AppIcon name="language" />
                   <span>{lang === 'ur' ? 'ان لائن (Inline)' : 'Inline'}</span>
                 </button>
                 <button
@@ -1740,7 +1732,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onSetWrapping && onSetWrapping('square')}
                   className="ribbon-action-btn highlight"
                 >
-                  <span>🔳</span>
+                  <AppIcon name="square" />
                   <span>{lang === 'ur' ? 'مربع (Square Wrap)' : 'Square Wrap'}</span>
                 </button>
                 <button
@@ -1762,7 +1754,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onReorderObject && onReorderObject('front')}
                   className="ribbon-action-btn"
                 >
-                  <span>🔝</span>
+                  <AppIcon name="arrow-up" />
                   <span>Bring to Front</span>
                 </button>
                 <button
@@ -1786,7 +1778,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onReorderObject && onReorderObject('back')}
                   className="ribbon-action-btn"
                 >
-                  <span>🔚</span>
+                  <AppIcon name="arrow-down" />
                   <span>Send to Back</span>
                 </button>
               </div>
@@ -1800,7 +1792,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onAlignObjects && onAlignObjects('left')}
                   className="ribbon-action-btn"
                 >
-                  <span>├</span>
+                  <AppIcon name="align-left" />
                   <span>Align Left</span>
                 </button>
                 <button
@@ -1808,7 +1800,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onAlignObjects && onAlignObjects('center')}
                   className="ribbon-action-btn"
                 >
-                  <span>┼</span>
+                  <AppIcon name="align-center" />
                   <span>Align Center</span>
                 </button>
                 <button
@@ -1816,7 +1808,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onAlignObjects && onAlignObjects('right')}
                   className="ribbon-action-btn"
                 >
-                  <span>┤</span>
+                  <AppIcon name="align-right" />
                   <span>Align Right</span>
                 </button>
               </div>
@@ -1845,7 +1837,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onSetWrapping && onSetWrapping('square')}
                   className="ribbon-action-btn highlight"
                 >
-                  <span>🔳</span>
+                  <AppIcon name="square" />
                   <span>Square Wrap</span>
                 </button>
                 <button
@@ -1853,7 +1845,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onSetWrapping && onSetWrapping('behind')}
                   className="ribbon-action-btn"
                 >
-                  <span>🔲</span>
+                  <AppIcon name="square" />
                   <span>Behind Text</span>
                 </button>
                 <button
@@ -1920,11 +1912,11 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             <div className="ribbon-group-box">
               <div className="ribbon-chunk" style={{ display: 'flex', flexDirection: 'row', gap: '6px', alignItems: 'center' }}>
                 <button type="button" onClick={onDeleteTableRow} className="ribbon-action-btn danger" title="Delete Row" style={{ whiteSpace: 'nowrap' }}>
-                  <span>❌</span>
+                  <AppIcon name="delete" />
                   <span>{lang === 'ur' ? 'سطر حذف کریں' : 'Delete Row'}</span>
                 </button>
                 <button type="button" onClick={onDeleteTableCol} className="ribbon-action-btn danger" title="Delete Column" style={{ whiteSpace: 'nowrap' }}>
-                  <span>❌</span>
+                  <AppIcon name="delete" />
                   <span>{lang === 'ur' ? 'کالم حذف کریں' : 'Delete Col'}</span>
                 </button>
                 <button type="button" onClick={onDeleteTable} className="ribbon-action-btn danger" title="Delete Table" style={{ whiteSpace: 'nowrap' }}>
@@ -1950,21 +1942,21 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   aria-label={`${t.spellcheck} & ${t.dictionary}`}
                   title={`${t.spellcheck} & ${t.dictionary}`}
                 >
-                  <span aria-hidden="true">🌐</span>
-                  <span>{t.spellcheck} & {t.dictionary}</span>
+                  <AppIcon name="language" aria-hidden="true" />
+                  <span>{lang === 'ur' ? 'املا' : 'Spelling'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenLanguageTools('proofread')}
                   className="ribbon-action-btn"
-                  aria-label={`${t.proofread} & ${t.transliteration}`}
-                  title={`${t.proofread} & ${t.transliteration}`}
+                  aria-label={lang === 'ur' ? 'پروف ریڈنگ' : 'Proofread'}
+                  title={lang === 'ur' ? 'اردو متن کی پروف ریڈنگ' : 'Proofread Urdu text'}
                 >
-                  <span aria-hidden="true">✍</span>
-                  <span>{t.proofread} & {t.transliteration}</span>
+                  <AppIcon name="edit" aria-hidden="true" />
+                  <span>{lang === 'ur' ? 'پروف ریڈ' : 'Proofread'}</span>
                 </button>
               </div>
-              <div className="ribbon-group-caption">{t.grpProofing}</div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'املا' : 'Proofing'}</div>
             </div>
 
             {/* Group 2: Transliteration & Character Normalization */}
@@ -1977,11 +1969,11 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   aria-label={lang === 'ur' ? 'حروف کی اصلاح (Fix Characters)' : 'Fix Characters'}
                   title="Correct Arabic Character Variants (ك, ي, ه) to Native Urdu (ک, ی, ہ)"
                 >
-                  <span aria-hidden="true">🔤</span>
+                  <AppIcon name="language" aria-hidden="true" />
                   <span>{lang === 'ur' ? 'حروف کی اصلاح' : 'Fix Characters'}</span>
                 </button>
               </div>
-              <div className="ribbon-group-caption">{lang === 'ur' ? 'تحویل و اصلاح' : 'Transliteration & Normalization'}</div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'اصلاح' : 'Text Fixes'}</div>
             </div>
 
             {/* Group 3: Keyboard & Input Systems */}
@@ -2011,7 +2003,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   </button>
                 )}
               </div>
-              <div className="ribbon-group-caption">{lang === 'ur' ? 'کی بورڈ نظام' : 'Keyboard Systems'}</div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'کی بورڈ' : 'Keyboard'}</div>
             </div>
 
             {/* Group 4: Scanned Content & OCR */}
@@ -2024,7 +2016,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   aria-label={lang === 'ur' ? 'تصویری متن شناسی (Import Image OCR)' : 'Import Image OCR'}
                   title="Import scanned image or PDF page for Urdu OCR recognition"
                 >
-                  <span aria-hidden="true">📷</span>
+                  <AppIcon name="camera" aria-hidden="true" />
                   <span>{t.ocr}</span>
                 </button>
               </div>
@@ -2037,11 +2029,11 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
         {activeTab === 'layout' && (
           <div className="ribbon-group-row" style={{ direction: lang === 'ur' ? 'rtl' : 'ltr' }}>
             {/* Group 1: Page Setup */}
-            <div className="ribbon-group-box" role="region" aria-label="Page Setup">
-              <div className="ribbon-chunk" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="ribbon-group-box ribbon-page-setup-group" role="region" aria-label="Page Setup">
+              <div className="ribbon-chunk ribbon-page-setup-controls">
                 {/* Size Preset Dropdown */}
                 <select
-                  className="ribbon-select"
+                  className="ribbon-select ribbon-page-setup-select"
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === 'more') {
@@ -2052,7 +2044,6 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   }}
                   defaultValue=""
                   title={lang === 'ur' ? 'صفحہ کا سائز منتخب کریں' : 'Select Page Size'}
-                  style={{ width: '90px', height: '22px', fontSize: '10px' }}
                 >
                   <option value="" disabled>{lang === 'ur' ? 'سائز' : 'Size'}</option>
                   <option value="a4">A4 (210×297mm)</option>
@@ -2066,7 +2057,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
 
                 {/* Orientation Dropdown */}
                 <select
-                  className="ribbon-select"
+                  className="ribbon-select ribbon-page-setup-select"
                   onChange={(e) => {
                     const val = e.target.value as 'portrait' | 'landscape';
                     if (val) {
@@ -2075,7 +2066,6 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   }}
                   defaultValue=""
                   title={lang === 'ur' ? 'صفحہ کا رخ (عمودی/افقی)' : 'Page Orientation'}
-                  style={{ width: '80px', height: '22px', fontSize: '10px' }}
                 >
                   <option value="" disabled>{lang === 'ur' ? 'رخ' : 'Orientation'}</option>
                   <option value="portrait">{lang === 'ur' ? 'عمودی' : 'Portrait'}</option>
@@ -2084,7 +2074,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
 
                 {/* Margins Dropdown */}
                 <select
-                  className="ribbon-select"
+                  className="ribbon-select ribbon-page-setup-select"
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === 'custom') {
@@ -2095,7 +2085,6 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   }}
                   defaultValue=""
                   title={lang === 'ur' ? 'حواشی منتخب کریں' : 'Select Margins'}
-                  style={{ width: '85px', height: '22px', fontSize: '10px' }}
                 >
                   <option value="" disabled>{lang === 'ur' ? 'حواشی' : 'Margins'}</option>
                   <option value="normal">{lang === 'ur' ? 'نارمل (15mm)' : 'Normal (15mm)'}</option>
@@ -2110,11 +2099,11 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 <button
                   type="button"
                   onClick={onOpenPageSetupModal}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-page-setup-more"
                   title={lang === 'ur' ? 'صفحہ کی مکمل ترتیبات کھولیں' : 'Open Page Setup Modal'}
-                  style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
                   <AppIcon name="more" />
+                  <span>{lang === 'ur' ? 'مزید' : 'More'}</span>
                 </button>
               </div>
               <div className="ribbon-group-caption">{t.grpPageSetup}</div>
@@ -2129,7 +2118,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn primary"
                   title={lang === 'ur' ? 'نیا سیکشن صفحہ درج کریں' : 'Insert Next Page Section Break'}
                 >
-                  <span>📃</span>
+                  <AppIcon name="document-add" />
                   <span>{lang === 'ur' ? 'نیا سیکشن' : 'Section Break'}</span>
                 </button>
                 <button
@@ -2147,12 +2136,12 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             </div>
 
             {/* Group 3: Columns */}
-            <div className="ribbon-group-box" role="region" aria-label="Columns">
-              <div className="ribbon-chunk" style={{ display: 'flex', gap: '4px' }}>
+            <div className="ribbon-group-box ribbon-columns-group" role="region" aria-label="Columns">
+              <div className="ribbon-chunk ribbon-columns-grid">
                 <button
                   type="button"
                   onClick={() => onApplyColumns?.(1)}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-column-option"
                   title={lang === 'ur' ? 'ایک کالم' : 'One Column'}
                   style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
@@ -2162,7 +2151,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 <button
                   type="button"
                   onClick={() => onApplyColumns?.(2)}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-column-option"
                   title={lang === 'ur' ? 'دو کالمز (Urdu RTL)' : 'Two Columns'}
                   style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
@@ -2172,7 +2161,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 <button
                   type="button"
                   onClick={() => onApplyColumns?.(3)}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-column-option"
                   title={lang === 'ur' ? 'تین کالمز' : 'Three Columns'}
                   style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
@@ -2182,7 +2171,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 <button
                   type="button"
                   onClick={() => onApplyColumns?.(4)}
-                  className="ribbon-action-btn"
+                  className="ribbon-action-btn ribbon-column-option"
                   title={lang === 'ur' ? 'چار کالمز' : 'Four Columns'}
                   style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
@@ -2202,7 +2191,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn primary"
                   title={lang === 'ur' ? 'ہیڈر، فوٹر اور ماسٹر پیج سیٹنگز' : 'Header, Footer & Master Setup'}
                 >
-                  <span>📜</span>
+                  <AppIcon name="document-text" />
                   <span>{lang === 'ur' ? 'ہیڈر و فوٹر' : 'Header & Footer'}</span>
                 </button>
               </div>
@@ -2218,7 +2207,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className={`ribbon-action-btn ${showRulers ? 'active' : ''}`}
                   title={lang === 'ur' ? 'پیمانہ دِکھائیں/پُھلا دیں' : 'Toggle Rulers'}
                 >
-                  <span>📏</span>
+                  <AppIcon name="ruler" />
                   <span>{lang === 'ur' ? 'پیمانہ' : 'Rulers'}</span>
                 </button>
                 <button
@@ -2256,31 +2245,22 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
         {activeTab === 'collab' && (
           <div className="ribbon-group-row">
             {/* Mode Switcher Group */}
-            <div className="ribbon-group-box">
-              <div className="ribbon-chunk" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+            <div className="ribbon-group-box ribbon-edit-mode-group">
+              <div className="ribbon-chunk ribbon-edit-mode-control">
+                <span className="ribbon-edit-mode-label">
                   {lang === 'ur' ? 'موڈ:' : 'Mode:'}
                 </span>
                 <select
                   value={editMode}
                   onChange={(e) => onEditModeChange && onEditModeChange(e.target.value as typeof editMode)}
-                  style={{
-                    backgroundColor: '#1e293b',
-                    color: '#f8fafc',
-                    border: '1px solid #334155',
-                    borderRadius: '4px',
-                    padding: '3px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="ribbon-select ribbon-edit-mode-select"
                 >
-                  <option value="editing">{lang === 'ur' ? 'ایڈیٹنگ (Editing)' : 'Editing'}</option>
-                  <option value="reviewing">{lang === 'ur' ? 'ریویونگ (Reviewing)' : 'Reviewing'}</option>
-                  <option value="viewing">{lang === 'ur' ? 'ویونگ (Viewing)' : 'Viewing'}</option>
+                  <option value="editing">{lang === 'ur' ? 'ترمیم' : 'Edit'}</option>
+                  <option value="reviewing">{lang === 'ur' ? 'جائزہ' : 'Review'}</option>
+                  <option value="viewing">{lang === 'ur' ? 'دیکھیں' : 'View'}</option>
                 </select>
               </div>
-              <div className="ribbon-group-caption">{lang === 'ur' ? 'موڈ منتقلی' : 'Editing Mode'}</div>
+              <div className="ribbon-group-caption">{lang === 'ur' ? 'موڈ' : 'Mode'}</div>
             </div>
 
             {/* Track Changes & Review Group */}
@@ -2300,7 +2280,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   <span>{lang === 'ur' ? 'موازنہ' : 'Compare'}</span>
                 </button>
                 <button type="button" onClick={onOpenVersionHistory} className="ribbon-action-btn" title="Version History">
-                  <span>📜</span>
+                  <AppIcon name="history" />
                   <span>{lang === 'ur' ? 'ورژن ہسٹری' : 'History'}</span>
                 </button>
               </div>
@@ -2315,7 +2295,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   <span>{lang === 'ur' ? 'شیئر کریں' : 'Share'}</span>
                 </button>
                 <button onClick={onToggleCollab} className="ribbon-action-btn sky">
-                  <span>👥</span>
+                  <AppIcon name="people" />
                   <span>{t.collabRoom}</span>
                 </button>
               </div>
@@ -2342,7 +2322,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={() => onViewModeChange && onViewModeChange('web')}
                   className={`ribbon-action-btn ${viewMode === 'web' ? 'highlight' : ''}`}
                 >
-                  <span>🌐</span>
+                  <AppIcon name="language" />
                   <span>{lang === 'ur' ? 'ویب لے آؤٹ' : 'Web View'}</span>
                 </button>
                 <button
@@ -2358,7 +2338,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   onClick={onToggleRulers}
                   className={`ribbon-action-btn ${showRulers ? 'primary' : ''}`}
                 >
-                  <span>📏</span>
+                  <AppIcon name="ruler" />
                   <span>{lang === 'ur' ? 'رولر (Ruler)' : 'Toggle Ruler'}</span>
                 </button>
                 {onToggleInspector && (
@@ -2384,15 +2364,15 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className={`ribbon-action-btn ${isFocusMode ? 'highlight' : ''}`}
                   title="Focus Mode (Full Screen Distraction Free)"
                 >
-                  <span>🔍</span>
+                  <AppIcon name="search" />
                   <span>{lang === 'ur' ? 'فوکس موڈ' : 'Focus Mode'}</span>
                 </button>
                 <button type="button" onClick={onToggleReadAloud} className="ribbon-action-btn highlight" title="Read Aloud Text Speech">
-                  <span>🔊</span>
+                  <AppIcon name="speaker" />
                   <span>{lang === 'ur' ? 'پڑھائی' : 'Read Aloud'}</span>
                 </button>
                 <button type="button" onClick={onOpenAccessibilityChecker} className="ribbon-action-btn" title="Accessibility Checker">
-                  <span>♿</span>
+                  <AppIcon name="spell-check" />
                   <span>{lang === 'ur' ? 'رسائی چیکر' : 'Accessibility'}</span>
                 </button>
                 <button type="button" onClick={onOpenAccessibilitySettings} className="ribbon-action-btn" title="Display & Accessibility Settings">
@@ -2411,7 +2391,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn"
                   title={lang === 'ur' ? 'دستاویز کی غلطیاں چیک کریں' : 'Run Preflight Diagnostics'}
                 >
-                  <span>🔍</span>
+                  <AppIcon name="search" />
                   <span>{t.preflight}</span>
                 </button>
                 <button
@@ -2429,7 +2409,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   className="ribbon-action-btn gold"
                   title={lang === 'ur' ? 'مکمل برآمدی سیٹنگز اور ڈائیلاگ کھولیں' : 'Open Output & Export Setup Dialog'}
                 >
-                  <span>📦</span>
+                  <AppIcon name="export" />
                   <span>{lang === 'ur' ? 'برآمد ترتیبات…' : 'Export Setup…'}</span>
                 </button>
                 <button

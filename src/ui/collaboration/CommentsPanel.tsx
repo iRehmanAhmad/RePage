@@ -115,7 +115,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
                   onClick={() => onToggleResolve?.(thread.id)}
                   className="text-[10px] text-slate-400 hover:text-emerald-300 underline"
                 >
-                  {thread.isResolved ? 'Reopen' : '✓ Resolve'}
+                  {thread.isResolved ? 'Reopen' : 'Resolve'}
                 </button>
               </div>
 

@@ -247,7 +247,7 @@ export function OcrImportDialog({
           >
             {isProcessing ? (
               <>
-                <span>⏳</span>
+                <AppIcon name="history" />
                 <span>{isUr ? 'پروسیسنگ...' : 'Processing OCR...'}</span>
               </>
             ) : (

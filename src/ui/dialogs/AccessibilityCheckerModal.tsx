@@ -84,7 +84,7 @@ export function AccessibilityCheckerModal({
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {issues.length === 0 ? (
             <div style={{ color: '#10b981', textAlign: 'center', padding: '20px 0', fontWeight: 700 }}>
-              ✓ {isUr ? 'رسائی کے حوالے سے کوئی مسئلہ نہیں ملا!' : 'No accessibility issues found!'}
+              <AppIcon name="check" /> {isUr ? 'رسائی کے حوالے سے کوئی مسئلہ نہیں ملا!' : 'No accessibility issues found!'}
             </div>
           ) : (
             issues.map((iss) => (
