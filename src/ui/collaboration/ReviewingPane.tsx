@@ -7,6 +7,7 @@ import {
   rejectRevision,
 } from '../../domain/document/trackChangesEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface ReviewingPaneProps {
   isOpen: boolean;
@@ -67,7 +68,7 @@ export function ReviewingPane({
             cursor: 'pointer',
           }}
         >
-          ✕
+          <AppIcon name="dismiss" />
         </button>
       </div>
 
@@ -170,7 +171,7 @@ export function ReviewingPane({
                     cursor: 'pointer',
                   }}
                 >
-                  ✓ {isUr ? 'قبول' : 'Accept'}
+                  <AppIcon name="check" /> {isUr ? 'قبول' : 'Accept'}
                 </button>
 
                 <button
@@ -187,7 +188,7 @@ export function ReviewingPane({
                     cursor: 'pointer',
                   }}
                 >
-                  ✕ {isUr ? 'مسترد' : 'Reject'}
+                  <AppIcon name="dismiss" /> {isUr ? 'مسترد' : 'Reject'}
                 </button>
               </div>
             </div>

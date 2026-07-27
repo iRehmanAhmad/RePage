@@ -1,6 +1,7 @@
 import React from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface DocumentStatsModalProps {
   isOpen: boolean;
@@ -94,7 +95,7 @@ export function DocumentStatsModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

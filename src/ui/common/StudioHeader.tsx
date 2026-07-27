@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import type { ThemeMode } from '../theme/themeEngine';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 import { QatItemKey, QAT_CATALOG } from '../header/qatEngine';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface StudioHeaderProps {
   t: Translations;
@@ -115,7 +116,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                 className={`qat-btn ${isDisabled ? 'disabled' : ''}`}
                 title={`Quick Access: ${label}`}
               >
-                <span>{def.icon}</span>
+                <AppIcon name={def.icon} size={16} />
               </button>
             );
           })}
@@ -127,7 +128,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
               className="qat-btn customize-btn"
               title="Customize Quick Access Toolbar"
             >
-              <span>▼</span>
+              <AppIcon name="chevron-down" size={14} />
             </button>
 
             {showQatDropdown && (
@@ -144,7 +145,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                         checked={isChecked}
                         onChange={() => onToggleQatItem(item.key)}
                       />
-                      <span>{item.icon}</span>
+                      <AppIcon name={item.icon} size={16} />
                       <span>{itemLabel}</span>
                     </label>
                   );
@@ -189,9 +190,9 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           className="header-select"
           title="Color Theme Mode"
         >
-          <option value="light">☀️ {t.themeLight}</option>
-          <option value="dark">🌙 {t.themeDark}</option>
-          <option value="system">💻 {t.themeSystem}</option>
+          <option value="light">{t.themeLight}</option>
+          <option value="dark">{t.themeDark}</option>
+          <option value="system">{t.themeSystem}</option>
         </select>
       </div>
     </header>

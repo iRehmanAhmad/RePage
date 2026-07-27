@@ -1,4 +1,5 @@
 import React from 'react';
+import { AppIcon } from '../icons/AppIcon';
 
 export type ActiveTool = 'select' | 'text' | 'rectangle' | 'image' | 'pan';
 
@@ -94,7 +95,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           className={`ribbon-tool-btn ${activeTool === 'image' ? 'active' : ''}`}
           title="تصویر فریم (Image Frame Tool)"
         >
-          <span>🖼</span>
+          <AppIcon name="image" />
           <span>Image Frame</span>
         </button>
       </div>

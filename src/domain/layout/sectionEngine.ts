@@ -207,6 +207,9 @@ export function applyPageSetup(
     height?: number;
     orientation?: 'portrait' | 'landscape';
     margins?: { top: number; right: number; bottom: number; left: number };
+    gutter?: number;
+    gutterPosition?: 'right' | 'left' | 'top';
+    mirrorMargins?: boolean;
   },
 ): RePageDocument {
   const page = doc.pages[pageId];
@@ -226,6 +229,9 @@ export function applyPageSetup(
     width,
     height,
     margins: setup.margins ? { ...setup.margins } : page.margins,
+    gutter: setup.gutter ?? page.gutter,
+    gutterPosition: setup.gutterPosition ?? page.gutterPosition,
+    mirrorMargins: setup.mirrorMargins ?? page.mirrorMargins,
   };
 
   return {

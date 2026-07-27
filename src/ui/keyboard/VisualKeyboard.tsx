@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import {
   QWERTY_ROW_1,
   QWERTY_ROW_2,
@@ -135,8 +136,9 @@ export function VisualKeyboard({
           }}
           title="Expand Visual Keyboard"
         >
-          <span>⌨</span>
-          <span>Expand Keyboard ▲</span>
+          <AppIcon name="keyboard" />
+          <span>Expand Keyboard</span>
+          <AppIcon name="chevron-up" size={12} />
         </button>
       </div>
     );
@@ -210,7 +212,7 @@ export function VisualKeyboard({
                 boxShadow: isShift ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none',
               }}
             >
-              Shift {isShift ? 'ON ▲' : 'OFF ▼'}
+              Shift {isShift ? 'On' : 'Off'}
             </button>
           )}
 
@@ -287,8 +289,9 @@ export function VisualKeyboard({
           }}
           title="Minimize Visual Keyboard"
         >
-          <span>⌨</span>
-          <span>Minimize Keyboard ▼</span>
+          <AppIcon name="keyboard" />
+          <span>Minimize Keyboard</span>
+          <AppIcon name="chevron-down" size={12} />
         </button>
       </div>
 
@@ -306,7 +309,7 @@ export function VisualKeyboard({
             fontWeight: 600,
           }}
         >
-          ⌨ Native OS Keyboard Mode Active — Key mapping grid is disabled. Type directly using your operating system keyboard.
+          <AppIcon name="keyboard" /> Native OS Keyboard Mode Active — Key mapping grid is disabled. Type directly using your operating system keyboard.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>

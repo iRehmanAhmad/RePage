@@ -85,6 +85,8 @@ export interface Translations {
   collabRoom: string;
   shareLink: string;
   exportPdf: string;
+  browserPrint: string;
+  pdfExportDisabled: string;
   exportEpub: string;
 
   // Inspector & Status
@@ -177,6 +179,8 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     collabRoom: 'تعاون روم',
     shareLink: 'لنک شیئر',
     exportPdf: 'PDF برآمد',
+    browserPrint: 'پرنٹ… (براؤزر)',
+    pdfExportDisabled: 'PDF برآمد (عنقریب)',
     exportEpub: 'ePUB 3.0 برآمد',
 
     inspectorProps: 'خواص',
@@ -266,6 +270,8 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     collabRoom: 'Co-Authoring Room',
     shareLink: 'Share Link',
     exportPdf: 'Export PDF',
+    browserPrint: 'Browser Print…',
+    pdfExportDisabled: 'PDF Export (Coming Soon)',
     exportEpub: 'Export ePUB 3.0',
 
     inspectorProps: 'Properties',

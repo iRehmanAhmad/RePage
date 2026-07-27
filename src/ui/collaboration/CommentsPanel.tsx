@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface CommentReply {
   id: string;
@@ -73,7 +74,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
             onClick={onClose}
             className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded"
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
       </div>

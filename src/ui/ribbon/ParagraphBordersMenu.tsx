@@ -1,4 +1,5 @@
 import React from 'react';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface ParagraphBordersMenuProps {
   onSelectBorder: (side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all' | 'none') => void;
@@ -33,7 +34,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>▔</span>
+        <AppIcon name="border-bottom" />
         <span>Bottom Border</span>
       </button>
       <button
@@ -41,7 +42,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>  </span>
+        <AppIcon name="border-top" />
         <span>Top Border</span>
       </button>
       <button
@@ -49,7 +50,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>▎</span>
+        <AppIcon name="border-left" />
         <span>Left Border</span>
       </button>
       <button
@@ -57,7 +58,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>🎚️</span>
+        <AppIcon name="border-right" />
         <span>Right Border</span>
       </button>
 
@@ -68,7 +69,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>🚫</span>
+        <AppIcon name="border-none" />
         <span>No Border</span>
       </button>
       <button
@@ -76,7 +77,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>田</span>
+        <AppIcon name="border-all" />
         <span>All Borders</span>
       </button>
       <button
@@ -84,7 +85,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
-        <span>🔲</span>
+        <AppIcon name="square" />
         <span>Outside Borders</span>
       </button>
 
@@ -95,7 +96,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         className="ribbon-menu-item"
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', fontWeight: 600 }}
       >
-        <span>⚙️</span>
+        <AppIcon name="settings" />
         <span>Borders and Shading...</span>
       </button>
     </div>

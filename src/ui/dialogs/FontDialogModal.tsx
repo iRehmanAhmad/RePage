@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getFontCategoryBadge } from '../../domain/unicode/fontRegistry';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface FontProps {
   fontFamily: string;
@@ -82,7 +83,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
       <div className="modal-card" style={{ width: '560px', padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Font Formatting</h3>
-          <button onClick={onClose} className="modal-close-btn">✕</button>
+          <button onClick={onClose} className="modal-close-btn"><AppIcon name="dismiss" /></button>
         </div>
 
         {/* Tab Header Navigation */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface FileBackstageOverlayProps {
   isOpen: boolean;
@@ -360,13 +361,14 @@ export function FileBackstageOverlay({
             <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
               {lang === 'ur' ? 'دستاویز برآمد کریں (Export Document)' : 'Export Document'}
             </h1>
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => {
                   onExportPdf();
                   onClose();
                 }}
+                title={lang === 'ur' ? 'سسٹم کا پرنٹ ڈائیلاگ کھولتا ہے۔ یہ RePage PDF فائل نہیں بناتا۔' : 'Opens your browser/system print dialog. It does not generate a RePage PDF file.'}
                 style={{
                   padding: '16px 24px',
                   backgroundColor: '#0f766e',
@@ -378,7 +380,25 @@ export function FileBackstageOverlay({
                   cursor: 'pointer',
                 }}
               >
-                📄 {lang === 'ur' ? 'PDF برآمد کریں (PDF Export)' : 'Export PDF'}
+                <AppIcon name="print" /> {lang === 'ur' ? 'پرنٹ… (براؤزر)' : 'Browser Print…'}
+              </button>
+              <button
+                type="button"
+                disabled
+                title={lang === 'ur' ? 'نیٹِو ویکٹر PDF برآمد فی الحال غیر دستیاب ہے۔' : 'Native vector PDF export is currently under development and unavailable.'}
+                style={{
+                  padding: '16px 24px',
+                  backgroundColor: '#1e293b',
+                  color: '#64748b',
+                  border: '1px solid #334155',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'not-allowed',
+                  opacity: 0.6,
+                }}
+              >
+                <AppIcon name="document-pdf" /> {lang === 'ur' ? 'PDF برآمد (عنقریب)' : 'PDF Export (Coming Soon)'}
               </button>
             </div>
           </div>

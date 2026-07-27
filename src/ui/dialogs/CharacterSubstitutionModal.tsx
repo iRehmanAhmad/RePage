@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import { substituteDocumentCharacters } from '../../domain/language/characterSubstitutionEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface CharacterSubstitutionModalProps {
   isOpen: boolean;
@@ -90,7 +91,7 @@ export function CharacterSubstitutionModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

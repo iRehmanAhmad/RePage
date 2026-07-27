@@ -7,6 +7,7 @@ import {
   stopSpeech,
 } from '../../domain/language/readAloudEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface ReadAloudToolbarProps {
   isOpen: boolean;
@@ -67,7 +68,7 @@ export function ReadAloudToolbar({
       }}
     >
       <span style={{ fontWeight: 700, color: '#10b981' }}>
-        🔊 {isUr ? 'متن کی پڑھائی (Read Aloud)' : 'Read Aloud'}
+        <AppIcon name="speaker" /> {isUr ? 'متن کی پڑھائی (Read Aloud)' : 'Read Aloud'}
       </span>
 
       <button
@@ -83,7 +84,7 @@ export function ReadAloudToolbar({
           cursor: 'pointer',
         }}
       >
-        {speechState.isSpeaking && !speechState.isPaused ? '⏸ Pause' : '▶ Play'}
+        <AppIcon name="play" /> {speechState.isSpeaking && !speechState.isPaused ? 'Pause' : 'Play'}
       </button>
 
       <button
@@ -99,7 +100,7 @@ export function ReadAloudToolbar({
           cursor: 'pointer',
         }}
       >
-        ⏹ Stop
+        <AppIcon name="stop" /> Stop
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -131,7 +132,7 @@ export function ReadAloudToolbar({
           marginLeft: '4px',
         }}
       >
-        ✕
+        <AppIcon name="dismiss" />
       </button>
     </div>
   );

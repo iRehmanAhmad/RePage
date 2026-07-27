@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface ShareDialogModalProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ export function ShareDialogModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

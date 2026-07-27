@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { createId } from '../domain/document/ids';
 import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
@@ -8,7 +8,6 @@ import { PAGE_PRESETS, millimetresToPoints, pointsToMillimetres } from '../domai
 import { getSectionForPage } from '../domain/layout/sectionEngine';
 import { repaginateDocument } from '../domain/layout/paginationEngine';
 import { DocumentRulers } from '../ui/editor/DocumentRulers';
-import { PaginatedPrintLayout } from '../ui/editor/PaginatedPrintLayout';
 import {
   addOcrResultCommand,
   addTableObject,
@@ -51,10 +50,7 @@ import {
   updateObjectGeometry,
 } from '../editor/commands/documentCommands';
 import { TransactionHistory } from '../editor/history/transactionHistory';
-import { FabricCanvas } from '../ui/canvas/FabricCanvas';
 import { VisualKeyboard } from '../ui/keyboard/VisualKeyboard';
-import { TextEditorOverlay } from '../ui/editor/TextEditorOverlay';
-import { DocumentBodyEditor } from '../ui/editor/DocumentBodyEditor';
 import { PreflightPanel } from '../ui/diagnostics/PreflightPanel';
 import { runPreflightCheck } from '../domain/diagnostics/preflightEngine';
 import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
@@ -75,7 +71,7 @@ import { LanguageToolsPanel } from '../ui/language/LanguageToolsPanel';
 import { OcrCorrectionPanel } from '../ui/ocr/OcrCorrectionPanel';
 import { OcrImportDialog } from '../ui/ocr/OcrImportDialog';
 import { OcrPageResult } from '../domain/ocr/ocrEngine';
-import { exportDocumentToPdfMetadata, exportDocumentToEpub } from '../export/exportEngine';
+import { exportDocumentToEpub } from '../export/exportEngine';
 
 // Theme, i18n & QAT
 import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
@@ -105,6 +101,14 @@ import { addBookmarkCommand, insertTocCommand, addFootnoteCommand, addEndnoteCom
 import { addCaptionToObject } from '../domain/document/captionEngine';
 import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/document/indexEngine';
 import { applyLanguageChangesCommand } from '../editor/commands/languageCommands';
+import { HeaderFooterModal } from '../ui/dialogs/HeaderFooterModal';
+import { ExportOutputDialog } from '../ui/dialogs/ExportOutputDialog';
+import type { ExportOptions } from '../export/types';
+import { PrintLayoutView } from '../ui/views/PrintLayoutView';
+import { WebReadingView } from '../ui/views/WebReadingView';
+import { DraftEditingView } from '../ui/views/DraftEditingView';
+import { FocusModeShell } from '../ui/views/FocusModeShell';
+import { setPageOrientationCommand, toggleRulersCommand } from '../editor/commands/pageLayoutCommands';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
 
@@ -139,10 +143,13 @@ export function App() {
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [pendingChar, setPendingChar] = useState<string | null>(null);
   const [bodyEditorFocusRequest, setBodyEditorFocusRequest] = useState(0);
+  const [isFormatPainterActive, setIsFormatPainterActive] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>('print');
   const [showRulers, setShowRulers] = useState(true);
   const [showPageSetupModal, setShowPageSetupModal] = useState(false);
+  const [showHeaderFooterModal, setShowHeaderFooterModal] = useState(false);
+  const [showExportOutputDialog, setShowExportOutputDialog] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
@@ -222,19 +229,7 @@ export function App() {
   const [activeAlignment, setActiveAlignment] = useState<TextAlignment>('start');
 
   const activePage = resolveActivePage(document, activePageId);
-  const visibleObjects = useMemo(
-    () =>
-      activePage.objectOrder
-        .map((objectId) => document.objects[objectId])
-        .filter((object): object is PageObject => Boolean(object && !object.hidden)),
-    [activePage.objectOrder, document.objects],
-  );
-
   const selectedObject = selectedObjectId ? document.objects[selectedObjectId] : null;
-
-  // Find object being edited
-  const editingObject = editingObjectId ? document.objects[editingObjectId] : null;
-  const editingStory = editingObject && editingObject.type === 'text-frame' ? document.stories[editingObject.storyId] : null;
 
   // Update document with undo push
   const updateDocument = React.useCallback(
@@ -394,11 +389,10 @@ export function App() {
     }
   }, []);
 
-  const handleExportPdf = React.useCallback(() => {
-    const meta = exportDocumentToPdfMetadata(document);
+  const handleBrowserPrint = React.useCallback(() => {
     triggerNativePrintDialog();
-    setMessage(`Exporting PDF: ${meta.title}`);
-  }, [document]);
+    setMessage(lang === 'ur' ? 'براؤزر پرنٹ ڈائیلاگ کھولا گیا' : 'Opened browser print dialog');
+  }, [lang]);
 
   const handleExportEpub = React.useCallback(async () => {
     const epubBytes = await exportDocumentToEpub(document);
@@ -566,19 +560,6 @@ export function App() {
     [activePageId, document, selectedObject, updateDocument],
   );
 
-  // Handle Double Click on Text Frame, Shape or Image Frame
-  const handleObjectDoubleClicked = React.useCallback((objectId: string) => {
-    const obj = document.objects[objectId];
-    if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle' || obj.type === 'table')) {
-      setSelectedObjectId(objectId);
-      setEditingObjectId(objectId);
-      setMessage(obj.type === 'table' ? 'Editing Table Cells. Press ESC to exit.' : obj.type === 'rectangle' ? 'Editing Shape Text. Press ESC to exit.' : 'Editing Text Frame. Press ESC to exit.');
-    } else if (obj && obj.type === 'image-frame') {
-      setSelectedObjectId(objectId);
-      imageFileInputRef.current?.click();
-    }
-  }, [document.objects]);
-
   // Handle Shape Style Updates (Fill, Stroke, StrokeWidth, CornerRadius)
   const handleUpdateShapeStyle = React.useCallback(
     (
@@ -608,15 +589,14 @@ export function App() {
     setTimeout(() => setPendingChar(null), 50);
   }, []);
 
-  const [isFormatPainterActive, setIsFormatPainterActive] = React.useState(false);
-
   const getTargetStoryId = React.useCallback(() => {
-    return editingObject && editingObject.type === 'text-frame'
-      ? editingObject.storyId
+    const editingObj = editingObjectId ? document.objects[editingObjectId] : null;
+    return editingObj && editingObj.type === 'text-frame'
+      ? editingObj.storyId
       : selectedObject && selectedObject.type === 'text-frame'
       ? selectedObject.storyId
       : PRIMARY_STORY_ID;
-  }, [editingObject, selectedObject]);
+  }, [editingObjectId, selectedObject, document.objects]);
 
   const getStoryPlainText = (story?: import('../domain/document/types').TextStory): string => {
     if (!story || !story.content || !Array.isArray(story.content.content)) return '';
@@ -1038,7 +1018,7 @@ export function App() {
           onToggleCollab={() => setMessage('Live collaboration room active')}
           onOpenLanguageTools={() => setShowLanguageTools(true)}
           onOpenOcr={() => void handleTriggerOcr()}
-          onExportPdf={handleExportPdf}
+          onExportPdf={handleBrowserPrint}
           onExportEpub={() => void handleExportEpub()}
           onUndo={handleUndo}
           onRedo={handleRedo}
@@ -1171,7 +1151,7 @@ export function App() {
             setShowLanguageTools(true);
           }}
           onOpenOcr={() => void handleTriggerOcr()}
-          onExportPdf={handleExportPdf}
+          onExportPdf={handleBrowserPrint}
           onExportEpub={() => void handleExportEpub()}
           onRunPreflight={() => setShowPreflight(true)}
           onToggleCollab={() => setMessage('Live collaboration room active')}
@@ -1179,18 +1159,19 @@ export function App() {
           onToggleNavigationPane={() => setIsNavigationPaneOpen((prev) => !prev)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          onToggleOrientation={() => {
-            const nextOrientation = activePage.width > activePage.height ? 'portrait' : 'landscape';
-            const nextDoc = applyPageSetupCommand(
+          onSetOrientation={(targetOrientation) => {
+            const nextDoc = setPageOrientationCommand(
               document,
               { kind: 'current-page', pageId: activePageId },
-              { orientation: nextOrientation },
+              targetOrientation,
             );
-            updateDocument(nextDoc, `Set page orientation to ${nextOrientation}`);
+            updateDocument(nextDoc, `Set page orientation to ${targetOrientation}`);
 
             const preflight = runPreflightCheck(nextDoc);
             if (preflight.errorCount > 0) {
-              setMessage(`Page orientation updated. ${preflight.errorCount} preflight issue(s) detected.`);
+              setMessage(`Page orientation set to ${targetOrientation}. ${preflight.errorCount} preflight issue(s) detected.`);
+            } else {
+              setMessage(`Page orientation set to ${targetOrientation}.`);
             }
           }}
           onInsertSectionBreak={(type) => {
@@ -1198,6 +1179,8 @@ export function App() {
             updateDocument(nextDoc, `Insert ${type} section break`);
           }}
           onOpenPageSetupModal={() => setShowPageSetupModal(true)}
+          onOpenHeaderFooterModal={() => setShowHeaderFooterModal(true)}
+          onOpenExportDialog={() => setShowExportOutputDialog(true)}
           onApplySizePreset={(preset) => {
             let width = PAGE_PRESETS.a4.width;
             let height = PAGE_PRESETS.a4.height;
@@ -1269,8 +1252,12 @@ export function App() {
             updateDocument(nextDoc, `Set section columns to ${count}`);
             setMessage(`Applied ${count} column(s)`);
           }}
-          showRulers={showRulers}
-          onToggleRulers={() => setShowRulers((prev) => !prev)}
+          showRulers={document.settings.showRulers ?? showRulers}
+          onToggleRulers={() => {
+            const nextDoc = toggleRulersCommand(document);
+            updateDocument(nextDoc, 'Toggle rulers visibility');
+            setShowRulers((prev) => !prev);
+          }}
           showGrid={showGrid}
           onToggleGrid={() => {
             const nextDoc = toggleGridCommand(document);
@@ -1490,10 +1477,12 @@ export function App() {
 
           {/* Center Studio Viewport */}
           <main className="studio-viewport" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto', alignItems: 'center', padding: '16px 0' }}>
-            {showRulers && activePage && <DocumentRulers page={activePage} unit={document.settings.measurementUnit} />}
+            {showRulers && resolveActivePage(document, activePageId) && (
+              <DocumentRulers page={resolveActivePage(document, activePageId)} unit={document.settings.measurementUnit} />
+            )}
 
-            {viewMode === 'print' ? (
-              <PaginatedPrintLayout
+            {viewMode === 'print' && (
+              <PrintLayoutView
                 document={document}
                 activePageId={activePageId}
                 zoomLevel={zoomLevel}
@@ -1564,113 +1553,45 @@ export function App() {
                   }
                 }}
               />
-            ) : (
-            <div
-              className="canvas-paper-frame"
-              style={{
-                width: `${activePage.width}pt`,
-                height: `${activePage.height}pt`,
-                transform: `scale(${zoomLevel / 100})`,
-                transformOrigin: 'top center',
-                position: 'relative',
-              }}
-            >
-              {/* Margin Guide */}
-              <div
-                className="canvas-margin-guide"
-                style={{
-                  top: `${activePage.margins.top}pt`,
-                  right: `${activePage.margins.right}pt`,
-                  bottom: `${activePage.margins.bottom}pt`,
-                  left: `${activePage.margins.left}pt`,
-                }}
+            )}
+
+            {viewMode === 'web' && (
+              <WebReadingView
+                document={document}
+                zoomLevel={zoomLevel}
+                activeFontFamily={activeFontFamily}
+                activeFontSize={activeFontSize}
+                lang={lang}
               />
+            )}
 
-              {/* Primary Document Body Editor (Word-Style Typing Surface) */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: `${activePage.margins.top}pt`,
-                  right: `${activePage.margins.right}pt`,
-                  bottom: `${activePage.margins.bottom}pt`,
-                  left: `${activePage.margins.left}pt`,
-                  zIndex: 5,
+            {viewMode === 'draft' && (
+              <DraftEditingView
+                document={document}
+                activeFontFamily={activeFontFamily}
+                activeFontSize={activeFontSize}
+                pendingChar={pendingChar}
+                bodyEditorFocusRequest={bodyEditorFocusRequest}
+                onCommitStory={(storyId, updatedContent) => {
+                  setDocumentState((prev) => {
+                    const updatedStories = {
+                      ...prev.stories,
+                      [storyId]: {
+                        id: storyId,
+                        name: 'Primary Story',
+                        content: updatedContent,
+                      },
+                    };
+                    const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
+                    return repagination.repaginatedDoc;
+                  });
                 }}
-              >
-                <DocumentBodyEditor
-                  story={
-                    document.stories[PRIMARY_STORY_ID] || {
-                      id: PRIMARY_STORY_ID,
-                      name: 'Primary Document Story',
-                      content: { type: 'doc', content: [] },
-                    }
-                  }
-                  fontFamily={activeFontFamily}
-                  fontSize={activeFontSize}
-                  color="#172119"
-                  lineHeight={1.8}
-                  pendingChar={!editingObjectId ? pendingChar : null}
-                  focusRequest={bodyEditorFocusRequest}
-                  onCommit={(updatedContent) => {
-                    setDocumentState((prev) => ({
-                      ...prev,
-                      stories: {
-                        ...prev.stories,
-                        [PRIMARY_STORY_ID]: {
-                          id: PRIMARY_STORY_ID,
-                          name: 'Primary Document Story',
-                          content: updatedContent,
-                        },
-                      },
-                    }));
-                  }}
-                />
-              </div>
-
-              {/* Fabric Vector Canvas for Floating Objects & Text Boxes */}
-              <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: editingObjectId ? 'none' : 'auto' }}>
-                <FabricCanvas
-                  page={activePage}
-                  objects={visibleObjects}
-                  stories={document.stories}
-                  selectedObjectId={selectedObjectId}
-                  onObjectModified={handleObjectModified}
-                  onSelectionChanged={(id) => {
-                    setSelectedObjectId(id);
-                  }}
-                  onObjectDoubleClicked={handleObjectDoubleClicked}
-                  onBlankCanvasClick={() => {
-                    setSelectedObjectId(null);
-                    setBodyEditorFocusRequest((value) => value + 1);
-                  }}
-                />
-              </div>
-
-              {/* Interactive In-place Rich Text Editor Overlay */}
-              {editingObject && editingObject.type === 'text-frame' && editingStory && (
-                <TextEditorOverlay
-                  frame={editingObject.frame}
-                  story={editingStory}
-                  fontFamily={editingObject.fontFamily || activeFontFamily}
-                  fontSize={editingObject.fontSize || activeFontSize}
-                  color={editingObject.color}
-                  pendingChar={pendingChar}
-                  onCommit={(updatedContent) => {
-                    setDocumentState((prev) => ({
-                      ...prev,
-                      stories: {
-                        ...prev.stories,
-                        [editingObject.storyId]: {
-                          ...prev.stories[editingObject.storyId]!,
-                          content: updatedContent,
-                        },
-                      },
-                    }));
-                  }}
-                  onClose={() => setEditingObjectId(null)}
-                />
-              )}
-            </div>
+                onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
+                onEditorReady={(editor) => {
+                  activeEditorRef.current = editor;
+                }}
+                lang={lang}
+              />
             )}
           </main>
 
@@ -1821,6 +1742,37 @@ export function App() {
           lang={lang}
         />
 
+        {/* Header Footer & Master Setup Modal */}
+        <HeaderFooterModal
+          isOpen={showHeaderFooterModal}
+          onClose={() => setShowHeaderFooterModal(false)}
+          document={document}
+          activePageId={activePageId}
+          onApply={(updatedDoc, msg) => {
+            updateDocument(updatedDoc, msg);
+            setMessage(msg);
+          }}
+          lang={lang}
+        />
+
+        {/* Real Export & Output Setup Dialog */}
+        <ExportOutputDialog
+          isOpen={showExportOutputDialog}
+          onClose={() => setShowExportOutputDialog(false)}
+          document={document}
+          activePageId={activePageId}
+          onConfirmExport={(exportOptions: ExportOptions) => {
+            if (exportOptions.format === 'browser-print') {
+              handleBrowserPrint();
+            } else if (exportOptions.format === 'epub') {
+              void handleExportEpub();
+            } else {
+              setMessage(`Export format '${exportOptions.format}' selected.`);
+            }
+          }}
+          lang={lang}
+        />
+
         {/* Diagnostic Preflight & Audit Panel Modal */}
         {showPreflight && (
           <div
@@ -1923,6 +1875,80 @@ export function App() {
           />
         )}
 
+        {/* Fullscreen Distraction-Free Focus Mode Shell */}
+        <FocusModeShell
+          isActive={isFocusMode}
+          onExit={() => setIsFocusMode(false)}
+          document={document}
+          activePageId={activePageId}
+          onSelectPage={setActivePageId}
+          lang={lang}
+        >
+          {viewMode === 'print' && (
+            <PrintLayoutView
+              document={document}
+              activePageId={activePageId}
+              zoomLevel={zoomLevel}
+              activeFontFamily={activeFontFamily}
+              activeFontSize={activeFontSize}
+              pendingChar={pendingChar}
+              editingObjectId={editingObjectId}
+              isObjectSelectionMode={activeTool === 'select'}
+              bodyEditorFocusRequest={bodyEditorFocusRequest}
+              selectedObjectId={selectedObjectId}
+              onSelectPage={setActivePageId}
+              onSelectObject={setSelectedObjectId}
+              onEditObject={setEditingObjectId}
+              onObjectModified={handleObjectModified}
+              onCommitStory={(storyId, updatedContent) => {
+                setDocumentState((prev) => {
+                  const updatedStories = {
+                    ...prev.stories,
+                    [storyId]: {
+                      id: storyId,
+                      name: 'Primary Story',
+                      content: updatedContent,
+                    },
+                  };
+                  const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
+                  return repagination.repaginatedDoc;
+                });
+              }}
+              onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
+              onUpdateTableCell={handleUpdateTableCell}
+              onActiveTableCellChange={(rIdx, cIdx) => setActiveTableCell({ rowIndex: rIdx, colIndex: cIdx })}
+              onUpdateGuides={(pageId, guides) => updateDocument(updateGuidesCommand(document, pageId, guides), 'Update page guides')}
+            />
+          )}
+          {viewMode === 'web' && (
+            <WebReadingView document={document} zoomLevel={zoomLevel} activeFontFamily={activeFontFamily} activeFontSize={activeFontSize} lang={lang} />
+          )}
+          {viewMode === 'draft' && (
+            <DraftEditingView
+              document={document}
+              activeFontFamily={activeFontFamily}
+              activeFontSize={activeFontSize}
+              pendingChar={pendingChar}
+              bodyEditorFocusRequest={bodyEditorFocusRequest}
+              onCommitStory={(storyId, updatedContent) => {
+                setDocumentState((prev) => {
+                  const updatedStories = {
+                    ...prev.stories,
+                    [storyId]: {
+                      id: storyId,
+                      name: 'Primary Story',
+                      content: updatedContent,
+                    },
+                  };
+                  const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
+                  return repagination.repaginatedDoc;
+                });
+              }}
+              lang={lang}
+            />
+          )}
+        </FocusModeShell>
+
         {showAccessibilitySettings && (
           <AccessibilitySettingsModal
             isOpen={showAccessibilitySettings}
@@ -1963,7 +1989,7 @@ export function App() {
           }}
           onSaveDocument={() => void handleSaveNative()}
           onSaveAsDocument={() => void handleSaveAsNative()}
-          onExportPdf={handleExportPdf}
+          onExportPdf={handleBrowserPrint}
           onPrint={triggerNativePrintDialog}
         />
 

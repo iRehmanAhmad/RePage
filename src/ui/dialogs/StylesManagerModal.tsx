@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface StylesManagerModalProps {
   isOpen: boolean;
@@ -88,7 +89,7 @@ export function StylesManagerModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

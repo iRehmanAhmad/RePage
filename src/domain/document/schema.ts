@@ -144,6 +144,9 @@ export const documentSchema = z.object({
       bleed: insetsSchema,
       background: z.string().min(1),
       objectOrder: z.array(z.string().min(1)),
+      gutter: nonNegativeNumber.optional(),
+      gutterPosition: z.enum(['right', 'left', 'top']).optional(),
+      mirrorMargins: z.boolean().optional(),
       masterPageId: z.string().min(1).nullable().optional(),
       masterOverrides: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
       guides: z.array(pageGuideSchema).optional(),
@@ -239,7 +242,7 @@ export function validateDocumentReferences(value: z.infer<typeof documentSchema>
         errors.push(`Section ${section.id} references missing start page ${section.startPageId}.`);
       }
 
-      if (sectionStartPages.has(section.startPageId)) {
+      if (sectionStartPages.has(section.startPageId) && section.breakType !== 'continuous') {
         errors.push(`Duplicate section start page ${section.startPageId}.`);
       }
       sectionStartPages.add(section.startPageId);

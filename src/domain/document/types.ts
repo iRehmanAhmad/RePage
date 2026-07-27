@@ -55,6 +55,9 @@ export interface Page {
   bleed: Insets;
   background: string;
   objectOrder: ObjectId[];
+  gutter?: number | undefined;
+  gutterPosition?: 'right' | 'left' | 'top' | undefined;
+  mirrorMargins?: boolean | undefined;
   masterPageId?: MasterPageId | null | undefined;
   masterOverrides?: Record<ObjectId, Partial<PageObject>> | undefined;
   guides?: PageGuide[] | undefined;

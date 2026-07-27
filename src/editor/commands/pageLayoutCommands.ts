@@ -55,6 +55,9 @@ export function applyPageSetupCommand(
     height?: number;
     orientation?: 'portrait' | 'landscape';
     margins?: Insets;
+    gutter?: number;
+    gutterPosition?: 'right' | 'left' | 'top';
+    mirrorMargins?: boolean;
   },
 ): RePageDocument {
   const pageIds = resolveTargetPageIds(doc, target);
@@ -66,6 +69,17 @@ export function applyPageSetupCommand(
   }
 
   return touch(nextDoc);
+}
+
+/**
+ * Sets explicit page orientation for target pages without toggling.
+ */
+export function setPageOrientationCommand(
+  doc: RePageDocument,
+  target: PageLayoutTarget,
+  orientation: 'portrait' | 'landscape',
+): RePageDocument {
+  return applyPageSetupCommand(doc, target, { orientation });
 }
 
 /**

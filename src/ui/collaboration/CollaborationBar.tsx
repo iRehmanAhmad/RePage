@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CollaboratorPresence } from '../../collaboration/awareness';
 import type { NetworkConnectionState } from '../../collaboration/networkProvider';
+import { AppIcon } from '../icons/AppIcon';
 
 interface CollaborationBarProps {
   connectionState: NetworkConnectionState;
@@ -26,7 +27,7 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
       case 'connected':
         return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">● Online</span>;
       case 'relay-forced':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">🛡️ TURN Relay</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"><AppIcon name="shield-check" size={14} /> TURN Relay</span>;
       case 'reconnecting':
         return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">⏳ Reconnecting...</span>;
       case 'disconnected':
@@ -40,7 +41,7 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
       <div className="flex items-center space-x-3 space-x-reverse">
         {getStatusBadge()}
         {isLocalRecoveryActive && (
-          <span className="text-xs text-emerald-400 font-medium">✓ Local recovery active</span>
+          <span className="text-xs text-emerald-400 font-medium"><AppIcon name="check" size={14} /> Local recovery active</span>
         )}
       </div>
 

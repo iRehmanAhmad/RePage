@@ -2,6 +2,7 @@ import React from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import { loadVersionHistory, saveVersionSnapshot } from '../../domain/document/versionHistoryEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export function VersionHistoryModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

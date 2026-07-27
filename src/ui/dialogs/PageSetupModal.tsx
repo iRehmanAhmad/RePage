@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Insets, RePageDocument } from '../../domain/document/types';
 import type { PageLayoutTarget } from '../../editor/commands/pageLayoutCommands';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 import {
   PAGE_PRESETS,
   inchesToPoints,
@@ -24,6 +25,9 @@ export interface PageSetupModalProps {
       height?: number;
       orientation?: 'portrait' | 'landscape';
       margins?: Insets;
+      gutter?: number;
+      gutterPosition?: 'right' | 'left' | 'top';
+      mirrorMargins?: boolean;
       bleed?: Insets;
       background?: string;
     },
@@ -243,6 +247,9 @@ export function PageSetupModal({
         bottom: toPoints(marginBottom),
         left: toPoints(marginLeft),
       },
+      gutter: toPoints(gutter),
+      gutterPosition,
+      mirrorMargins: useMirrorMargins,
       bleed: {
         top: toPoints(bleedTop),
         right: toPoints(bleedRight),
@@ -298,7 +305,7 @@ export function PageSetupModal({
           }}
         >
           <h3 style={{ margin: 0, fontSize: '16px', color: '#38bdf8', fontWeight: 700 }}>
-            📐 {isUr ? 'صفحہ کی ترتیبات (Page Setup)' : 'Page Setup'}
+            <AppIcon name="page-layout" /> {isUr ? 'صفحہ کی ترتیبات (Page Setup)' : 'Page Setup'}
           </h3>
           <button
             type="button"
@@ -311,7 +318,7 @@ export function PageSetupModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 
@@ -327,7 +334,7 @@ export function PageSetupModal({
               marginBottom: '12px',
             }}
           >
-            ⚠️ {validationError}
+            <AppIcon name="warning" /> {validationError}
           </div>
         )}
         {overflowWarning && (
@@ -341,7 +348,7 @@ export function PageSetupModal({
               marginBottom: '12px',
             }}
           >
-            ⚠️ {overflowWarning}
+            <AppIcon name="warning" /> {overflowWarning}
           </div>
         )}
 
@@ -418,7 +425,7 @@ export function PageSetupModal({
                       fontSize: '11px',
                     }}
                   >
-                    📄 {isUr ? 'عمودی (Portrait)' : 'Portrait'}
+                    <AppIcon name="document" /> {isUr ? 'عمودی (Portrait)' : 'Portrait'}
                   </button>
                   <button
                     type="button"
@@ -434,7 +441,7 @@ export function PageSetupModal({
                       fontSize: '11px',
                     }}
                   >
-                    🖼️ {isUr ? 'افقی (Landscape)' : 'Landscape'}
+                    <AppIcon name="image" /> {isUr ? 'افقی (Landscape)' : 'Landscape'}
                   </button>
                 </div>
               </div>

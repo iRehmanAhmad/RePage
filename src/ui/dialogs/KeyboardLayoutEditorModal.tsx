@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import {
   createDefaultCustomLayout,
   deleteCustomKeyboardLayout,
@@ -148,7 +149,7 @@ export function KeyboardLayoutEditorModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 
@@ -177,7 +178,7 @@ export function KeyboardLayoutEditorModal({
               cursor: 'pointer',
             }}
           >
-            📋 {isUr ? 'ڈپلیکیٹ' : 'Duplicate'}
+            <AppIcon name="copy" /> {isUr ? 'ڈپلیکیٹ' : 'Duplicate'}
           </button>
           <button
             type="button"
@@ -192,7 +193,7 @@ export function KeyboardLayoutEditorModal({
               cursor: 'pointer',
             }}
           >
-            🗑️ {isUr ? 'حذف کریں' : 'Delete'}
+            <AppIcon name="delete" /> {isUr ? 'حذف کریں' : 'Delete'}
           </button>
           <button
             type="button"
@@ -207,7 +208,7 @@ export function KeyboardLayoutEditorModal({
               cursor: 'pointer',
             }}
           >
-            ⬇️ {isUr ? 'ایکسپورٹ JSON' : 'Export JSON'}
+            <AppIcon name="download" /> {isUr ? 'ایکسپورٹ JSON' : 'Export JSON'}
           </button>
           <button
             type="button"
@@ -222,7 +223,7 @@ export function KeyboardLayoutEditorModal({
               cursor: 'pointer',
             }}
           >
-            ⬆️ {isUr ? 'امپورٹ JSON' : 'Import JSON'}
+            <AppIcon name="upload" /> {isUr ? 'امپورٹ JSON' : 'Import JSON'}
           </button>
           <input
             ref={fileInputRef}
@@ -235,7 +236,7 @@ export function KeyboardLayoutEditorModal({
 
         {validationError && (
           <div style={{ color: '#f87171', fontSize: '11px', marginBottom: '8px' }}>
-            ⚠️ {validationError}
+            <AppIcon name="warning" /> {validationError}
           </div>
         )}
 

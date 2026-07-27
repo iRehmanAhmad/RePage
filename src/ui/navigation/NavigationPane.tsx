@@ -3,6 +3,7 @@ import type { PageId, RePageDocument } from '../../domain/document/types';
 import { extractHeadingTree, reorderHeadingSection, type HeadingNode } from '../../domain/document/headingNavigationEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
 import { findInUrduText, replaceInUrduText } from '../../domain/rich-text/findReplace';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface NavigationPaneProps {
   isOpen: boolean;
@@ -144,7 +145,7 @@ export function NavigationPane({
                 cursor: 'pointer',
               }}
             >
-              ▲
+              <AppIcon name="arrow-up" size={12} />
             </button>
             <button
               type="button"
@@ -160,7 +161,7 @@ export function NavigationPane({
                 cursor: 'pointer',
               }}
             >
-              ▼
+              <AppIcon name="arrow-down" size={12} />
             </button>
           </div>
         </div>
@@ -229,7 +230,7 @@ export function NavigationPane({
           }}
           title="Close Navigation Pane"
         >
-          ✕
+          <AppIcon name="dismiss" />
         </button>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 
 interface DragAndDropOverlayProps {
   onFileDrop: (file: File) => void;
@@ -65,7 +66,7 @@ export function DragAndDropOverlay({ onFileDrop, children }: DragAndDropOverlayP
             pointerEvents: 'none',
           }}
         >
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
+          <AppIcon name="document-add" size={48} style={{ marginBottom: '16px' }} />
           <h2 style={{ margin: 0, fontSize: '24px', fontFamily: 'Noto Nastaliq Urdu, sans-serif' }}>
             دستاویز یہاں ڈراپ کریں (.urdup / .pdf / .docx)
           </h2>

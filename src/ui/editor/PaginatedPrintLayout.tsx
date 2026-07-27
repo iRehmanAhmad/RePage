@@ -111,14 +111,39 @@ export function PaginatedPrintLayout({
         const headerStory = section.headerStoryId ? document.stories[section.headerStoryId] : null;
         const footerStory = section.footerStoryId ? document.stories[section.footerStoryId] : null;
 
-        let headerText = document.metadata.title || 'RePage Document';
-        if (headerStory?.name) {
-          headerText = headerStory.name;
+        const extractStoryText = (story: typeof headerStory) => {
+          if (!story || !story.content?.content?.[0]) return null;
+          const p = story.content.content[0];
+          return (p.content || [])
+            .filter((node): node is { type: 'text'; text: string } => node.type === 'text')
+            .map((r) => r.text)
+            .join('');
+        };
+
+        const headerText = extractStoryText(headerStory) || headerStory?.name || document.metadata.title || 'RePage Document';
+        const footerText = extractStoryText(footerStory) || footerStory?.name || 'RePage Studio';
+
+        // Calculate Effective Margins considering Gutter & Mirror Margins
+        const pageIndexInDoc = document.pageOrder.indexOf(pageId);
+        const isEvenPage = pageIndexInDoc % 2 === 1;
+
+        let effectiveLeftMargin = page.margins.left;
+        let effectiveRightMargin = page.margins.right;
+        const effectiveTopMargin = page.margins.top;
+        const effectiveBottomMargin = page.margins.bottom;
+
+        if (page.mirrorMargins && isEvenPage) {
+          effectiveLeftMargin = page.margins.right;
+          effectiveRightMargin = page.margins.left;
         }
 
-        let footerText = 'RePage Studio';
-        if (footerStory?.name) {
-          footerText = footerStory.name;
+        const gutterWidth = page.gutter || 0;
+        const gutterPos = page.gutterPosition || (document.metadata.locale === 'ur-PK' ? 'right' : 'left');
+
+        if (gutterPos === 'left') {
+          effectiveLeftMargin += gutterWidth;
+        } else if (gutterPos === 'right') {
+          effectiveRightMargin += gutterWidth;
         }
 
         return (
@@ -168,8 +193,8 @@ export function PaginatedPrintLayout({
                 </span>
                 <span style={{ fontSize: '9px', opacity: 0.85 }}>
                   {document.metadata.locale === 'ur-PK'
-                    ? `کالمز: ${section.columns} | حواشی: ${Math.round(page.margins.top / 2.835)}mm`
-                    : `Cols: ${section.columns} | Margins: ${Math.round(page.margins.top / 2.835)}mm`}
+                    ? `کالمز: ${section.columns} | حواشی: ${Math.round(effectiveTopMargin / 2.835)}mm`
+                    : `Cols: ${section.columns} | Margins: ${Math.round(effectiveTopMargin / 2.835)}mm`}
                 </span>
               </div>
             )}
@@ -177,9 +202,9 @@ export function PaginatedPrintLayout({
             <div
               style={{
                 position: 'absolute',
-                top: `${Math.max(8, page.margins.top / 2)}pt`,
-                left: `${page.margins.left}pt`,
-                right: `${page.margins.right}pt`,
+                top: `${Math.max(8, effectiveTopMargin / 2)}pt`,
+                left: `${effectiveLeftMargin}pt`,
+                right: `${effectiveRightMargin}pt`,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -232,10 +257,10 @@ export function PaginatedPrintLayout({
             <div
               className="canvas-margin-guide"
               style={{
-                top: `${page.margins.top}pt`,
-                right: `${page.margins.right}pt`,
-                bottom: `${page.margins.bottom}pt`,
-                left: `${page.margins.left}pt`,
+                top: `${effectiveTopMargin}pt`,
+                right: `${effectiveRightMargin}pt`,
+                bottom: `${effectiveBottomMargin}pt`,
+                left: `${effectiveLeftMargin}pt`,
                 position: 'absolute',
                 border: '1px dashed #cbd5e1',
                 pointerEvents: 'none',
@@ -630,9 +655,9 @@ export function PaginatedPrintLayout({
             <div
               style={{
                 position: 'absolute',
-                bottom: `${Math.max(8, page.margins.bottom / 2)}pt`,
-                left: `${page.margins.left}pt`,
-                right: `${page.margins.right}pt`,
+                bottom: `${Math.max(8, effectiveBottomMargin / 2)}pt`,
+                left: `${effectiveLeftMargin}pt`,
+                right: `${effectiveRightMargin}pt`,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import type { UiLanguage } from '../i18n/menuTranslation';
 import { validateOcrInputFile, type OcrPageResult } from '../../domain/ocr/ocrEngine';
 import { getConfiguredOcrProvider, getOcrProvider } from '../../domain/ocr/ocrProvider';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface OcrImportDialogProps {
   isOpen: boolean;
@@ -110,7 +111,7 @@ export function OcrImportDialog({
           }}
         >
           <h3 style={{ margin: 0, fontSize: '15px', color: '#38bdf8', fontWeight: 700 }}>
-            📷 {isUr ? 'اردو تصویری متن شناسی (OCR Import)' : 'Urdu Image OCR Import'}
+            <AppIcon name="camera" /> {isUr ? 'اردو تصویری متن شناسی (OCR Import)' : 'Urdu Image OCR Import'}
           </h3>
           <button
             type="button"
@@ -123,7 +124,7 @@ export function OcrImportDialog({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 
@@ -141,7 +142,7 @@ export function OcrImportDialog({
               fontWeight: 600,
             }}
           >
-            ⚠️ {isUr
+            <AppIcon name="warning" /> {isUr
               ? 'پیش نظارہ/ڈیمو — کوئی حقیقی OCR انجن ترتیب نہیں ہے۔ نتائج فرضی ہیں۔'
               : 'Preview/Demo Mode — No real OCR engine configured. Results are simulated.'}
           </div>
@@ -158,7 +159,7 @@ export function OcrImportDialog({
               marginBottom: '12px',
             }}
           >
-            ⚠️ {errorMessage}
+            <AppIcon name="warning" /> {errorMessage}
           </div>
         )}
 
@@ -182,7 +183,7 @@ export function OcrImportDialog({
             onChange={handleFileChange}
             style={{ display: 'none' }}
           />
-          <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px' }}>📄</span>
+          <AppIcon name="document" size={24} style={{ display: 'block', marginBottom: '6px' }} />
           {selectedFile ? (
             <span style={{ fontWeight: 700, color: '#10b981' }}>{selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
           ) : (

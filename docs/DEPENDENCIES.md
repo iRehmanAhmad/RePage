@@ -40,7 +40,8 @@ GitHub popularity is supporting evidence, not proof of correctness.
 | jsPDF | Current use inserts a screenshot | Do not designate current output production-ready |
 | y-webrtc | Public signaling/reliability and full-mesh limitations | Experimental only until collaboration design |
 | core-js | Need and target-browser impact unclear | Remove if build targets do not require it |
-| lucide-react | UI icons | Keep if licence attribution and bundle use are acceptable |
+| lucide-react | Legacy UI icons | Do not extend | Retain only while existing usages are migrated |
+| @fluentui/react-icons | Shared Fluent command icon set | Keep | MIT-licensed UI-only dependency; imported through `src/ui/icons/AppIcon.tsx` so icon names and sizing remain consistent |
 
 ## 4. Referenced repositories that are not application dependencies
 

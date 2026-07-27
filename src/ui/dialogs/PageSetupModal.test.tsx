@@ -1,10 +1,14 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { PageSetupModal } from './PageSetupModal';
 import { createStarterDocument } from '../../domain/document/createDocument';
 
 describe('PageSetupModal Component', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders PageSetupModal fields when open', () => {
     const doc = createStarterDocument();
     const activePageId = doc.pageOrder[0]!;
@@ -30,20 +34,21 @@ describe('PageSetupModal Component', () => {
     const doc = createStarterDocument();
     const activePageId = doc.pageOrder[0]!;
     const handleApply = vi.fn();
+    const handleClose = vi.fn();
 
     render(
       <PageSetupModal
         isOpen={true}
-        onClose={vi.fn()}
+        onClose={handleClose}
         document={doc}
         activePageId={activePageId}
-        lang="en"
         onApply={handleApply}
+        lang="en"
       />,
     );
 
-    const applyButtons = screen.getAllByRole('button', { name: 'Apply' });
-    const applyButton = applyButtons[applyButtons.length - 1]!;
+    const applyButtons = screen.getAllByRole('button', { name: /^Apply$/i });
+    const applyButton = applyButtons[0]!;
     fireEvent.click(applyButton);
 
     expect(handleApply).toHaveBeenCalledTimes(1);

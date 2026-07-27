@@ -2,6 +2,7 @@ import React from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import { compareDocuments } from '../../domain/document/documentCompareEngine';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface CompareDocumentsModalProps {
   isOpen: boolean;
@@ -80,7 +81,7 @@ export function CompareDocumentsModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

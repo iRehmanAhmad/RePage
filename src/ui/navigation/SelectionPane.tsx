@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PageObject, RePageDocument } from '../../domain/document/types';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon, type AppIconName } from '../icons/AppIcon';
 
 export interface SelectionPaneProps {
   isOpen: boolean;
@@ -62,18 +63,18 @@ export function SelectionPane({
     .map((id) => document.objects[id])
     .filter(Boolean) as PageObject[];
 
-  const getObjectIcon = (type: string) => {
+  const getObjectIcon = (type: string): AppIconName => {
     switch (type) {
       case 'text-frame':
-        return '📝';
+        return 'text-add';
       case 'rectangle':
-        return '⏹️';
+        return 'square';
       case 'image-frame':
-        return '🖼️';
+        return 'image';
       case 'table':
-        return '📊';
+        return 'table';
       default:
-        return '📄';
+        return 'document';
     }
   };
 
@@ -133,7 +134,7 @@ export function SelectionPane({
             fontSize: '14px',
           }}
         >
-          ✕
+          <AppIcon name="dismiss" />
         </button>
       </div>
 
@@ -154,7 +155,7 @@ export function SelectionPane({
             title="Bring to Front"
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
-            🔝
+            <AppIcon name="arrow-up" />
           </button>
           <button
             type="button"
@@ -162,7 +163,7 @@ export function SelectionPane({
             title="Bring Forward"
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
-            ▲
+            <AppIcon name="arrow-up" />
           </button>
           <button
             type="button"
@@ -170,7 +171,7 @@ export function SelectionPane({
             title="Send Backward"
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
-            ▼
+            <AppIcon name="arrow-down" />
           </button>
           <button
             type="button"
@@ -178,7 +179,7 @@ export function SelectionPane({
             title="Send to Back"
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
-            🔚
+            <AppIcon name="arrow-down" />
           </button>
         </div>
       )}
@@ -208,7 +209,7 @@ export function SelectionPane({
                   cursor: 'pointer',
                 }}
               >
-                <span>{getObjectIcon(obj.type)}</span>
+                <AppIcon name={getObjectIcon(obj.type)} />
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {obj.name || obj.id}
                 </span>
@@ -228,7 +229,7 @@ export function SelectionPane({
                   }}
                   title={obj.hidden ? 'Show Object' : 'Hide Object'}
                 >
-                  {obj.hidden ? '🙈' : '👁️'}
+                  <AppIcon name={obj.hidden ? 'eye-off' : 'eye'} />
                 </button>
 
                 {/* Lock Toggle */}
@@ -246,7 +247,7 @@ export function SelectionPane({
                   }}
                   title={obj.locked ? 'Unlock Object' : 'Lock Object'}
                 >
-                  {obj.locked ? '🔒' : '🔓'}
+                  <AppIcon name={obj.locked ? 'lock' : 'unlock'} />
                 </button>
               </div>
             );

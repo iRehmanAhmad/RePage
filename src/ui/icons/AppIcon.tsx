@@ -1,0 +1,227 @@
+import React, { type ComponentProps, type ElementType } from 'react';
+import {
+  AddRegular,
+  ArrowDownRegular,
+  ArrowDownloadRegular,
+  ArrowLeftRegular,
+  ArrowRightRegular,
+  ArrowSortDownRegular,
+  ArrowSortUpRegular,
+  ArrowUpRegular,
+  ArrowUploadRegular,
+  ArrowExportRegular,
+  ArrowRedoRegular,
+  ArrowUndoRegular,
+  BookmarkRegular,
+  BookOpenRegular,
+  BorderAllRegular,
+  BorderBottomRegular,
+  BorderLeftRegular,
+  BorderNoneRegular,
+  BorderRightRegular,
+  BorderTopRegular,
+  CameraRegular,
+  ChatRegular,
+  CheckmarkRegular,
+  CircleRegular,
+  ChevronDownRegular,
+  ChevronUpRegular,
+  ClipboardPasteRegular,
+  ClipboardRegular,
+  CommentRegular,
+  CopyRegular,
+  CutRegular,
+  DeleteRegular,
+  DismissRegular,
+  DocumentAddRegular,
+  DocumentPdfRegular,
+  DocumentRegular,
+  DocumentSettingsRegular,
+  DocumentTextRegular,
+  EditRegular,
+  EyeOffRegular,
+  EyeRegular,
+  FolderOpenRegular,
+  GridRegular,
+  HistoryRegular,
+  HomeRegular,
+  ImageRegular,
+  KeyboardRegular,
+  LinkRegular,
+  LockClosedRegular,
+  LockOpenRegular,
+  MoreHorizontalRegular,
+  PaintBrushRegular,
+  PanelLeftRegular,
+  PanelRightRegular,
+  PeopleRegular,
+  PlayRegular,
+  PrintRegular,
+  RulerRegular,
+  SaveRegular,
+  ScanTextRegular,
+  SearchRegular,
+  SettingsRegular,
+  ShieldCheckmarkRegular,
+  Speaker1Regular,
+  SquareRegular,
+  StarRegular,
+  StopRegular,
+  SubtractRegular,
+  TableRegular,
+  TagRegular,
+  TargetArrowRegular,
+  TextAddRegular,
+  TextAlignCenterRegular,
+  TextAlignJustifyRegular,
+  TextAlignLeftRegular,
+  TextAlignRightRegular,
+  TextBoldRegular,
+  TextBulletListRegular,
+  TextColorRegular,
+  TextGrammarCheckmarkRegular,
+  TextIndentDecreaseRegular,
+  TextIndentIncreaseRegular,
+  TextItalicRegular,
+  TextLineSpacingRegular,
+  TextNumberListLtrRegular,
+  TextUnderlineRegular,
+  TriangleRegular,
+  TranslateRegular,
+  WarningRegular,
+  WrenchRegular,
+  HexagonRegular,
+} from '@fluentui/react-icons';
+
+/** Shared Microsoft Fluent icon vocabulary for application chrome and commands. */
+export type AppIconName =
+  | 'save' | 'undo' | 'redo' | 'folder-open' | 'document' | 'shield-check'
+  | 'document-pdf' | 'book-open' | 'scan' | 'language' | 'people' | 'chevron-down'
+  | 'file' | 'home' | 'add' | 'tools' | 'page-layout' | 'export'
+  | 'dismiss' | 'warning' | 'check' | 'search' | 'print' | 'settings' | 'image'
+  | 'table' | 'delete' | 'copy' | 'cut' | 'paste' | 'clipboard' | 'keyboard'
+  | 'eye' | 'eye-off' | 'lock' | 'unlock' | 'chevron-up' | 'arrow-up' | 'arrow-down'
+  | 'arrow-left' | 'arrow-right' | 'sort-up' | 'sort-down' | 'download' | 'upload'
+  | 'document-add' | 'text-add' | 'paint' | 'border-all' | 'border-none'
+  | 'border-bottom' | 'border-top' | 'border-left' | 'border-right' | 'align-justify'
+  | 'align-left' | 'align-right' | 'align-center' | 'indent-increase' | 'indent-decrease'
+  | 'line-spacing' | 'bullets' | 'numbered-list' | 'bold' | 'italic' | 'underline'
+  | 'text-color' | 'history' | 'comment' | 'link' | 'ruler' | 'grid' | 'speaker'
+  | 'play' | 'stop' | 'target' | 'edit' | 'document-text' | 'panel-left' | 'panel-right'
+  | 'more' | 'camera' | 'tag' | 'bookmark' | 'spell-check' | 'square' | 'circle'
+  | 'triangle' | 'star' | 'hexagon' | 'chat' | 'subtract';
+
+export interface AppIconProps extends ComponentProps<'svg'> {
+  name: AppIconName;
+  size?: number;
+  label?: string;
+}
+
+const icons: Record<AppIconName, ElementType> = {
+  save: SaveRegular,
+  undo: ArrowUndoRegular,
+  redo: ArrowRedoRegular,
+  'folder-open': FolderOpenRegular,
+  document: DocumentRegular,
+  'shield-check': ShieldCheckmarkRegular,
+  'document-pdf': DocumentPdfRegular,
+  'book-open': BookOpenRegular,
+  scan: ScanTextRegular,
+  language: TranslateRegular,
+  people: PeopleRegular,
+  'chevron-down': ChevronDownRegular,
+  file: DocumentRegular,
+  home: HomeRegular,
+  add: AddRegular,
+  tools: WrenchRegular,
+  'page-layout': DocumentSettingsRegular,
+  export: ArrowExportRegular,
+  dismiss: DismissRegular,
+  warning: WarningRegular,
+  check: CheckmarkRegular,
+  search: SearchRegular,
+  print: PrintRegular,
+  settings: SettingsRegular,
+  image: ImageRegular,
+  table: TableRegular,
+  delete: DeleteRegular,
+  copy: CopyRegular,
+  cut: CutRegular,
+  paste: ClipboardPasteRegular,
+  clipboard: ClipboardRegular,
+  keyboard: KeyboardRegular,
+  eye: EyeRegular,
+  'eye-off': EyeOffRegular,
+  lock: LockClosedRegular,
+  unlock: LockOpenRegular,
+  'chevron-up': ChevronUpRegular,
+  'arrow-up': ArrowUpRegular,
+  'arrow-down': ArrowDownRegular,
+  'arrow-left': ArrowLeftRegular,
+  'arrow-right': ArrowRightRegular,
+  'sort-up': ArrowSortUpRegular,
+  'sort-down': ArrowSortDownRegular,
+  download: ArrowDownloadRegular,
+  upload: ArrowUploadRegular,
+  'document-add': DocumentAddRegular,
+  'text-add': TextAddRegular,
+  paint: PaintBrushRegular,
+  'border-all': BorderAllRegular,
+  'border-none': BorderNoneRegular,
+  'border-bottom': BorderBottomRegular,
+  'border-top': BorderTopRegular,
+  'border-left': BorderLeftRegular,
+  'border-right': BorderRightRegular,
+  'align-justify': TextAlignJustifyRegular,
+  'align-left': TextAlignLeftRegular,
+  'align-right': TextAlignRightRegular,
+  'align-center': TextAlignCenterRegular,
+  'indent-increase': TextIndentIncreaseRegular,
+  'indent-decrease': TextIndentDecreaseRegular,
+  'line-spacing': TextLineSpacingRegular,
+  bullets: TextBulletListRegular,
+  'numbered-list': TextNumberListLtrRegular,
+  bold: TextBoldRegular,
+  italic: TextItalicRegular,
+  underline: TextUnderlineRegular,
+  'text-color': TextColorRegular,
+  history: HistoryRegular,
+  comment: CommentRegular,
+  link: LinkRegular,
+  ruler: RulerRegular,
+  grid: GridRegular,
+  speaker: Speaker1Regular,
+  play: PlayRegular,
+  stop: StopRegular,
+  target: TargetArrowRegular,
+  edit: EditRegular,
+  'document-text': DocumentTextRegular,
+  'panel-left': PanelLeftRegular,
+  'panel-right': PanelRightRegular,
+  more: MoreHorizontalRegular,
+  camera: CameraRegular,
+  tag: TagRegular,
+  bookmark: BookmarkRegular,
+  'spell-check': TextGrammarCheckmarkRegular,
+  square: SquareRegular,
+  circle: CircleRegular,
+  triangle: TriangleRegular,
+  star: StarRegular,
+  hexagon: HexagonRegular,
+  chat: ChatRegular,
+  subtract: SubtractRegular,
+};
+
+export function AppIcon({ name, size = 18, label, className, ...props }: AppIconProps) {
+  const Icon = icons[name];
+  return (
+    <Icon
+      aria-hidden={label ? undefined : true}
+      aria-label={label}
+      className={['app-icon', className].filter(Boolean).join(' ')}
+      fontSize={size}
+      role={label ? 'img' : undefined}
+      {...props}
+    />
+  );
+}

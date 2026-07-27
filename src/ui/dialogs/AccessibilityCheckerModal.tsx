@@ -2,6 +2,7 @@ import React from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import { runAccessibilityAudit } from '../../domain/diagnostics/accessibilityChecker';
 import type { UiLanguage } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface AccessibilityCheckerModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export function AccessibilityCheckerModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

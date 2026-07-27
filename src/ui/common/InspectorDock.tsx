@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import type { PageObject, RePageDocument } from '../../domain/document/types';
 import { pointsToMillimetres } from '../../domain/geometry/units';
 import type { Translations } from '../i18n/menuTranslation';
+import { AppIcon } from '../icons/AppIcon';
 
 export interface InspectorDockProps {
   t: Translations;
@@ -104,7 +105,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             }}
             title="Close Properties Inspector"
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         )}
       </div>
@@ -274,7 +275,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           /* Document Page Overview when no object selected */
           <div className="space-y-section">
             <div className="inspector-card empty">
-              <span className="block text-xl mb-1">📄</span>
+              <AppIcon name="document" size={24} className="block mb-1" />
               <span>کینوس پر کوئی عنصر منتخب نہیں۔ عنصر کے خواص دیکھنے کے لیے اس پر کلک کریں۔</span>
             </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import {
   loadAccessibilitySettings,
   saveAccessibilitySettings,
@@ -84,7 +85,7 @@ export function AccessibilitySettingsModal({
               cursor: 'pointer',
             }}
           >
-            ✕
+            <AppIcon name="dismiss" />
           </button>
         </div>
 

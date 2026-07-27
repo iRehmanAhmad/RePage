@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppIcon } from '../icons/AppIcon';
 import {
   getExportReadinessReport,
   type PreflightResult,
@@ -84,7 +85,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
               fontWeight: 600,
             }}
           >
-            ✕ بند کریں
+            <AppIcon name="dismiss" /> بند کریں
           </button>
         )}
       </div>
@@ -110,7 +111,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
               borderRadius: '4px',
             }}
           >
-            ❌ {result.errorCount} غلطیاں (Errors)
+            <AppIcon name="dismiss" /> {result.errorCount} غلطیاں (Errors)
           </span>
           <span
             style={{
@@ -121,11 +122,11 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
               borderRadius: '4px',
             }}
           >
-            ⚠️ {result.warningCount} تنبیہات (Warnings)
+            <AppIcon name="warning" /> {result.warningCount} تنبیہات (Warnings)
           </span>
         </div>
         <div style={{ color: result.passed ? '#34d399' : '#f87171' }}>
-          {result.passed ? '✅ تیار ہے (Passed)' : '❌ مسئلہ ہے (Failed)'}
+          {result.passed ? 'تیار ہے (Passed)' : 'مسئلہ ہے (Failed)'}
         </div>
       </div>
 
@@ -189,7 +190,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
             fontWeight: 600,
           }}
         >
-          📋 PDF تیاری (PDF Readiness)
+          <AppIcon name="clipboard" /> PDF تیاری (PDF Readiness)
         </button>
       </div>
 
@@ -232,7 +233,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
                   >
                     <span style={{ fontWeight: 600, color: '#f8fafc' }}>{check.name}</span>
                     <span style={{ color: check.passed ? '#4ade80' : '#f87171', fontWeight: 700 }}>
-                      {check.passed ? '✓ پاس (Passed)' : '✗ نااہل (Failed)'}
+                      {check.passed ? 'پاس (Passed)' : 'نااہل (Failed)'}
                     </span>
                   </div>
                 ))}
