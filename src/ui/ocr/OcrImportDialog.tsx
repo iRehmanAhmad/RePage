@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import type { UiLanguage } from '../i18n/menuTranslation';
 import { validateOcrInputFile, type OcrPageResult } from '../../domain/ocr/ocrEngine';
-import { getConfiguredOcrProvider } from '../../domain/ocr/ocrProvider';
+import { getConfiguredOcrProvider, getOcrProvider } from '../../domain/ocr/ocrProvider';
 
 export interface OcrImportDialogProps {
   isOpen: boolean;
@@ -53,7 +53,7 @@ export function OcrImportDialog({
       const configured = getConfiguredOcrProvider();
       const provider = configured.isAvailable
         ? configured
-        : (await import('../../domain/ocr/ocrProvider')).getOcrProvider('mock');
+        : getOcrProvider('mock');
 
       const result = await provider.recognize({
         buffer,

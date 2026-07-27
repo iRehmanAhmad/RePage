@@ -103,3 +103,60 @@ commandRegistry.register({
   execute: () => {},
 });
 
+// Default Registration of Page Layout & View Commands
+commandRegistry.register({
+  id: 'layout.applyPageSetup',
+  label: 'Page Setup',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'layout.insertSectionBreak',
+  label: 'Insert Section Break',
+  category: 'insert',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'layout.updateSectionColumns',
+  label: 'Section Columns',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'layout.setBleed',
+  label: 'Page Bleed',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'layout.setBackground',
+  label: 'Page Background',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'view.toggleRulers',
+  label: 'Rulers',
+  category: 'view',
+  isUndoable: false,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'view.toggleGrid',
+  label: 'Grid',
+  category: 'view',
+  isUndoable: false,
+  execute: () => {},
+});
+

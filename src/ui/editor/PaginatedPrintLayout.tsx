@@ -1,6 +1,9 @@
 import React from 'react';
-import type { PageId, PageObject, RePageDocument } from '../../domain/document/types';
-import { renderPageNumberToken } from '../../domain/layout/paginationEngine';
+import type { PageId, RePageDocument } from '../../domain/document/types';
+import { getSectionForPage } from '../../domain/layout/sectionEngine';
+import { computeColumnSeparatorGuides } from '../../domain/layout/columnEngine';
+import { resolvePageCompositeObjects } from '../../domain/layout/masterPageEngine';
+import { getSectionPageNumberString } from '../../domain/unicode/pageNumbering';
 import { FabricCanvas } from '../canvas/FabricCanvas';
 import { DocumentBodyEditor } from './DocumentBodyEditor';
 import { TextEditorOverlay } from './TextEditorOverlay';
@@ -27,6 +30,7 @@ export interface PaginatedPrintLayoutProps {
   onSelectionChange?: ((info: any) => void) | undefined;
   onUpdateTableCell?: ((tableId: string, rowIndex: number, colIndex: number, text: string) => void) | undefined;
   onActiveTableCellChange?: ((rowIndex: number, colIndex: number) => void) | undefined;
+  onUpdateGuides?: ((pageId: PageId, guides: import('../../domain/document/types').PageGuide[]) => void) | undefined;
 }
 
 export function PaginatedPrintLayout({
@@ -50,6 +54,7 @@ export function PaginatedPrintLayout({
   onSelectionChange,
   onUpdateTableCell,
   onActiveTableCellChange,
+  onUpdateGuides,
 }: PaginatedPrintLayoutProps) {
   const primaryStoryId = 'primary-body-story';
   const primaryStory = document.stories[primaryStoryId] || {
@@ -74,15 +79,9 @@ export function PaginatedPrintLayout({
         if (!page) return null;
 
         const isActive = pageId === activePageId;
-        const visibleObjects = page.objectOrder
-          .map((id) => document.objects[id])
-          .filter(Boolean) as PageObject[];
+        const visibleObjects = resolvePageCompositeObjects(document, pageId);
 
-        const pageNumberStr = renderPageNumberToken(
-          pageIndex,
-          document.pageOrder.length,
-          document.metadata.locale,
-        );
+        const sectionPageNumStr = getSectionPageNumberString(document, pageId);
         const editingObject = editingObjectId ? document.objects[editingObjectId] : null;
         const editingTextBox =
           editingObject?.type === 'text-frame' || editingObject?.type === 'rectangle'
@@ -105,6 +104,23 @@ export function PaginatedPrintLayout({
         const editingTable = editingObj && editingObj.type === 'table' ? editingObj : null;
         const isEditingTableOnPage = Boolean(editingTable?.pageId === pageId);
 
+        const section = getSectionForPage(document, pageId);
+        const isSectionStart = section.startPageId === pageId && pageIndex > 0;
+
+        // Running Header & Footer Resolution
+        const headerStory = section.headerStoryId ? document.stories[section.headerStoryId] : null;
+        const footerStory = section.footerStoryId ? document.stories[section.footerStoryId] : null;
+
+        let headerText = document.metadata.title || 'RePage Document';
+        if (headerStory?.name) {
+          headerText = headerStory.name;
+        }
+
+        let footerText = 'RePage Studio';
+        if (footerStory?.name) {
+          footerText = footerStory.name;
+        }
+
         return (
           <div
             key={pageId}
@@ -116,7 +132,7 @@ export function PaginatedPrintLayout({
               transform: `scale(${zoomLevel / 100})`,
               transformOrigin: 'top center',
               position: 'relative',
-              backgroundColor: '#ffffff',
+              backgroundColor: page.background || '#ffffff',
               boxShadow: isActive
                 ? '0 8px 30px rgba(56, 189, 248, 0.3), 0 4px 16px rgba(0,0,0,0.15)'
                 : '0 4px 16px rgba(0,0,0,0.12)',
@@ -124,6 +140,39 @@ export function PaginatedPrintLayout({
               transition: 'box-shadow 0.2s ease',
             }}
           >
+            {/* Section Break Visual Indicator Banner */}
+            {isSectionStart && (
+              <div
+                className="section-break-banner"
+                style={{
+                  position: 'absolute',
+                  top: '-24px',
+                  right: '0',
+                  left: '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '2px 8px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  color: '#0284c7',
+                  backgroundColor: '#e0f2fe',
+                  border: '1px stroke #bae6fd',
+                  borderRadius: '4px',
+                  userSelect: 'none',
+                  zIndex: 30,
+                }}
+              >
+                <span>
+                  ✂️ {document.metadata.locale === 'ur-PK' ? 'سیکشن بریک' : 'Section Break'} ({section.breakType === 'next-page' ? (document.metadata.locale === 'ur-PK' ? 'نیا صفحہ' : 'Next Page') : (document.metadata.locale === 'ur-PK' ? 'جاری' : 'Continuous')})
+                </span>
+                <span style={{ fontSize: '9px', opacity: 0.85 }}>
+                  {document.metadata.locale === 'ur-PK'
+                    ? `کالمز: ${section.columns} | حواشی: ${Math.round(page.margins.top / 2.835)}mm`
+                    : `Cols: ${section.columns} | Margins: ${Math.round(page.margins.top / 2.835)}mm`}
+                </span>
+              </div>
+            )}
             {/* Header Region */}
             <div
               style={{
@@ -141,9 +190,43 @@ export function PaginatedPrintLayout({
                 paddingBottom: '2px',
               }}
             >
-              <span>{document.metadata.title}</span>
-              <span style={{ fontSize: '9px' }}>RePage Header</span>
+              <span>{headerText}</span>
+              <span style={{ fontSize: '9px' }}>{document.metadata.locale === 'ur-PK' ? 'سیکشن ' + section.columns : 'Section Header'}</span>
             </div>
+
+            {/* Bleed Frame Visual Indicator Overlay */}
+            {page.bleed &&
+              (page.bleed.top > 0 || page.bleed.right > 0 || page.bleed.bottom > 0 || page.bleed.left > 0) && (
+                <div
+                  className="canvas-bleed-guide"
+                  style={{
+                    position: 'absolute',
+                    top: `-${page.bleed.top}pt`,
+                    right: `-${page.bleed.right}pt`,
+                    bottom: `-${page.bleed.bottom}pt`,
+                    left: `-${page.bleed.left}pt`,
+                    border: '1px dashed #ef4444',
+                    pointerEvents: 'none',
+                    zIndex: 5,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-14px',
+                      right: '4px',
+                      fontSize: '9px',
+                      color: '#ef4444',
+                      fontWeight: 600,
+                      backgroundColor: '#fee2e2',
+                      padding: '1px 4px',
+                      borderRadius: '2px',
+                    }}
+                  >
+                    {document.metadata.locale === 'ur-PK' ? 'بلیڈ فریم' : 'Bleed Box'} ({Math.round(page.bleed.top / 2.835)}mm)
+                  </span>
+                </div>
+              )}
 
             {/* Margin Guide */}
             <div
@@ -158,6 +241,133 @@ export function PaginatedPrintLayout({
                 pointerEvents: 'none',
               }}
             />
+
+            {/* User Guidelines Overlay */}
+            {page.guides?.map((guide) => (
+              <div
+                key={guide.id}
+                className={`canvas-user-guide canvas-user-guide-${guide.orientation}`}
+                style={{
+                  position: 'absolute',
+                  top: guide.orientation === 'horizontal' ? `${guide.position}pt` : 0,
+                  left: guide.orientation === 'vertical' ? `${guide.position}pt` : 0,
+                  width: guide.orientation === 'horizontal' ? '100%' : '1px',
+                  height: guide.orientation === 'vertical' ? '100%' : '1px',
+                  borderTop: guide.orientation === 'horizontal' ? '1px dashed #06b6d4' : 'none',
+                  borderLeft: guide.orientation === 'vertical' ? '1px dashed #06b6d4' : 'none',
+                  pointerEvents: 'none',
+                  zIndex: 16,
+                }}
+              />
+            ))}
+
+            {/* Interactive Rulers (Horizontal & Vertical) */}
+            {document.settings.showRulers && (
+              <>
+                {/* Horizontal Top Ruler */}
+                <div
+                  className="canvas-ruler-horizontal"
+                  onClick={(e) => {
+                    if (!onUpdateGuides) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickXPt = (e.clientX - rect.left) / (zoomLevel / 100);
+                    const newGuide = {
+                      id: `guide-v-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                      orientation: 'vertical' as const,
+                      position: Math.round(clickXPt),
+                    };
+                    onUpdateGuides(pageId, [...(page.guides || []), newGuide]);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '-18px',
+                    left: 0,
+                    right: 0,
+                    height: '16px',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '1px solid #cbd5e1',
+                    fontSize: '9px',
+                    color: '#64748b',
+                    cursor: 'crosshair',
+                    zIndex: 25,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 4px',
+                    userSelect: 'none',
+                  }}
+                  title={document.metadata.locale === 'ur-PK' ? 'عمودی گائیڈ شامل کرنے کے لیے کلک کریں' : 'Click to add vertical guide'}
+                >
+                  <span>0 pt</span>
+                  <span>{Math.round(page.width)} pt</span>
+                </div>
+
+                {/* Vertical Left Ruler */}
+                <div
+                  className="canvas-ruler-vertical"
+                  onClick={(e) => {
+                    if (!onUpdateGuides) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickYPt = (e.clientY - rect.top) / (zoomLevel / 100);
+                    const newGuide = {
+                      id: `guide-h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                      orientation: 'horizontal' as const,
+                      position: Math.round(clickYPt),
+                    };
+                    onUpdateGuides(pageId, [...(page.guides || []), newGuide]);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: '-18px',
+                    width: '16px',
+                    backgroundColor: '#f8fafc',
+                    borderRight: '1px solid #cbd5e1',
+                    fontSize: '9px',
+                    color: '#64748b',
+                    cursor: 'crosshair',
+                    zIndex: 25,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '4px 0',
+                    userSelect: 'none',
+                  }}
+                  title={document.metadata.locale === 'ur-PK' ? 'افقی گائیڈ شامل کرنے کے لیے کلک کریں' : 'Click to add horizontal guide'}
+                >
+                  <span>0</span>
+                  <span>{Math.round(page.height)}</span>
+                </div>
+              </>
+            )}
+
+            {/* Visual Column Separator Guides (Gutter Rules) */}
+            {section.columns > 1 &&
+              computeColumnSeparatorGuides(
+                page.width,
+                page.height,
+                page.margins,
+                section.columns,
+                section.columnGap,
+                section.rtlColumnOrder,
+              ).map((guide, idx) => (
+                <div
+                  key={`col-guide-${idx}`}
+                  className="canvas-column-separator-guide"
+                  style={{
+                    position: 'absolute',
+                    left: `${guide.x}pt`,
+                    top: `${guide.startY}pt`,
+                    height: `${guide.endY - guide.startY}pt`,
+                    width: '1px',
+                    borderLeft: '1px dashed #94a3b8',
+                    pointerEvents: 'none',
+                    zIndex: 15,
+                  }}
+                />
+              ))}
 
             {/* Primary Document Body Editor */}
             <div
@@ -178,6 +388,9 @@ export function PaginatedPrintLayout({
                   fontSize={activeFontSize}
                   color="#172119"
                   lineHeight={1.8}
+                  columns={section.columns}
+                  columnGap={section.columnGap}
+                  rtlColumnOrder={section.rtlColumnOrder}
                   pendingChar={!editingObjectId ? pendingChar : null}
                   focusRequest={isActive ? bodyEditorFocusRequest : 0}
                   onCommit={(updatedContent) => onCommitStory(primaryStoryId, updatedContent)}
@@ -430,8 +643,8 @@ export function PaginatedPrintLayout({
                 paddingTop: '2px',
               }}
             >
-              <span style={{ fontSize: '9px' }}>RePage Studio</span>
-              <span>{pageNumberStr}</span>
+              <span style={{ fontSize: '9px' }}>{footerText}</span>
+              <span>{sectionPageNumStr}</span>
             </div>
           </div>
         );

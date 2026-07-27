@@ -1,12 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { createId } from '../domain/document/ids';
-import type { AssetReference, ImageFrameObject, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
+import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
-import { pointsToMillimetres } from '../domain/geometry/units';
+import { PAGE_PRESETS, millimetresToPoints, pointsToMillimetres } from '../domain/geometry/units';
+import { getSectionForPage } from '../domain/layout/sectionEngine';
 import { repaginateDocument } from '../domain/layout/paginationEngine';
-import { applyPageSetup, insertSectionBreak } from '../domain/layout/sectionEngine';
 import { DocumentRulers } from '../ui/editor/DocumentRulers';
 import { PaginatedPrintLayout } from '../ui/editor/PaginatedPrintLayout';
 import {
@@ -21,6 +21,16 @@ import {
   setObjectWrapping,
   updateTableCell,
 } from '../editor/commands/objectCommands';
+import {
+  applyPageSetupCommand,
+  insertSectionBreakCommand,
+  setPageBackgroundCommand,
+  setPageBleedCommand,
+  toggleGridCommand,
+  updateGuidesCommand,
+  updateSectionColumnsCommand,
+} from '../editor/commands/pageLayoutCommands';
+import { PageSetupModal } from '../ui/dialogs/PageSetupModal';
 import { SelectionPane } from '../ui/navigation/SelectionPane';
 import {
   copySelection,
@@ -132,6 +142,8 @@ export function App() {
 
   const [viewMode, setViewMode] = useState<ViewMode>('print');
   const [showRulers, setShowRulers] = useState(true);
+  const [showPageSetupModal, setShowPageSetupModal] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
   const [isKeyboardMinimized, setIsKeyboardMinimized] = useState(true);
@@ -1168,17 +1180,103 @@ export function App() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           onToggleOrientation={() => {
-            setDocumentState((prev) =>
-              applyPageSetup(prev, activePageId, {
-                orientation: activePage.width > activePage.height ? 'portrait' : 'landscape',
-              }),
+            const nextOrientation = activePage.width > activePage.height ? 'portrait' : 'landscape';
+            const nextDoc = applyPageSetupCommand(
+              document,
+              { kind: 'current-page', pageId: activePageId },
+              { orientation: nextOrientation },
             );
+            updateDocument(nextDoc, `Set page orientation to ${nextOrientation}`);
+
+            const preflight = runPreflightCheck(nextDoc);
+            if (preflight.errorCount > 0) {
+              setMessage(`Page orientation updated. ${preflight.errorCount} preflight issue(s) detected.`);
+            }
           }}
           onInsertSectionBreak={(type) => {
-            setDocumentState((prev) => insertSectionBreak(prev, type, activePageId));
+            const nextDoc = insertSectionBreakCommand(document, activePageId, type);
+            updateDocument(nextDoc, `Insert ${type} section break`);
+          }}
+          onOpenPageSetupModal={() => setShowPageSetupModal(true)}
+          onApplySizePreset={(preset) => {
+            let width = PAGE_PRESETS.a4.width;
+            let height = PAGE_PRESETS.a4.height;
+            if (preset === 'a5') {
+              width = PAGE_PRESETS.a5.width;
+              height = PAGE_PRESETS.a5.height;
+            } else if (preset === 'a3') {
+              width = PAGE_PRESETS.a3.width;
+              height = PAGE_PRESETS.a3.height;
+            } else if (preset === 'letter') {
+              width = PAGE_PRESETS.letter.width;
+              height = PAGE_PRESETS.letter.height;
+            } else if (preset === 'legal') {
+              width = PAGE_PRESETS.legal.width;
+              height = PAGE_PRESETS.legal.height;
+            } else if (preset === 'book6x9') {
+              width = PAGE_PRESETS.book6x9.width;
+              height = PAGE_PRESETS.book6x9.height;
+            }
+
+            const nextDoc = applyPageSetupCommand(document, { kind: 'current-page', pageId: activePageId }, { width, height });
+            updateDocument(nextDoc, `Set page size to ${preset.toUpperCase()}`);
+            setMessage(`Applied ${preset.toUpperCase()} page size`);
+          }}
+          onApplyMarginPreset={(preset) => {
+            let margins = {
+              top: millimetresToPoints(15),
+              right: millimetresToPoints(15),
+              bottom: millimetresToPoints(15),
+              left: millimetresToPoints(15),
+            };
+            if (preset === 'narrow') {
+              margins = {
+                top: millimetresToPoints(10),
+                right: millimetresToPoints(10),
+                bottom: millimetresToPoints(10),
+                left: millimetresToPoints(10),
+              };
+            } else if (preset === 'moderate') {
+              margins = {
+                top: millimetresToPoints(20),
+                right: millimetresToPoints(15),
+                bottom: millimetresToPoints(20),
+                left: millimetresToPoints(15),
+              };
+            } else if (preset === 'wide') {
+              margins = {
+                top: millimetresToPoints(20),
+                right: millimetresToPoints(30),
+                bottom: millimetresToPoints(20),
+                left: millimetresToPoints(30),
+              };
+            } else if (preset === 'mirrored') {
+              margins = {
+                top: millimetresToPoints(20),
+                right: millimetresToPoints(15),
+                bottom: millimetresToPoints(20),
+                left: millimetresToPoints(25),
+              };
+            }
+
+            const nextDoc = applyPageSetupCommand(document, { kind: 'current-page', pageId: activePageId }, { margins });
+            updateDocument(nextDoc, `Set ${preset} margin preset`);
+            setMessage(`Applied ${preset} margins`);
+          }}
+          onApplyColumns={(count) => {
+            const activeSec = getSectionForPage(document, activePageId);
+            const nextDoc = updateSectionColumnsCommand(document, activeSec.id, count);
+            updateDocument(nextDoc, `Set section columns to ${count}`);
+            setMessage(`Applied ${count} column(s)`);
           }}
           showRulers={showRulers}
           onToggleRulers={() => setShowRulers((prev) => !prev)}
+          showGrid={showGrid}
+          onToggleGrid={() => {
+            const nextDoc = toggleGridCommand(document);
+            updateDocument(nextDoc, 'Toggle grid visibility');
+            setShowGrid((prev) => !prev);
+          }}
           selectedObjectType={selectedObject ? selectedObject.type : null}
           onReorderObject={(action) => {
             if (selectedObjectId) {
@@ -1427,6 +1525,7 @@ export function App() {
                 onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
                 onUpdateTableCell={handleUpdateTableCell}
                 onActiveTableCellChange={(rIdx, cIdx) => setActiveTableCell({ rowIndex: rIdx, colIndex: cIdx })}
+                onUpdateGuides={(pageId, guides) => updateDocument(updateGuidesCommand(document, pageId, guides), 'Update page guides')}
                 onEditorReady={(editor) => {
                   activeEditorRef.current = editor;
                 }}
@@ -1654,25 +1753,63 @@ export function App() {
 
         {/* Modal Panels & Overlays */}
         {showLanguageTools && (
-          <LanguageToolsPanel
-            document={document}
-            activeSelection={activeSelectionRange}
-            initialTab={languageToolsInitialTab}
-            onApplyChanges={(changes) => {
-              const nextDoc = applyLanguageChangesCommand(document, changes);
-              updateDocument(nextDoc, `Apply ${changes.length} Urdu language change(s)`);
-              setMessage(`Applied ${changes.length} language change(s) cleanly`);
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              backdropFilter: 'blur(2px)',
             }}
-            onClose={() => setShowLanguageTools(false)}
-          />
+            onClick={() => setShowLanguageTools(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <LanguageToolsPanel
+                document={document}
+                activeSelection={activeSelectionRange}
+                initialTab={languageToolsInitialTab}
+                onApplyChanges={(changes) => {
+                  const nextDoc = applyLanguageChangesCommand(document, changes);
+                  updateDocument(nextDoc, `Apply ${changes.length} Urdu language change(s)`);
+                  setMessage(`Applied ${changes.length} language change(s) cleanly`);
+                }}
+                onClose={() => setShowLanguageTools(false)}
+              />
+            </div>
+          </div>
         )}
 
         {showOcrPanel && ocrResult && (
-          <OcrCorrectionPanel
-            ocrResult={ocrResult}
-            onClose={() => setShowOcrPanel(false)}
-            onCommitToDocument={handleCommitOcrToCanvas}
-          />
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              backdropFilter: 'blur(4px)',
+            }}
+            onClick={() => setShowOcrPanel(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()} style={{ zIndex: 10000 }}>
+              <OcrCorrectionPanel
+                ocrResult={ocrResult}
+                onClose={() => setShowOcrPanel(false)}
+                onCommitToDocument={handleCommitOcrToCanvas}
+              />
+            </div>
+          </div>
         )}
 
         {/* Reviewing Pane */}
@@ -1686,10 +1823,30 @@ export function App() {
 
         {/* Diagnostic Preflight & Audit Panel Modal */}
         {showPreflight && (
-          <PreflightPanel
-            result={runPreflightCheck(document)}
-            onClose={() => setShowPreflight(false)}
-          />
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              backdropFilter: 'blur(2px)',
+            }}
+            onClick={() => setShowPreflight(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <PreflightPanel
+                result={runPreflightCheck(document)}
+                document={document}
+                onClose={() => setShowPreflight(false)}
+              />
+            </div>
+          </div>
         )}
 
         {showDocStats && (
@@ -1863,6 +2020,34 @@ export function App() {
             setMessage('Applied paragraph formatting');
           }}
           onClose={() => setShowParagraphDialog(false)}
+        />
+        {/* Page Setup Modal */}
+        <PageSetupModal
+          isOpen={showPageSetupModal}
+          onClose={() => setShowPageSetupModal(false)}
+          document={document}
+          activePageId={activePageId}
+          lang={lang}
+          onApply={(target, setup) => {
+            let nextDoc = document;
+            if (setup.width !== undefined || setup.height !== undefined || setup.orientation !== undefined || setup.margins !== undefined) {
+              const setupPayload: { width?: number; height?: number; orientation?: 'portrait' | 'landscape'; margins?: Insets } = {};
+              if (setup.width !== undefined) setupPayload.width = setup.width;
+              if (setup.height !== undefined) setupPayload.height = setup.height;
+              if (setup.orientation !== undefined) setupPayload.orientation = setup.orientation;
+              if (setup.margins !== undefined) setupPayload.margins = setup.margins;
+              nextDoc = applyPageSetupCommand(nextDoc, target, setupPayload);
+            }
+            if (setup.bleed !== undefined) {
+              nextDoc = setPageBleedCommand(nextDoc, target, setup.bleed);
+            }
+            if (setup.background !== undefined) {
+              nextDoc = setPageBackgroundCommand(nextDoc, target, setup.background);
+            }
+
+            updateDocument(nextDoc, 'Update page setup');
+            setMessage(lang === 'ur' ? 'صفحہ کی ترتیبات نافذ کر دی گئیں۔' : 'Page setup applied successfully');
+          }}
         />
         <OcrImportDialog
           isOpen={showOcrImportDialog}

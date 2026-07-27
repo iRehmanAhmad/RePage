@@ -59,20 +59,30 @@ export function runPreflightCheck(
   const fontsUsed = new Set<string>();
 
   for (const pageObj of Object.values(doc.objects)) {
-    // Page boundary check
+    // Page & Bleed boundary check
     const activePage = doc.pages[pageObj.pageId] || Object.values(doc.pages)[0];
     if (activePage && pageObj.frame) {
+      const bleedTop = activePage.bleed?.top || 0;
+      const bleedRight = activePage.bleed?.right || 0;
+      const bleedBottom = activePage.bleed?.bottom || 0;
+      const bleedLeft = activePage.bleed?.left || 0;
+
+      const minX = -bleedLeft;
+      const minY = -bleedTop;
+      const maxX = activePage.width + bleedRight;
+      const maxY = activePage.height + bleedBottom;
+
       if (
-        pageObj.frame.x < 0 ||
-        pageObj.frame.y < 0 ||
-        pageObj.frame.x + pageObj.frame.width > activePage.width ||
-        pageObj.frame.y + pageObj.frame.height > activePage.height
+        pageObj.frame.x < minX ||
+        pageObj.frame.y < minY ||
+        pageObj.frame.x + pageObj.frame.width > maxX ||
+        pageObj.frame.y + pageObj.frame.height > maxY
       ) {
         issues.push({
           id: `boundary_${pageObj.id}`,
           severity: pressReady ? 'error' : 'warning',
           category: 'boundary',
-          message: `عنصر صفحے کی سرحد سے باہر پھیل رہا ہے (Object ${pageObj.name || pageObj.id} extends beyond page boundaries)`,
+          message: `عنصر بلیڈ کی حد سے باہر پھیل رہا ہے (Object ${pageObj.name || pageObj.id} extends beyond bleed boundaries)`,
           targetId: pageObj.id,
         });
       }
@@ -116,7 +126,6 @@ export function runPreflightCheck(
         } else if (imgFrame.frame) {
           // Calculate effective image DPI based on width in points (72 points = 1 inch)
           const widthInInches = Math.max(0.1, imgFrame.frame.width / 72);
-          // Standard estimate: 1000px width asset
           const estimatedPixelWidth = 800;
           const effectiveDpi = Math.round(estimatedPixelWidth / widthInInches);
 
@@ -167,5 +176,80 @@ export function runPreflightCheck(
     warningCount,
     infoCount,
     issues,
+  };
+}
+
+export interface ExportReadinessReport {
+  isPrintReady: boolean;
+  isPdfReady: boolean;
+  score: number; // 0 to 100
+  summary: string;
+  checks: {
+    name: string;
+    passed: boolean;
+    detail: string;
+  }[];
+}
+
+/**
+ * Returns a PDF / Press Export Readiness Report for the document.
+ */
+export function getExportReadinessReport(
+  doc: RePageDocument,
+  options: PreflightOptions = {},
+): ExportReadinessReport {
+  const result = runPreflightCheck(doc, { ...options, pressReady: true });
+
+  const checks = [
+    {
+      name: 'Document Structure & Invariants',
+      passed: !result.issues.some((i) => i.category === 'structure'),
+      detail: result.issues.some((i) => i.category === 'structure')
+        ? 'Invalid document references detected'
+        : 'Structure integrity verified',
+    },
+    {
+      name: 'Font Embedding & Licensing',
+      passed: !result.issues.some((i) => i.category === 'font' || i.category === 'license'),
+      detail: result.issues.some((i) => i.category === 'font' || i.category === 'license')
+        ? 'Unregistered or proprietary fonts found'
+        : 'All fonts licensed and embeddable',
+    },
+    {
+      name: 'Text Frame Overflow',
+      passed: !result.issues.some((i) => i.category === 'text-overflow'),
+      detail: result.issues.some((i) => i.category === 'text-overflow')
+        ? 'Text frames contain overset hidden text'
+        : 'No text frame overflow',
+    },
+    {
+      name: 'Bleed & Page Boundary Safety',
+      passed: !result.issues.some((i) => i.category === 'boundary'),
+      detail: result.issues.some((i) => i.category === 'boundary')
+        ? 'Objects extend outside printable bleed boundaries'
+        : 'All objects within safe print bleed margins',
+    },
+    {
+      name: 'Image Asset Resolution',
+      passed: !result.issues.some((i) => i.category === 'image'),
+      detail: result.issues.some((i) => i.category === 'image')
+        ? 'Low DPI or missing image assets'
+        : 'All image assets meet target DPI criteria',
+    },
+  ];
+
+  const passedCount = checks.filter((c) => c.passed).length;
+  const score = Math.round((passedCount / checks.length) * 100);
+  const isPrintReady = score === 100;
+  const isPdfReady = result.errorCount === 0;
+
+  return {
+    isPrintReady,
+    isPdfReady,
+    score,
+    summary: isPrintReady
+      ? 'دستاویز پرنٹنگ اور PDF کے لیے مکمل طور پر تیار ہے (100% Print Ready)'
+      : `پرنٹ کے لیے ${score}% تیار ہے (${result.errorCount} Errors, ${result.warningCount} Warnings)`,
+    checks,
   };
 }

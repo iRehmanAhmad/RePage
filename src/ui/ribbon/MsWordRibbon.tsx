@@ -58,8 +58,14 @@ export interface MsWordRibbonProps {
   onViewModeChange?: (mode: ViewMode) => void;
   onToggleOrientation?: () => void;
   onInsertSectionBreak?: (type: 'next-page' | 'continuous') => void;
+  onOpenPageSetupModal?: () => void;
+  onApplySizePreset?: (preset: 'a4' | 'a5' | 'a3' | 'letter' | 'legal' | 'book6x9') => void;
+  onApplyMarginPreset?: (preset: 'normal' | 'narrow' | 'moderate' | 'wide' | 'mirrored') => void;
+  onApplyColumns?: (count: 1 | 2 | 3) => void;
   showRulers?: boolean;
   onToggleRulers?: () => void;
+  showGrid?: boolean;
+  onToggleGrid?: () => void;
   selectedObjectType?: 'text-frame' | 'rectangle' | 'image-frame' | 'table' | null;
   onReorderObject?: (action: 'forward' | 'backward' | 'front' | 'back') => void;
   onAlignObjects?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
@@ -203,8 +209,14 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onViewModeChange,
   onToggleOrientation,
   onInsertSectionBreak,
-  showRulers = true,
+  onOpenPageSetupModal,
+  onApplySizePreset,
+  onApplyMarginPreset,
+  onApplyColumns,
+  showRulers = false,
   onToggleRulers,
+  showGrid = false,
+  onToggleGrid,
   selectedObjectType,
   onReorderObject,
   onAlignObjects,
@@ -2014,40 +2026,183 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
         )}
 
         {/* Tab 4: PAGE LAYOUT */}
-        {/* Tab 4: PAGE LAYOUT */}
         {activeTab === 'layout' && (
-          <div className="ribbon-group-row">
-            <div className="ribbon-group-box">
-              <div className="ribbon-chunk">
+          <div className="ribbon-group-row" style={{ direction: lang === 'ur' ? 'rtl' : 'ltr' }}>
+            {/* Group 1: Page Setup */}
+            <div className="ribbon-group-box" role="region" aria-label="Page Setup">
+              <div className="ribbon-chunk" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {/* Size Preset Dropdown */}
+                <select
+                  className="ribbon-select"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'more') {
+                      onOpenPageSetupModal?.();
+                    } else if (val) {
+                      onApplySizePreset?.(val as any);
+                    }
+                  }}
+                  defaultValue=""
+                  title={lang === 'ur' ? 'صفحہ کا سائز منتخب کریں' : 'Select Page Size'}
+                  style={{ width: '90px', height: '22px', fontSize: '10px' }}
+                >
+                  <option value="" disabled>{lang === 'ur' ? 'سائز ▼' : 'Size ▼'}</option>
+                  <option value="a4">A4 (210×297mm)</option>
+                  <option value="a5">A5 (148×210mm)</option>
+                  <option value="a3">A3 (297×420mm)</option>
+                  <option value="letter">Letter (8.5×11in)</option>
+                  <option value="legal">Legal (8.5×14in)</option>
+                  <option value="book6x9">6×9 Book</option>
+                  <option value="more">⚙️ {lang === 'ur' ? 'مزید سائز...' : 'More Setup...'}</option>
+                </select>
+
+                {/* Orientation Dropdown */}
+                <select
+                  className="ribbon-select"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      onToggleOrientation?.();
+                    }
+                  }}
+                  defaultValue=""
+                  title={lang === 'ur' ? 'صفحہ کا رخ (عمودی/افقی)' : 'Page Orientation'}
+                  style={{ width: '80px', height: '22px', fontSize: '10px' }}
+                >
+                  <option value="" disabled>{lang === 'ur' ? 'رخ ▼' : 'Orientation ▼'}</option>
+                  <option value="portrait">📄 {lang === 'ur' ? 'عمودی' : 'Portrait'}</option>
+                  <option value="landscape">🖼️ {lang === 'ur' ? 'افقی' : 'Landscape'}</option>
+                </select>
+
+                {/* Margins Dropdown */}
+                <select
+                  className="ribbon-select"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'custom') {
+                      onOpenPageSetupModal?.();
+                    } else if (val) {
+                      onApplyMarginPreset?.(val as any);
+                    }
+                  }}
+                  defaultValue=""
+                  title={lang === 'ur' ? 'حواشی منتخب کریں' : 'Select Margins'}
+                  style={{ width: '85px', height: '22px', fontSize: '10px' }}
+                >
+                  <option value="" disabled>{lang === 'ur' ? 'حواشی ▼' : 'Margins ▼'}</option>
+                  <option value="normal">{lang === 'ur' ? 'نارمل (15mm)' : 'Normal (15mm)'}</option>
+                  <option value="narrow">{lang === 'ur' ? 'باریک (10mm)' : 'Narrow (10mm)'}</option>
+                  <option value="moderate">{lang === 'ur' ? 'درمیانہ' : 'Moderate'}</option>
+                  <option value="wide">{lang === 'ur' ? 'وسیع (30mm)' : 'Wide (30mm)'}</option>
+                  <option value="mirrored">{lang === 'ur' ? 'آئینہ دار' : 'Mirrored'}</option>
+                  <option value="custom">⚙️ {lang === 'ur' ? 'حسبِ ضرورت...' : 'Custom...'}</option>
+                </select>
+
+                {/* Launcher Button for Full Page Setup Modal */}
                 <button
                   type="button"
-                  onClick={onToggleOrientation}
+                  onClick={onOpenPageSetupModal}
                   className="ribbon-action-btn"
-                  title="Toggle Orientation (Portrait / Landscape)"
+                  title={lang === 'ur' ? 'صفحہ کی مکمل ترتیبات کھولیں' : 'Open Page Setup Modal'}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
-                  <span>🔄</span>
-                  <span>{lang === 'ur' ? 'رخ (Orientation)' : 'Orientation'}</span>
+                  <span>↘️</span>
                 </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpPageSetup}</div>
+            </div>
+
+            {/* Group 2: Breaks */}
+            <div className="ribbon-group-box" role="region" aria-label="Breaks">
+              <div className="ribbon-chunk" style={{ display: 'flex', gap: '4px' }}>
                 <button
                   type="button"
                   onClick={() => onInsertSectionBreak && onInsertSectionBreak('next-page')}
                   className="ribbon-action-btn primary"
-                  title="Insert Next Page Section Break"
+                  title={lang === 'ur' ? 'نیا سیکشن صفحہ درج کریں' : 'Insert Next Page Section Break'}
                 >
                   <span>📃</span>
-                  <span>{lang === 'ur' ? 'نیا سیکشن (Next Page)' : 'Section Break'}</span>
+                  <span>{lang === 'ur' ? 'نیا سیکشن' : 'Section Break'}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpBreaks}</div>
+            </div>
+
+            {/* Group 3: Columns */}
+            <div className="ribbon-group-box" role="region" aria-label="Columns">
+              <div className="ribbon-chunk" style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => onApplyColumns?.(1)}
+                  className="ribbon-action-btn"
+                  title={lang === 'ur' ? 'ایک کالم' : 'One Column'}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
+                >
+                  <span>|</span>
+                  <span>{lang === 'ur' ? '۱ کالم' : '1 Col'}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => onInsertSectionBreak && onInsertSectionBreak('continuous')}
+                  onClick={() => onApplyColumns?.(2)}
                   className="ribbon-action-btn"
-                  title="Insert Continuous Section Break"
+                  title={lang === 'ur' ? 'دو کالمز (Urdu RTL)' : 'Two Columns'}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
-                  <span>⚡</span>
-                  <span>{lang === 'ur' ? 'جاری (Continuous)' : 'Continuous Break'}</span>
+                  <span>||</span>
+                  <span>{lang === 'ur' ? '۲ کالمز' : '2 Cols'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onApplyColumns?.(3)}
+                  className="ribbon-action-btn"
+                  title={lang === 'ur' ? 'تین کالمز' : 'Three Columns'}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
+                >
+                  <span>|||</span>
+                  <span>{lang === 'ur' ? '۳ کالمز' : '3 Cols'}</span>
                 </button>
               </div>
-              <div className="ribbon-group-caption">{t.grpPageSetup}</div>
+              <div className="ribbon-group-caption">{t.grpColumns}</div>
+            </div>
+
+            {/* Group 4: Layout Aids */}
+            <div className="ribbon-group-box" role="region" aria-label="Layout Aids">
+              <div className="ribbon-chunk" style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  type="button"
+                  onClick={onToggleRulers}
+                  className={`ribbon-action-btn ${showRulers ? 'active' : ''}`}
+                  title={lang === 'ur' ? 'پیمانہ دِکھائیں/پُھلا دیں' : 'Toggle Rulers'}
+                >
+                  <span>📏</span>
+                  <span>{lang === 'ur' ? 'پیمانہ' : 'Rulers'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onToggleGrid}
+                  className={`ribbon-action-btn ${showGrid ? 'active' : ''}`}
+                  title={lang === 'ur' ? 'گرڈ دکھائیں' : 'Toggle Grid'}
+                >
+                  <span>▦</span>
+                  <span>{lang === 'ur' ? 'گرڈ' : 'Grid'}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpLayoutAids}</div>
+            </div>
+
+            {/* Group 5: Print Safety */}
+            <div className="ribbon-group-box" role="region" aria-label="Print Safety">
+              <div className="ribbon-chunk">
+                <button
+                  type="button"
+                  onClick={onRunPreflight}
+                  className="ribbon-action-btn warning"
+                  title={lang === 'ur' ? 'پرنٹ و لکیج پری فلائٹ جاچک کریں' : 'Run Preflight Diagnostics'}
+                >
+                  <span>⚠️</span>
+                  <span>{t.preflight}</span>
+                </button>
+              </div>
+              <div className="ribbon-group-caption">{t.grpPrintSafety}</div>
             </div>
           </div>
         )}

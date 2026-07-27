@@ -25,6 +25,9 @@ export interface DocumentBodyEditorProps {
   color?: string;
   lineHeight?: number;
   scale?: number;
+  columns?: number;
+  columnGap?: number;
+  rtlColumnOrder?: boolean;
   pendingChar?: string | null;
   /** Increment to focus the editor after a click on unoccupied page space. */
   focusRequest?: number;
@@ -52,6 +55,9 @@ export function DocumentBodyEditor({
   color = '#172119',
   lineHeight = 1.8,
   scale = 1,
+  columns = 1,
+  columnGap = 18,
+  rtlColumnOrder = true,
   pendingChar,
   focusRequest = 0,
   onCommit,
@@ -78,7 +84,7 @@ export function DocumentBodyEditor({
     autofocus: false,
     editorProps: {
       attributes: {
-        dir: 'rtl',
+        dir: rtlColumnOrder ? 'rtl' : 'ltr',
         style: `
           font-family: ${fontDef.family};
           font-size: ${fontSize * scale}px;
@@ -86,10 +92,11 @@ export function DocumentBodyEditor({
           line-height: ${lineHeight};
           outline: none;
           min-height: 100%;
-          direction: rtl;
-          text-align: right;
+          direction: ${rtlColumnOrder ? 'rtl' : 'ltr'};
+          text-align: ${rtlColumnOrder ? 'right' : 'left'};
           padding: 0;
           margin: 0;
+          ${columns > 1 ? `column-count: ${columns}; column-gap: ${columnGap}pt; column-fill: auto;` : ''}
         `,
       },
     },

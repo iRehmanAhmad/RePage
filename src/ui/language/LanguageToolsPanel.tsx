@@ -216,17 +216,61 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
   };
 
   return (
-    <div className="fixed inset-y-12 right-6 w-[470px] bg-slate-900 text-slate-100 border border-slate-700 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden font-sans">
+    <div
+      style={{
+        backgroundColor: '#0f172a',
+        border: '1px solid #334155',
+        color: '#f8fafc',
+        borderRadius: '12px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+        width: '520px',
+        maxWidth: '92vw',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        fontFamily: 'inherit',
+        direction: 'rtl',
+        zIndex: 1050,
+      }}
+    >
       {/* Panel Header */}
-      <div className="px-4 py-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+      <div
+        style={{
+          padding: '12px 16px',
+          backgroundColor: '#1e293b',
+          borderBottom: '1px solid #334155',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '14px',
+            fontWeight: 700,
+            color: '#34d399',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
           <span>🌐</span> اردو زبان کے آلات (Language Tools)
         </h3>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded bg-slate-700/50"
+            style={{
+              color: '#94a3b8',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              fontSize: '12px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
           >
             ✕ بند کریں
           </button>
@@ -234,11 +278,21 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
       </div>
 
       {/* Scope Selector & Finding Summary Bar */}
-      <div className="px-4 py-2 bg-slate-950/80 border-b border-slate-800 flex flex-col gap-2 text-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400 font-medium">دائرہ کار (Scope):</span>
-          <div className="flex items-center gap-3">
-            <label className={`flex items-center gap-1 cursor-pointer ${!hasSelection ? 'opacity-40 cursor-not-allowed' : ''}`}>
+      <div
+        style={{
+          padding: '10px 16px',
+          backgroundColor: '#020617',
+          borderBottom: '1px solid #1e293b',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          fontSize: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: '#94a3b8', fontWeight: 600 }}>دائرہ کار (Scope):</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: hasSelection ? 'pointer' : 'not-allowed', opacity: hasSelection ? 1 : 0.4 }}>
               <input
                 type="radio"
                 name="languageScope"
@@ -246,29 +300,29 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 disabled={!hasSelection}
                 checked={scopeKind === 'selection'}
                 onChange={() => setScopeKind('selection')}
-                className="accent-emerald-500"
+                style={{ accentColor: '#10b981' }}
               />
               <span>انتخاب ({activeSelection ? activeSelection.selectedText.length : 0})</span>
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
               <input
                 type="radio"
                 name="languageScope"
                 value="story"
                 checked={scopeKind === 'story'}
                 onChange={() => setScopeKind('story')}
-                className="accent-emerald-500"
+                style={{ accentColor: '#10b981' }}
               />
               <span>موجودہ تحریر</span>
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
               <input
                 type="radio"
                 name="languageScope"
                 value="document"
                 checked={scopeKind === 'document'}
                 onChange={() => setScopeKind('document')}
-                className="accent-emerald-500"
+                style={{ accentColor: '#10b981' }}
               />
               <span>مکمل دستاویز</span>
             </label>
@@ -276,33 +330,40 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
         </div>
 
         {/* Structured Summary Badges */}
-        <div className="flex gap-2 pt-1 border-t border-slate-800/60 text-[11px] dir-rtl">
-          <span className="px-2 py-0.5 bg-rose-950/60 border border-rose-900/60 text-rose-300 rounded font-medium">
+        <div style={{ display: 'flex', gap: '6px', paddingTop: '6px', borderTop: '1px solid #1e293b', fontSize: '11px', direction: 'rtl' }}>
+          <span style={{ padding: '2px 8px', backgroundColor: '#450a0a', border: '1px solid #991b1b', color: '#fca5a5', borderRadius: '4px', fontWeight: 600 }}>
             املاء: {spellingErrors.length}
           </span>
-          <span className="px-2 py-0.5 bg-amber-950/60 border border-amber-900/60 text-amber-300 rounded font-medium">
+          <span style={{ padding: '2px 8px', backgroundColor: '#451a03', border: '1px solid #854d0e', color: '#fde047', borderRadius: '4px', fontWeight: 600 }}>
             رموزِ اوقاف: {punctuationCount}
           </span>
-          <span className="px-2 py-0.5 bg-blue-950/60 border border-blue-900/60 text-blue-300 rounded font-medium">
+          <span style={{ padding: '2px 8px', backgroundColor: '#172554', border: '1px solid #1e40af', color: '#93c5fd', borderRadius: '4px', fontWeight: 600 }}>
             حروفی متبادلات: {normPreview.replacementCount}
           </span>
-          <span className="px-2 py-0.5 bg-purple-950/60 border border-purple-900/60 text-purple-300 rounded font-medium">
+          <span style={{ padding: '2px 8px', backgroundColor: '#3b0764', border: '1px solid #7e22ce', color: '#e9d5ff', borderRadius: '4px', fontWeight: 600 }}>
             سپیس: {spaceCount}
           </span>
         </div>
       </div>
 
       {/* Tabs Header */}
-      <div className="flex border-b border-slate-700 text-xs bg-slate-900/80" role="tablist" aria-label="Language Tools Tabs">
+      <div style={{ display: 'flex', borderBottom: '1px solid #334155', fontSize: '12px', backgroundColor: '#0f172a' }} role="tablist" aria-label="Language Tools Tabs">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'proofread'}
           aria-controls="panel-proofread"
           onClick={() => setActiveTab('proofread')}
-          className={`flex-1 py-2 font-medium border-b-2 ${
-            activeTab === 'proofread' ? 'border-emerald-500 text-emerald-400 bg-slate-800/40' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
+          style={{
+            flex: 1,
+            padding: '10px 6px',
+            fontWeight: 600,
+            border: 'none',
+            borderBottom: '2px solid ' + (activeTab === 'proofread' ? '#10b981' : 'transparent'),
+            backgroundColor: activeTab === 'proofread' ? '#1e293b' : 'transparent',
+            color: activeTab === 'proofread' ? '#34d399' : '#94a3b8',
+            cursor: 'pointer',
+          }}
         >
           املاء و تصحیح ({spellingErrors.length + proofreadIssues.length})
         </button>
@@ -312,9 +373,16 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
           aria-selected={activeTab === 'dictionary'}
           aria-controls="panel-dictionary"
           onClick={() => setActiveTab('dictionary')}
-          className={`flex-1 py-2 font-medium border-b-2 ${
-            activeTab === 'dictionary' ? 'border-emerald-500 text-emerald-400 bg-slate-800/40' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
+          style={{
+            flex: 1,
+            padding: '10px 6px',
+            fontWeight: 600,
+            border: 'none',
+            borderBottom: '2px solid ' + (activeTab === 'dictionary' ? '#10b981' : 'transparent'),
+            backgroundColor: activeTab === 'dictionary' ? '#1e293b' : 'transparent',
+            color: activeTab === 'dictionary' ? '#34d399' : '#94a3b8',
+            cursor: 'pointer',
+          }}
         >
           لغت (Dictionary)
         </button>
@@ -324,9 +392,16 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
           aria-selected={activeTab === 'transliterate'}
           aria-controls="panel-transliterate"
           onClick={() => setActiveTab('transliterate')}
-          className={`flex-1 py-2 font-medium border-b-2 ${
-            activeTab === 'transliterate' ? 'border-emerald-500 text-emerald-400 bg-slate-800/40' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
+          style={{
+            flex: 1,
+            padding: '10px 6px',
+            fontWeight: 600,
+            border: 'none',
+            borderBottom: '2px solid ' + (activeTab === 'transliterate' ? '#10b981' : 'transparent'),
+            backgroundColor: activeTab === 'transliterate' ? '#1e293b' : 'transparent',
+            color: activeTab === 'transliterate' ? '#34d399' : '#94a3b8',
+            cursor: 'pointer',
+          }}
         >
           رومن اردو
         </button>
@@ -336,73 +411,80 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
           aria-selected={activeTab === 'normalize'}
           aria-controls="panel-normalize"
           onClick={() => setActiveTab('normalize')}
-          className={`flex-1 py-2 font-medium border-b-2 ${
-            activeTab === 'normalize' ? 'border-emerald-500 text-emerald-400 bg-slate-800/40' : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
+          style={{
+            flex: 1,
+            padding: '10px 6px',
+            fontWeight: 600,
+            border: 'none',
+            borderBottom: '2px solid ' + (activeTab === 'normalize' ? '#10b981' : 'transparent'),
+            backgroundColor: activeTab === 'normalize' ? '#1e293b' : 'transparent',
+            color: activeTab === 'normalize' ? '#34d399' : '#94a3b8',
+            cursor: 'pointer',
+          }}
         >
           حروف کی جانچ ({normPreview.replacementCount})
         </button>
       </div>
 
       {/* Content Body */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs dir-rtl">
+      <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px', direction: 'rtl' }}>
         {/* Tab 1: Proofread & Spelling */}
         {activeTab === 'proofread' && (
-          <div className="space-y-4">
-            <div className="p-2.5 bg-slate-800/80 border border-slate-700 rounded text-slate-300">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#cbd5e1' }}>
               مطلوبہ دائرہ کار کا متن ({concatenatedText.length} حروف):
-              <div className="mt-1 p-2 bg-slate-950 border border-slate-800 rounded font-serif text-sm text-emerald-300 max-h-24 overflow-y-auto dir-rtl">
+              <div style={{ marginTop: '6px', padding: '8px 12px', backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '6px', fontSize: '13px', color: '#34d399', maxHeight: '96px', overflowY: 'auto', direction: 'rtl' }}>
                 {concatenatedText || 'کوئی متن منتخب نہیں ہے۔'}
               </div>
             </div>
 
             {spellingErrors.length === 0 && proofreadIssues.length === 0 ? (
-              <div className="p-3 bg-emerald-950/50 border border-emerald-800 rounded text-emerald-300 text-center">
+              <div style={{ padding: '12px', backgroundColor: '#064e3b', border: '1px solid #065f46', borderRadius: '8px', color: '#6ee7b7', textAlign: 'center' }}>
                 ✨ اس دائرہ کار میں املاء اور زبان کی کوئی غلطی نہیں ملی!
               </div>
             ) : (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-slate-300">نشاندہیاں:</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h4 style={{ fontWeight: 600, color: '#f8fafc', margin: 0 }}>نشاندہیاں:</h4>
                 {spellingErrors.map((err, idx) => (
-                  <div key={`spell-${idx}`} className="p-3 bg-rose-950/40 border border-rose-900/60 rounded space-y-2">
-                    <div className="flex justify-between font-semibold text-rose-400">
+                  <div key={`spell-${idx}`} style={{ padding: '12px', backgroundColor: '#450a0a', border: '1px solid #991b1b', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: '#fca5a5' }}>
                       <span>املاء کی غلطی: "{err.word}"</span>
                     </div>
 
                     {/* Per-finding actions */}
-                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-rose-900/40 text-[11px]">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '6px', borderTop: '1px solid #7f1d1d', fontSize: '11px' }}>
                       <button
                         type="button"
                         onClick={() => handleIgnoreOnce(err.index + idx)}
-                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600"
+                        style={{ padding: '4px 8px', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f8fafc', borderRadius: '4px', cursor: 'pointer' }}
                       >
                         ایک بار نظر انداز
                       </button>
                       <button
                         type="button"
                         onClick={() => handleIgnoreAll(err.word)}
-                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600"
+                        style={{ padding: '4px 8px', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f8fafc', borderRadius: '4px', cursor: 'pointer' }}
                       >
                         دستاویز میں نظر انداز
                       </button>
                       <button
                         type="button"
                         onClick={() => handleAddWordToPersonalDict(err.word)}
-                        className="px-2 py-0.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 rounded border border-emerald-800 font-medium"
+                        style={{ padding: '4px 8px', backgroundColor: '#064e3b', border: '1px solid #047857', color: '#6ee7b7', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         + لغت میں شامل کریں
                       </button>
                     </div>
 
                     {err.suggestions.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 items-center mt-1">
-                        <span className="text-slate-400">تجویز:</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                        <span style={{ color: '#cbd5e1' }}>تجویز:</span>
                         {err.suggestions.map((sug, i) => (
                           <button
                             type="button"
                             key={i}
                             onClick={() => handleApplySingleReplacement(err.word, sug, `Spellcheck fix: ${err.word} -> ${sug}`, 'spelling')}
-                            className="px-2 py-1 bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-700 rounded text-[11px]"
+                            style={{ padding: '4px 8px', backgroundColor: '#047857', border: '1px solid #059669', color: '#ffffff', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
                           >
                             {sug}
                           </button>
@@ -413,14 +495,14 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 ))}
 
                 {proofreadIssues.map((issue, idx) => (
-                  <div key={`proof-${idx}`} className="p-2.5 bg-amber-950/40 border border-amber-900/60 rounded space-y-1.5">
-                    <div className="text-amber-400 font-medium">{issue.description}</div>
-                    <div className="flex justify-between items-center text-slate-300">
-                      <span>اصل: <code className="text-rose-300">{issue.originalSnippet}</code></span>
+                  <div key={`proof-${idx}`} style={{ padding: '10px 12px', backgroundColor: '#451a03', border: '1px solid #854d0e', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ color: '#fde047', fontWeight: 600 }}>{issue.description}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#f8fafc' }}>
+                      <span>اصل: <code style={{ color: '#fca5a5' }}>{issue.originalSnippet}</code></span>
                       <button
                         type="button"
                         onClick={() => handleApplySingleReplacement(issue.originalSnippet, issue.replacementSuggestion, issue.description, 'proofread')}
-                        className="px-2.5 py-1 bg-amber-800 hover:bg-amber-700 text-amber-100 rounded font-medium"
+                        style={{ padding: '4px 10px', backgroundColor: '#d97706', border: '1px solid #f59e0b', color: '#ffffff', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         تبدیل کریں ("{issue.replacementSuggestion}")
                       </button>
@@ -434,61 +516,61 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
 
         {/* Tab 2: Dictionary */}
         {activeTab === 'dictionary' && (
-          <div className="space-y-4">
-            <div className="flex gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
                 value={dictQuery}
                 onChange={(e) => setDictQuery(e.target.value)}
                 placeholder="لفظ تلاش کریں (مثلاً: پاکستان، علم، ترانہ)..."
-                className="flex-1 p-2 bg-slate-800 border border-slate-700 rounded text-slate-100 focus:outline-none focus:border-emerald-500"
+                style={{ flex: 1, padding: '8px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc', outline: 'none' }}
               />
               <button
                 type="button"
                 onClick={() => setDictResult(lookupUrduWord(dictQuery))}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium"
+                style={{ padding: '8px 16px', backgroundColor: '#059669', border: '1px solid #10b981', color: '#ffffff', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
               >
                 تلاش
               </button>
             </div>
 
             {dictResult ? (
-              <div className="p-3 bg-slate-800 border border-slate-700 rounded space-y-2">
-                <div className="flex justify-between items-center">
-                  <div className="text-base font-bold text-emerald-400">{dictResult.word}</div>
+              <div style={{ padding: '12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#34d399' }}>{dictResult.word}</div>
                   <button
                     type="button"
                     onClick={() => handleAddWordToPersonalDict(dictResult.word)}
-                    className="px-2 py-1 bg-emerald-950 border border-emerald-800 hover:bg-emerald-900 text-emerald-300 rounded text-[11px]"
+                    style={{ padding: '4px 8px', backgroundColor: '#064e3b', border: '1px solid #047857', color: '#6ee7b7', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
                   >
                     + ذاتی لغت میں شامل
                   </button>
                 </div>
                 {dictResult.grammaticalCategory && (
-                  <span className="inline-block px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[10px]">
+                  <span style={{ display: 'inline-block', padding: '2px 6px', backgroundColor: '#334155', color: '#cbd5e1', borderRadius: '4px', fontSize: '10px', width: 'fit-content' }}>
                     {dictResult.grammaticalCategory}
                   </span>
                 )}
-                <div className="text-slate-200 mt-1">{dictResult.definition}</div>
+                <div style={{ color: '#f8fafc', marginTop: '4px' }}>{dictResult.definition}</div>
 
                 {dictResult.synonyms && dictResult.synonyms.length > 0 && (
-                  <div className="pt-2 border-t border-slate-700/60 text-[11px] text-emerald-300">
-                    <span className="text-slate-400">مترادفات (Synonyms): </span>
+                  <div style={{ paddingTop: '8px', borderTop: '1px solid #334155', fontSize: '11px', color: '#6ee7b7' }}>
+                    <span style={{ color: '#94a3b8' }}>مترادفات (Synonyms): </span>
                     {dictResult.synonyms.join('، ')}
                   </div>
                 )}
                 {dictResult.antonyms && dictResult.antonyms.length > 0 && (
-                  <div className="text-[11px] text-amber-300">
-                    <span className="text-slate-400">متضادات (Antonyms): </span>
+                  <div style={{ fontSize: '11px', color: '#fde047' }}>
+                    <span style={{ color: '#94a3b8' }}>متضادات (Antonyms): </span>
                     {dictResult.antonyms.join('، ')}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-slate-400 text-center py-6 space-y-2">
+              <div style={{ color: '#94a3b8', textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div>لغت میں لفظ تلاش کرنے کے لیے اوپر ٹائپ کریں۔</div>
                 {personalWords.length > 0 && (
-                  <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-800">
+                  <div style={{ fontSize: '11px', color: '#64748b', paddingTop: '8px', borderTop: '1px solid #1e293b' }}>
                     ذاتی لغت کے جملہ الفاظ ({personalWords.length}): {personalWords.slice(0, 5).join('، ')}
                   </div>
                 )}
@@ -499,9 +581,9 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
 
         {/* Tab 3: Transliteration */}
         {activeTab === 'transliterate' && (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label className="block text-slate-400 mb-1">رومن اردو درج کریں (Roman Input):</label>
+              <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '4px', fontWeight: 600 }}>رومن اردو درج کریں (Roman Input):</label>
               <input
                 type="text"
                 value={romanInput}
@@ -509,15 +591,15 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                   setRomanInput(e.target.value);
                   setTransliteratedOutput(romanToUrdu(e.target.value));
                 }}
-                className="w-full p-2 bg-slate-800 border border-slate-700 rounded text-slate-100 focus:outline-none focus:border-emerald-500 ltr text-left"
+                style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc', outline: 'none', direction: 'ltr', textAlign: 'left' }}
                 placeholder="e.g. shukriya pakistan..."
               />
             </div>
 
             {transliteratedOutput && (
-              <div className="p-3 bg-slate-800 border border-slate-700 rounded space-y-2">
-                <label className="block text-slate-400 text-[10px]">اردو نستعلیق پیش نظارہ (Nastaliq Output):</label>
-                <div className="text-lg font-bold text-emerald-400 dir-rtl">{transliteratedOutput}</div>
+              <div style={{ padding: '12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ display: 'block', color: '#cbd5e1', fontSize: '11px', fontWeight: 600 }}>اردو نستعلیق پیش نظارہ (Nastaliq Output):</label>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: '#34d399', direction: 'rtl' }}>{transliteratedOutput}</div>
                 <button
                   type="button"
                   onClick={() => {
@@ -531,18 +613,23 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                     }
                   }}
                   disabled={!hasSelection || scopeKind !== 'selection'}
-                  className={`w-full py-2 rounded font-bold ${
-                    hasSelection && scopeKind === 'selection'
-                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  }`}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    border: '1px solid ' + (hasSelection && scopeKind === 'selection' ? '#10b981' : '#334155'),
+                    backgroundColor: hasSelection && scopeKind === 'selection' ? '#059669' : '#1e293b',
+                    color: hasSelection && scopeKind === 'selection' ? '#ffffff' : '#64748b',
+                    cursor: hasSelection && scopeKind === 'selection' ? 'pointer' : 'not-allowed',
+                  }}
                 >
                   منتخب متن کو اس تبدیل شدہ اردو سے بدلیں
                 </button>
               </div>
             )}
 
-            <div className="pt-2 border-t border-slate-700">
+            <div style={{ paddingTop: '8px', borderTop: '1px solid #334155' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -550,7 +637,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                   setRomanInput(roman);
                   setTransliteratedOutput(concatenatedText);
                 }}
-                className="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded font-medium"
+                style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f8fafc', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
               >
                 موجودہ دائرہ کار کے اردو متن کو رومن میں لائیں
               </button>
@@ -560,28 +647,28 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
 
         {/* Tab 4: Character Normalization / Review */}
         {activeTab === 'normalize' && (
-          <div className="space-y-4">
-            <div className="p-2.5 bg-slate-800 rounded border border-slate-700 text-slate-300">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', borderRadius: '6px', border: '1px solid #334155', color: '#cbd5e1' }}>
               اردو کریکٹر ریویو: غیر نقصان دہ تبدیلی کے ساتھ عربی کاف (ك) اور یاء (ي) کو معیاری اردو (ک/ی) میں لاتی ہے۔
             </div>
 
             {normPreview.replacementCount > 0 ? (
-              <div className="space-y-3">
-                <div className="text-amber-400 font-medium">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ color: '#fde047', fontWeight: 600 }}>
                   {normPreview.replacementCount} حروف کی تبدیلی کے امکانات ملے:
                 </div>
-                <div className="p-2 bg-slate-950 border border-slate-800 rounded font-mono text-[11px] max-h-40 overflow-y-auto space-y-1">
+                <div style={{ padding: '8px', backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '6px', fontSize: '11px', maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {normPreview.segments.map((seg, i) =>
                     seg.type === 'replaced' && seg.originalText && seg.normalizedText ? (
-                      <div key={i} className="text-amber-300 bg-amber-950/60 px-2 py-1 rounded flex justify-between items-center">
+                      <div key={i} style={{ color: '#fde047', backgroundColor: '#451a03', padding: '6px 10px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span>
-                          <span className="line-through text-rose-400">{seg.originalText}</span> ➔{' '}
-                          <span className="font-bold text-emerald-400">{seg.normalizedText}</span> ({seg.reason})
+                          <span style={{ textDecoration: 'line-through', color: '#fca5a5' }}>{seg.originalText}</span> ➔{' '}
+                          <span style={{ fontWeight: 700, color: '#34d399' }}>{seg.normalizedText}</span> ({seg.reason})
                         </span>
                         <button
                           type="button"
                           onClick={() => handleApplySingleReplacement(seg.originalText!, seg.normalizedText!, seg.reason || 'Normalization', 'normalization')}
-                          className="px-2 py-0.5 bg-amber-800 hover:bg-amber-700 text-amber-100 rounded text-[10px]"
+                          style={{ padding: '3px 8px', backgroundColor: '#d97706', border: '1px solid #f59e0b', color: '#ffffff', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}
                         >
                           تبدیل
                         </button>
@@ -593,13 +680,13 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 <button
                   type="button"
                   onClick={handleApplyAllNormalizations}
-                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded"
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#059669', border: '1px solid #10b981', color: '#ffffff', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
                 >
                   تمام کا اطلاق کریں ({normPreview.replacementCount} تبدیلیاں)
                 </button>
               </div>
             ) : (
-              <div className="p-3 bg-emerald-950/50 border border-emerald-800 rounded text-emerald-300 text-center">
+              <div style={{ padding: '12px', backgroundColor: '#064e3b', border: '1px solid #065f46', borderRadius: '8px', color: '#6ee7b7', textAlign: 'center' }}>
                 اس دائرہ کار کا متن پہلے سے مکمل معیاری اردو پر مشتمل ہے۔
               </div>
             )}

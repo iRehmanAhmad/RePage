@@ -1,3 +1,5 @@
+import { getPagesForSection, getSectionForPage } from '../layout/sectionEngine';
+
 export type PageNumberStyle = 'urdu' | 'western' | 'abjad';
 
 export interface PageNumberingOptions {
@@ -73,4 +75,35 @@ export function resolvePageNumberTokens(
   return template
     .replace(/\{\{\s*pageNumber\s*\}\}/g, pageNumStr)
     .replace(/\{\{\s*totalPages\s*\}\}/g, totalPagesStr);
+}
+
+/**
+ * Returns localized section-bound page number string for a given page.
+ */
+export function getSectionPageNumberString(
+  doc: import('../document/types').RePageDocument,
+  pageId: import('../document/types').PageId,
+): string {
+  const section = getSectionForPage(doc, pageId);
+  const sectionPages = getPagesForSection(doc, section.id);
+  const pageIndexInSection = sectionPages.indexOf(pageId);
+
+  const numbering = section.pageNumbering || {
+    style: 'urdu',
+    startAt: 1,
+    restartAtSection: true,
+    prefix: '',
+    suffix: '',
+  };
+
+  const pageIndexToUse = numbering.restartAtSection
+    ? Math.max(0, pageIndexInSection)
+    : Math.max(0, doc.pageOrder.indexOf(pageId));
+
+  return formatPageNumber(pageIndexToUse, {
+    style: numbering.style,
+    startNumber: numbering.startAt,
+    prefix: numbering.prefix,
+    suffix: numbering.suffix,
+  });
 }

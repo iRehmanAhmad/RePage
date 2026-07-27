@@ -22,15 +22,43 @@ export function cssPixelsToPoints(value: number, zoom = 1): number {
   return (value / zoom / CSS_PIXELS_PER_INCH) * POINTS_PER_INCH;
 }
 
+export function inchesToPoints(value: number): number {
+  return value * POINTS_PER_INCH;
+}
+
+export function pointsToInches(value: number): number {
+  return value / POINTS_PER_INCH;
+}
+
 export const PAGE_PRESETS = {
   a4: {
     name: 'A4',
     width: millimetresToPoints(210),
     height: millimetresToPoints(297),
   },
+  a5: {
+    name: 'A5',
+    width: millimetresToPoints(148),
+    height: millimetresToPoints(210),
+  },
+  a3: {
+    name: 'A3',
+    width: millimetresToPoints(297),
+    height: millimetresToPoints(420),
+  },
   letter: {
     name: 'Letter',
     width: POINTS_PER_INCH * 8.5,
     height: POINTS_PER_INCH * 11,
+  },
+  legal: {
+    name: 'Legal',
+    width: POINTS_PER_INCH * 8.5,
+    height: POINTS_PER_INCH * 14,
+  },
+  book6x9: {
+    name: '6×9 inch Book',
+    width: POINTS_PER_INCH * 6,
+    height: POINTS_PER_INCH * 9,
   },
 } as const;

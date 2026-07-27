@@ -40,6 +40,12 @@ export interface MasterPage {
   objects: Record<ObjectId, PageObject>;
 }
 
+export interface PageGuide {
+  id: string;
+  orientation: 'horizontal' | 'vertical';
+  position: number; // in points
+}
+
 export interface Page {
   id: PageId;
   name: string;
@@ -51,6 +57,7 @@ export interface Page {
   objectOrder: ObjectId[];
   masterPageId?: MasterPageId | null | undefined;
   masterOverrides?: Record<ObjectId, Partial<PageObject>> | undefined;
+  guides?: PageGuide[] | undefined;
 }
 
 export type TextWrapMode = 'inline' | 'square' | 'tight' | 'top-bottom' | 'behind' | 'in-front';
@@ -177,18 +184,28 @@ export type ViewMode = 'print' | 'web' | 'draft';
 
 export type SectionBreakType = 'next-page' | 'continuous';
 
-export interface SectionBreak {
-  id: string;
-  type: SectionBreakType;
-  orientation?: 'portrait' | 'landscape';
-  width?: number;
-  height?: number;
-  margins?: Insets;
-  columns?: number;
-  columnGap?: number;
-  headerStoryId?: StoryId;
-  footerStoryId?: StoryId;
+export interface PageNumberingSettings {
+  style: 'urdu' | 'western' | 'abjad';
+  startAt: number;
+  restartAtSection: boolean;
+  prefix: string;
+  suffix: string;
 }
+
+export interface DocumentSection {
+  id: string;
+  startPageId: PageId;
+  breakType: SectionBreakType;
+  columns: 1 | 2 | 3 | 4;
+  columnGap: number; // points
+  rtlColumnOrder: boolean;
+  headerStoryId?: StoryId | undefined;
+  footerStoryId?: StoryId | undefined;
+  pageNumbering: PageNumberingSettings;
+}
+
+/** Legacy type alias for backward compatibility */
+export type SectionBreak = DocumentSection;
 
 export interface HeaderFooterConfig {
   differentFirstPage?: boolean;
@@ -244,8 +261,10 @@ export interface RePageDocument {
   metadata: DocumentMetadata;
   settings: {
     measurementUnit: 'pt' | 'mm' | 'in';
-    viewMode?: ViewMode;
-    showRulers?: boolean;
+    viewMode?: ViewMode | undefined;
+    showRulers?: boolean | undefined;
+    showGrid?: boolean | undefined;
+    snapToGuides?: boolean | undefined;
   };
   pageOrder: PageId[];
   pages: Record<PageId, Page>;
@@ -254,7 +273,7 @@ export interface RePageDocument {
   styles: Record<string, unknown>;
   assets: Record<AssetId, AssetReference>;
   masterPages?: Record<MasterPageId, MasterPage> | undefined;
-  sections?: SectionBreak[];
+  sections?: DocumentSection[] | undefined;
   footnotes?: Record<string, FootnoteEntry>;
   endnotes?: Record<string, FootnoteEntry>;
   headerFooterConfig?: HeaderFooterConfig;

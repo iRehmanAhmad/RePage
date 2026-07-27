@@ -2,6 +2,7 @@ import { PAGE_PRESETS, millimetresToPoints } from '../geometry/units';
 import { paragraph } from '../rich-text/types';
 import { createId } from './ids';
 import type { Page, RePageDocument, TextStory } from './types';
+import { createDefaultSection } from '../layout/sectionEngine';
 
 function zeroInsets() {
   return { top: 0, right: 0, bottom: 0, left: 0 };
@@ -56,6 +57,7 @@ export function createDocument(title = 'Untitled RePage Document'): RePageDocume
     stories: { [PRIMARY_STORY_ID]: primaryStory },
     styles: {},
     assets: {},
+    sections: [createDefaultSection(page.id)],
   };
 }
 

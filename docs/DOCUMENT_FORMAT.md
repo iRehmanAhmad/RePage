@@ -44,7 +44,7 @@ Timestamps are metadata, not conflict-resolution clocks.
 
 `document.json` contains only schema-approved values. Coordinates and dimensions use points. IDs are stable strings. Object order is explicit.
 
-Page records include page size, orientation-derived dimensions, margins, bleed, guides, background, and ordered object IDs. Object records include a discriminated type, geometry, common appearance, type-specific properties, lock/visibility state, and accessibility metadata where applicable.
+Page records include page size, orientation-derived dimensions, margins, bleed, guides, background, and ordered object IDs. Document sections (`sections`) define anchored multi-page section ranges (`startPageId`), column layouts, RTL column ordering, section break types (`next-page` / `continuous`), headers/footers, and page numbering rules. Object records include a discriminated type, geometry, common appearance, type-specific properties, lock/visibility state, and accessibility metadata where applicable.
 
 Text is structured rich-text JSON with explicit paragraph direction. Arbitrary HTML is not accepted as canonical content.
 

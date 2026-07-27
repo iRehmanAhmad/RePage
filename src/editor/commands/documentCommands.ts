@@ -1,4 +1,5 @@
 import { createBlankPage } from '../../domain/document/createDocument';
+import { cleanupDanglingSections, ensureDocumentSections } from '../../domain/layout/sectionEngine';
 import { createId } from '../../domain/document/ids';
 import type {
   AssetReference,
@@ -47,11 +48,13 @@ export function addPage(document: RePageDocument, afterPageId?: PageId): RePageD
     nextOrder.push(page.id);
   }
 
-  return touch({
+  const newDoc = touch({
     ...document,
     pageOrder: nextOrder,
     pages: { ...document.pages, [page.id]: page },
   });
+
+  return ensureDocumentSections(newDoc);
 }
 
 export function removePage(document: RePageDocument, pageId: PageId): RePageDocument {
@@ -79,13 +82,15 @@ export function removePage(document: RePageDocument, pageId: PageId): RePageDocu
   const { [pageId]: _removedPage, ...nextPages } = document.pages;
   void _removedPage;
 
-  return touch({
+  const docAfterRemoval = touch({
     ...document,
     pageOrder: document.pageOrder.filter((id) => id !== pageId),
     pages: nextPages,
     objects: nextObjects,
     stories: nextStories,
   });
+
+  return cleanupDanglingSections(docAfterRemoval);
 }
 
 export function addRectangle(

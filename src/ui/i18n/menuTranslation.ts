@@ -21,6 +21,10 @@ export interface Translations {
   grpProofing: string;
   grpConversion: string;
   grpPageSetup: string;
+  grpBreaks: string;
+  grpColumns: string;
+  grpLayoutAids: string;
+  grpPrintSafety: string;
 
   // Common Actions
   open: string;
@@ -116,6 +120,10 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     grpProofing: 'املاء تفتیش',
     grpConversion: 'تبدیلی',
     grpPageSetup: 'صفحہ کی ترتیبات',
+    grpBreaks: 'سیکشن بریکس',
+    grpColumns: 'کالمز نگاری',
+    grpLayoutAids: 'منظر نامہ و سائز',
+    grpPrintSafety: 'پرنٹ حفاظت',
 
     open: 'کھولیں',
     save: 'محفوظ',
@@ -201,6 +209,10 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     grpProofing: 'Proofing',
     grpConversion: 'Conversion',
     grpPageSetup: 'Page Setup',
+    grpBreaks: 'Breaks',
+    grpColumns: 'Columns',
+    grpLayoutAids: 'Layout Aids',
+    grpPrintSafety: 'Print Safety',
 
     open: 'Open',
     save: 'Save',

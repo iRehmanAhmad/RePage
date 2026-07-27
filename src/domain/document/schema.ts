@@ -90,6 +90,32 @@ const tableSchema = baseObjectSchema.extend({
   borderWidth: nonNegativeNumber.optional(),
 });
 
+const pageNumberingSchema = z.object({
+  style: z.enum(['urdu', 'western', 'abjad']),
+  startAt: z.number().int().positive(),
+  restartAtSection: z.boolean(),
+  prefix: z.string(),
+  suffix: z.string(),
+});
+
+export const sectionSchema = z.object({
+  id: z.string().min(1),
+  startPageId: z.string().min(1),
+  breakType: z.enum(['next-page', 'continuous']),
+  columns: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  columnGap: nonNegativeNumber,
+  rtlColumnOrder: z.boolean(),
+  headerStoryId: z.string().min(1).optional(),
+  footerStoryId: z.string().min(1).optional(),
+  pageNumbering: pageNumberingSchema,
+});
+
+const pageGuideSchema = z.object({
+  id: z.string().min(1),
+  orientation: z.enum(['horizontal', 'vertical']),
+  position: finiteNumber,
+});
+
 export const documentSchema = z.object({
   schemaVersion: z.literal(1),
   id: z.string().min(1),
@@ -101,6 +127,10 @@ export const documentSchema = z.object({
   }),
   settings: z.object({
     measurementUnit: z.enum(['pt', 'mm', 'in']),
+    viewMode: z.enum(['print', 'web', 'draft']).optional(),
+    showRulers: z.boolean().optional(),
+    showGrid: z.boolean().optional(),
+    snapToGuides: z.boolean().optional(),
   }),
   pageOrder: z.array(z.string().min(1)).min(1),
   pages: z.record(
@@ -116,6 +146,7 @@ export const documentSchema = z.object({
       objectOrder: z.array(z.string().min(1)),
       masterPageId: z.string().min(1).nullable().optional(),
       masterOverrides: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
+      guides: z.array(pageGuideSchema).optional(),
     }),
   ),
   objects: z.record(
@@ -135,6 +166,7 @@ export const documentSchema = z.object({
       packageEntry: z.string().min(1),
     }),
   ),
+  sections: z.array(sectionSchema).optional(),
   masterPages: z.record(
     z.string(),
     z.object({
@@ -195,6 +227,38 @@ export function validateDocumentReferences(value: z.infer<typeof documentSchema>
     }
     if (object.type === 'image-frame' && object.assetId && !value.assets[object.assetId]) {
       errors.push(`Image frame ${object.id} references missing asset ${object.assetId}.`);
+    }
+  }
+
+  if (value.sections && value.sections.length > 0) {
+    const sectionStartPages = new Set<string>();
+    let lastPageIndexInOrder = -1;
+
+    for (const section of value.sections) {
+      if (!value.pages[section.startPageId]) {
+        errors.push(`Section ${section.id} references missing start page ${section.startPageId}.`);
+      }
+
+      if (sectionStartPages.has(section.startPageId)) {
+        errors.push(`Duplicate section start page ${section.startPageId}.`);
+      }
+      sectionStartPages.add(section.startPageId);
+
+      const pageIdx = value.pageOrder.indexOf(section.startPageId);
+      if (pageIdx !== -1) {
+        if (pageIdx < lastPageIndexInOrder) {
+          errors.push(`Section ${section.id} start page ${section.startPageId} is out of document page order.`);
+        }
+        lastPageIndexInOrder = pageIdx;
+      }
+
+      if (section.headerStoryId && !value.stories[section.headerStoryId]) {
+        errors.push(`Section ${section.id} references missing header story ${section.headerStoryId}.`);
+      }
+
+      if (section.footerStoryId && !value.stories[section.footerStoryId]) {
+        errors.push(`Section ${section.id} references missing footer story ${section.footerStoryId}.`);
+      }
     }
   }
 

@@ -1,14 +1,20 @@
 # Project Status
 
-Last updated: 2026-07-26
+Last updated: 2026-07-27
 
 ## Current phase
 
-**Export Engine & Vector PDF Print Production Milestone (M8) — Phase 0 Complete & Verified**
+**Page Layout & Section Model Architecture — FULLY COMPLETE, RELEASE-READY & VERIFIED (Phases 0–8)**
 
-Milestone 8 (Export Engine & Print Production) Phase 0 has been implemented, verified, and release-gated:
-- **M8 Phase 0 — Preflight Diagnostic Engine Expansion**: Expanded preflight diagnostics in `preflightEngine.ts` with `ImageDpiRule` (calculates effective image resolution against frame width; flags images below 300 DPI for press or below 150 DPI for web), `OutofPageBoundaryRule` (flags objects extending beyond printable page margins), `TextOverflowRule` (detects un-rendered story overflow), and `FontEmbeddingRule` (verifies OFL/embedding permissions). Added `PreflightOptions` (`targetDpi`, `pressReady`), severity levels, and interactive preflight panel UI with jump-to-object triggers.
-- **M7 Urdu Tools Milestone**: Fully implemented and release-gated across all 7 phases (Safe Mutation Foundation, Scope Resolution, Proofing & Personal Dictionary, Safe Transliteration & Bidi Preservation, Custom Keyboard Layout System, Extensible OcrProvider Architecture, Ribbon Reorganization & ARIA Accessibility).
+- **Phase 0 — Document Model Repair**: Defined canonical `DocumentSection`, `PageNumberingSettings`, `PageGuide` types and updated `RePageDocument.sections`. Added Zod schema validation and reference validation in `schema.ts`. Implemented section boundary engine (`sectionEngine.ts`) with page-to-section mapping, section-to-page resolution, and dangling section cleanup. Preserved `sections` across `.urdup` package save/reload.
+- **Phase 1 — Canonical Page Layout Commands**: Created `pageLayoutCommands.ts` (`applyPageSetupCommand`, `insertSectionBreakCommand`, `updateSectionColumnsCommand`, `setPageBleedCommand`, `setPageBackgroundCommand`, `toggleRulersCommand`, `toggleGridCommand`, `updateGuidesCommand`). Routed ribbon layout actions through `updateDocument()` for full undo/redo transaction history. Created exit gate test verifying section margin change -> undo -> redo -> `.urdup` package save -> reload roundtrip.
+- **Phase 2 — Page Setup Dialog & Ribbon Controls**: Built `PageSetupModal.tsx` with size presets (A4, A5, A3, Letter, Legal, 6×9 Book, Custom), orientation options, inside/outside mirror margins, gutter positioning, bleed/background controls, validation, and object overflow warnings. Updated `MsWordRibbon.tsx` with 5 structured ribbon groups for Page Layout (Page Setup, Breaks, Columns, Layout Aids, Print Safety). Added component tests in `PageSetupModal.test.tsx`.
+- **Phase 3 — Real Section Breaks & Page Backgrounds**: Rendered Section Break badges above paper frames when a page begins a new section (`section.startPageId === page.id`). Applied custom page background colors (`page.background || '#ffffff'`) to interactive viewport paper frames. Updated `documentCommands.ts` (`addPage`, `removePage`) to enforce `ensureDocumentSections` and `cleanupDanglingSections` on page addition and deletion. Added integration tests in `phase3SectionBreak.test.ts`.
+- **Phase 4 — Real Urdu Multi-Column Layout**: Added multi-column layout engine functions in `columnEngine.ts` (`computeColumnSeparatorGuides`, `getSectionColumnGeometry`). Supported CSS multi-column attributes with RTL column ordering (`direction: rtl`, `column-count`, `column-gap`) in `DocumentBodyEditor.tsx`. Rendered visual column separator guide lines (gutter rules) in `PaginatedPrintLayout.tsx` when `section.columns > 1`. Added unit tests in `columnEngine.test.ts`.
+- **Phase 5 — Headers, Footers, Master Pages & Urdu Numbering**: Implemented `getSectionPageNumberString()` in `pageNumbering.ts` resolving section page numbers with localized styles (`urdu` ۰, ۱, ۲, `abjad` ا, ب, ج, `western` 1, 2, 3) and section restart rules (`restartAtSection`). Composited master page background objects onto linked pages via `resolvePageCompositeObjects()`. Rendered running section header/footer text and localized page number tokens in `PaginatedPrintLayout.tsx`. Added tests in `phase5HeaderFooterMaster.test.ts`.
+- **Phase 6 — Professional Layout Aids**: Implemented `toggleSnapToGuidesCommand()` and `updateGuidesCommand()`. Added Bleed Frame Overlays (`border: 1px dashed #ef4444`) for prepress verification. Rendered User Guidelines (`page.guides`) as cyan dashed lines. Built Interactive Rulers (top horizontal and left vertical rulers) with guide creation on click. Preserved `page.guides` and `snapToGuides` in Zod schemas and `.urdup` packages across sessions. Added tests in `phase6LayoutAids.test.ts`.
+- **Phase 7 — Preflight & Print Safety**: Added Bleed Boundary Violation check evaluating `page.bleed` insets in `preflightEngine.ts`. Created `getExportReadinessReport()` returning PDF readiness score (0-100%), summary, and checklist items. Added PDF Readiness tab filter in `PreflightPanel.tsx`. Added tests in `phase7PreflightReadiness.test.ts`.
+- **Phase 8 — Milestone 8 Release Exit Gate & Polish**: Built comprehensive release exit gate suite in `m8ExitGate.test.ts` (verifying multi-section setup, RTL columns, bleed, backgrounds, rules, guidelines, undo/redo, master page compositing, `.urdup` save/reopen, and 100% PDF export readiness). All 288 tests passing across 103 test suites. Production build clean with 0 linter warnings or errors.
 
 ## Completed capabilities (M0–M7 Exit Gates Passed, M8 Phase 0 Complete)
 
@@ -21,7 +27,7 @@ Milestone 8 (Export Engine & Print Production) Phase 0 has been implemented, ver
   - Safe transliteration preserving Latin abbreviations and bidi controls.
   - Character normalization converting non-standard Arabic glyphs (ك, ي, ۃ) to native Urdu (ک, ی, ہ) with Quranic/honorific protection.
   - Custom keyboard layout editor with JSON import/export and honest Native OS mode.
-  - Scanned image and PDF page OCR recognition with side-by-side low-confidence review and package asset storage.
+  - OCR provider architecture with `getConfiguredOcrProvider()`, honest Preview/Demo labelling, source asset persistence, and canonical command placement.
   - Responsive ribbon organization across 1024px–1920px viewports with ARIA accessibility.
 - **Preflight & Print Production Engine (M8 Phase 0)**:
   - Multi-axis preflight diagnostics (image DPI calculation, boundary checks, overset text detection, font license compliance).

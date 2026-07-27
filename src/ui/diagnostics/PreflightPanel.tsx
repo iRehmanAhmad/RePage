@@ -1,118 +1,278 @@
 import React, { useState } from 'react';
-import type { PreflightResult, PreflightSeverity } from '../../domain/diagnostics/preflightEngine';
+import {
+  getExportReadinessReport,
+  type PreflightResult,
+  type PreflightSeverity,
+} from '../../domain/diagnostics/preflightEngine';
+import type { RePageDocument } from '../../domain/document/types';
 
 interface PreflightPanelProps {
   result: PreflightResult;
+  document?: RePageDocument | undefined;
   onClose?: () => void;
   onSelectIssue?: (targetId?: string) => void;
 }
 
 export const PreflightPanel: React.FC<PreflightPanelProps> = ({
   result,
+  document,
   onClose,
   onSelectIssue,
 }) => {
-  const [filter, setFilter] = useState<'all' | PreflightSeverity>('all');
+  const [filter, setFilter] = useState<'all' | PreflightSeverity | 'readiness'>('all');
 
   const filteredIssues = result.issues.filter(
     (issue) => filter === 'all' || issue.severity === filter,
   );
 
+  const readinessReport = document ? getExportReadinessReport(document) : null;
+
   return (
     <div
       data-testid="preflight-panel"
-      className="bg-slate-900 border border-slate-700 text-slate-100 rounded-lg p-4 shadow-xl max-w-md w-full dir-rtl"
       dir="rtl"
+      style={{
+        backgroundColor: '#0f172a',
+        border: '1px solid #334155',
+        color: '#f8fafc',
+        borderRadius: '12px',
+        padding: '20px',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+        width: '500px',
+        maxWidth: '92vw',
+        direction: 'rtl',
+        fontFamily: 'inherit',
+        zIndex: 1050,
+      }}
     >
-      <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-3">
-        <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #334155',
+          paddingBottom: '12px',
+          marginBottom: '14px',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '16px',
+            fontWeight: 700,
+            color: '#f8fafc',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
           <span>🔍</span> پری فلائٹ رپورٹ (Preflight Diagnostics)
         </h3>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-sm px-2 py-1 rounded bg-slate-800"
+            style={{
+              color: '#94a3b8',
+              backgroundColor: '#1e293b',
+              border: '1px solid #334155',
+              fontSize: '12px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
           >
             ✕ بند کریں
           </button>
         )}
       </div>
 
-      <div className="flex items-center justify-between mb-4 text-xs font-semibold">
-        <div className="flex gap-2">
-          <span className="bg-rose-950 text-rose-300 border border-rose-800 px-2 py-1 rounded">
+      {/* Summary Status Badges */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '14px',
+          fontSize: '12px',
+          fontWeight: 600,
+        }}
+      >
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <span
+            style={{
+              backgroundColor: '#450a0a',
+              color: '#fca5a5',
+              border: '1px solid #991b1b',
+              padding: '3px 8px',
+              borderRadius: '4px',
+            }}
+          >
             ❌ {result.errorCount} غلطیاں (Errors)
           </span>
-          <span className="bg-amber-950 text-amber-300 border border-amber-800 px-2 py-1 rounded">
+          <span
+            style={{
+              backgroundColor: '#451a03',
+              color: '#fde047',
+              border: '1px solid #854d0e',
+              padding: '3px 8px',
+              borderRadius: '4px',
+            }}
+          >
             ⚠️ {result.warningCount} تنبیہات (Warnings)
           </span>
         </div>
-        <div className="text-slate-400">
+        <div style={{ color: result.passed ? '#34d399' : '#f87171' }}>
           {result.passed ? '✅ تیار ہے (Passed)' : '❌ مسئلہ ہے (Failed)'}
         </div>
       </div>
 
-      <div className="flex gap-2 mb-3 text-xs">
+      {/* Filter / View Tabs */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', fontSize: '11px', flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={() => setFilter('all')}
-          className={`px-2 py-1 rounded border ${
-            filter === 'all'
-              ? 'bg-emerald-600 border-emerald-500 text-white'
-              : 'bg-slate-800 border-slate-700 text-slate-300'
-          }`}
+          style={{
+            padding: '5px 10px',
+            borderRadius: '6px',
+            border: '1px solid ' + (filter === 'all' ? '#10b981' : '#334155'),
+            backgroundColor: filter === 'all' ? '#059669' : '#1e293b',
+            color: '#ffffff',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
         >
           تمام ({result.issues.length})
         </button>
         <button
           type="button"
           onClick={() => setFilter('error')}
-          className={`px-2 py-1 rounded border ${
-            filter === 'error'
-              ? 'bg-rose-600 border-rose-500 text-white'
-              : 'bg-slate-800 border-slate-700 text-slate-300'
-          }`}
+          style={{
+            padding: '5px 10px',
+            borderRadius: '6px',
+            border: '1px solid ' + (filter === 'error' ? '#f43f5e' : '#334155'),
+            backgroundColor: filter === 'error' ? '#e11d48' : '#1e293b',
+            color: '#ffffff',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
         >
           غلطیاں ({result.errorCount})
         </button>
         <button
           type="button"
           onClick={() => setFilter('warning')}
-          className={`px-2 py-1 rounded border ${
-            filter === 'warning'
-              ? 'bg-amber-600 border-amber-500 text-white'
-              : 'bg-slate-800 border-slate-700 text-slate-300'
-          }`}
+          style={{
+            padding: '5px 10px',
+            borderRadius: '6px',
+            border: '1px solid ' + (filter === 'warning' ? '#f59e0b' : '#334155'),
+            backgroundColor: filter === 'warning' ? '#d97706' : '#1e293b',
+            color: '#ffffff',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
         >
           تنبیہات ({result.warningCount})
         </button>
+        <button
+          type="button"
+          onClick={() => setFilter('readiness')}
+          style={{
+            padding: '5px 10px',
+            borderRadius: '6px',
+            border: '1px solid ' + (filter === 'readiness' ? '#38bdf8' : '#334155'),
+            backgroundColor: filter === 'readiness' ? '#0284c7' : '#1e293b',
+            color: '#ffffff',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          📋 PDF تیاری (PDF Readiness)
+        </button>
       </div>
 
-      <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-        {filteredIssues.length === 0 ? (
-          <div className="text-center text-slate-400 py-6 text-sm">
-            کوئی مسائل نہیں پائے گئے (No preflight issues found)
-          </div>
-        ) : (
-          filteredIssues.map((issue) => (
-            <div
-              key={issue.id}
-              onClick={() => onSelectIssue?.(issue.targetId)}
-              className={`p-2.5 rounded text-xs border cursor-pointer transition ${
-                issue.severity === 'error'
-                  ? 'bg-rose-950/40 border-rose-800/80 text-rose-200 hover:bg-rose-900/60'
-                  : issue.severity === 'warning'
-                    ? 'bg-amber-950/40 border-amber-800/80 text-amber-200 hover:bg-amber-900/60'
-                    : 'bg-slate-800 border-slate-700 text-slate-300'
-              }`}
-            >
-              <div className="font-semibold">{issue.message}</div>
-              {issue.details && <div className="text-slate-400 mt-1">{issue.details}</div>}
+      {/* Main Content Area */}
+      {filter === 'readiness' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {readinessReport ? (
+            <>
+              {/* Score Meter */}
+              <div
+                style={{
+                  backgroundColor: '#1e293b',
+                  border: '1px solid #334155',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: '24px', fontWeight: 800, color: readinessReport.isPrintReady ? '#34d399' : '#38bdf8' }}>
+                  {readinessReport.score}%
+                </div>
+                <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '2px' }}>{readinessReport.summary}</div>
+              </div>
+
+              {/* Checklist Items */}
+              <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {readinessReport.checks.map((check, idx) => (
+                  <div
+                    key={`check-${idx}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: '#1e293b',
+                      border: '1px solid ' + (check.passed ? '#166534' : '#991b1b'),
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <span style={{ fontWeight: 600, color: '#f8fafc' }}>{check.name}</span>
+                    <span style={{ color: check.passed ? '#4ade80' : '#f87171', fontWeight: 700 }}>
+                      {check.passed ? '✓ پاس (Passed)' : '✗ نااہل (Failed)'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', color: '#94a3b8', padding: '20px', fontSize: '12px' }}>
+              دستاویز ڈیٹا لوڈ ہو رہا ہے... (Loading PDF Readiness Report)
             </div>
-          ))
-        )}
-      </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {filteredIssues.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#94a3b8', padding: '24px 0', fontSize: '13px' }}>
+              کوئی مسائل نہیں پائے گئے (No preflight issues found)
+            </div>
+          ) : (
+            filteredIssues.map((issue) => (
+              <div
+                key={issue.id}
+                onClick={() => onSelectIssue?.(issue.targetId)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  border: '1px solid ' + (issue.severity === 'error' ? '#991b1b' : issue.severity === 'warning' ? '#854d0e' : '#334155'),
+                  backgroundColor: issue.severity === 'error' ? '#450a0a' : issue.severity === 'warning' ? '#451a03' : '#1e293b',
+                  color: issue.severity === 'error' ? '#fecdd3' : issue.severity === 'warning' ? '#fef08a' : '#f8fafc',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s ease',
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>{issue.message}</div>
+                {issue.details && <div style={{ color: '#94a3b8', marginTop: '4px', fontSize: '11px' }}>{issue.details}</div>}
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };

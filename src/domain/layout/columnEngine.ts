@@ -70,3 +70,51 @@ export function computeVerticalTextOffset(
   }
   return padding.top;
 }
+
+export interface ColumnSeparatorGuide {
+  x: number;
+  startY: number;
+  endY: number;
+}
+
+/**
+ * Computes X coordinates for visual column separators (gutter rules) in multi-column layouts.
+ */
+export function computeColumnSeparatorGuides(
+  frameWidth: number,
+  frameHeight: number,
+  padding: Insets,
+  columnsCount = 1,
+  columnGap = 12,
+  isRtl = true,
+): ColumnSeparatorGuide[] {
+  const result = computeColumnRects(frameWidth, frameHeight, padding, columnsCount, columnGap, isRtl);
+  if (result.columns.length <= 1) return [];
+
+  const guides: ColumnSeparatorGuide[] = [];
+  const startY = padding.top;
+  const endY = frameHeight - padding.bottom;
+
+  for (let i = 0; i < result.columns.length - 1; i++) {
+    const colA = result.columns[i]!;
+    const colB = result.columns[i + 1]!;
+    const gapX = (colA.x + colA.width + colB.x) / 2;
+    guides.push({ x: gapX, startY, endY });
+  }
+
+  return guides;
+}
+
+/**
+ * Convenience helper to calculate column rects for a document page based on page dimensions and section settings.
+ */
+export function getSectionColumnGeometry(
+  pageWidth: number,
+  pageHeight: number,
+  margins: Insets,
+  columnsCount = 1,
+  columnGap = 18,
+  isRtl = true,
+): ColumnLayoutResult {
+  return computeColumnRects(pageWidth, pageHeight, margins, columnsCount, columnGap, isRtl);
+}

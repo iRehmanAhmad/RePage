@@ -15,14 +15,24 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Export Engine & Vector PDF Print Production Milestone — **M8 Phase 0 COMPLETE & VERIFIED** (Expanded preflight diagnostic rules for image DPI calculation against physical frame width, page boundary overflow detection, overset text checks, and font license compliance).
+- **Current Milestone**: Page Layout & Section Model Architecture — **FULLY COMPLETE, RELEASE-READY & VERIFIED (Phases 0–8)**.
+  - **ADR-0008 Page Layout & Section Model**: Realized physical page geometry (`width`, `height`, `margins`, `bleed`, `background`) stored in PDF points. Section breaks (`next-page`, `continuous`) anchored to `startPageId` in `doc.sections`.
+  - **Phase 0 (Model Repair)**: Defined `DocumentSection` schema & reference validation; section boundary engine with page slice querying & dangling section cleanup.
+  - **Phase 1 (Commands & Transactions)**: Canonical `pageLayoutCommands.ts` routed through `updateDocument()` for full undo/redo transaction history.
+  - **Phase 2 (Page Setup Modal & Ribbon UI)**: Built `PageSetupModal.tsx` with size presets (A4, A5, A3, Letter, Legal, 6×9 Book, Custom), inside/outside mirror margins, gutter positioning, bleed/background controls, validation, and object overflow warnings. Updated `MsWordRibbon.tsx` with 5 structured ribbon groups.
+  - **Phase 3 (Breaks & Backgrounds)**: Section break visual badges in viewport (`PaginatedPrintLayout.tsx`), realized custom page background color rendering (`page.background`), section anchor re-anchoring on page addition/deletion (`documentCommands.ts`).
+  - **Phase 4 (Urdu Multi-Column Layout)**: RTL column flow (`direction: rtl`, `column-count`, `column-gap`), visual column separator guide lines (gutter rules in `PaginatedPrintLayout.tsx`), and column geometry calculation (`columnEngine.ts`).
+  - **Phase 5 (Headers, Footers, Master Pages & Urdu Numbering)**: Master page object compositing (`resolvePageCompositeObjects`), running section header & footer stories, localized section page numbers (`getSectionPageNumberString` supporting Urdu `۰, ۱, ۲`, Abjad `ا, ب, ج`, and Western styles with `restartAtSection`).
+  - **Phase 6 (Professional Layout Aids)**: Interactive rulers, guide creation/dragging (`updateGuidesCommand`), snap-to-guides toggle (`toggleSnapToGuidesCommand`), bleed frame overlays (`page.bleed`), and guide persistence in `.urdup` packages.
+  - **Phase 7 (Preflight & Print Safety)**: Text-overflow detection, font license checking, low DPI image asset warnings, bleed boundary violation checks, and `getExportReadinessReport()` with PDF Readiness tab in `PreflightPanel.tsx`.
+  - **Phase 8 (Milestone Exit Gate & Verification)**: Exit gate verification suite in `m8ExitGate.test.ts`. 288 passing unit/integration tests across 103 test suites, 0 linter errors, production build verified.
 - **M7 Urdu Tools System (ADR-0007)**:
   - Canonical language mutation command `applyLanguageChangesCommand` operating in reverse offset order to preserve offsets.
   - Scope isolation (`selection`, `story`, `document`).
   - Personal dictionary local storage persistence (`repage_personal_dictionary`).
   - Transliteration guards (protecting Latin abbreviations like `HTTP`, `PDF`, `URL`, `e.g.`, `P.S.`, URLs, emails, dates, and numbers).
   - Preservation of ZWNJ (`\u200C`), ZWJ (`\u200D`), RLM (`\u200F`), LRM (`\u200E`), Aerab, and honorific glyphs (`ﷺ`).
-  - Extensible `OcrProvider` hierarchy (`MockOcrProvider`, `UnavailableOcrProvider`).
+  - Extensible `OcrProvider` hierarchy with `getConfiguredOcrProvider()` for production (returns `UnavailableOcrProvider` when no real engine exists), honest Preview/Demo labelling, source asset persistence in `document.assets`, and canonical `addOcrResultCommand` routing through `updateDocument` for undo/redo.
 - **GitHub Repository**: `https://github.com/iRehmanAhmad/RePage`
 
 ## Architecture decisions
