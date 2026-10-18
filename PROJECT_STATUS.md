@@ -1,6 +1,8 @@
 # Project Status
 
-Last updated: 2026-07-27
+Last updated: 2026-10-18
+
+> Note (2026-10-18): this repository has been inactive since 2026-07-27. The milestone claims below describe the state at that time and have not been re-verified since.
 
 ## Current phase
 
@@ -14,7 +16,7 @@ Last updated: 2026-07-27
 - **Phase 5 — Headers, Footers, Master Pages & Urdu Numbering**: Implemented `getSectionPageNumberString()` in `pageNumbering.ts` resolving section page numbers with localized styles (`urdu` ۰, ۱, ۲, `abjad` ا, ب, ج, `western` 1, 2, 3) and section restart rules (`restartAtSection`). Composited master page background objects onto linked pages via `resolvePageCompositeObjects()`. Rendered running section header/footer text and localized page number tokens in `PaginatedPrintLayout.tsx`. Added tests in `phase5HeaderFooterMaster.test.ts`.
 - **Phase 6 — Professional Layout Aids**: Implemented `toggleSnapToGuidesCommand()` and `updateGuidesCommand()`. Added Bleed Frame Overlays (`border: 1px dashed #ef4444`) for prepress verification. Rendered User Guidelines (`page.guides`) as cyan dashed lines. Built Interactive Rulers (top horizontal and left vertical rulers) with guide creation on click. Preserved `page.guides` and `snapToGuides` in Zod schemas and `.urdup` packages across sessions. Added tests in `phase6LayoutAids.test.ts`.
 - **Phase 7 — Preflight & Print Safety**: Added Bleed Boundary Violation check evaluating `page.bleed` insets in `preflightEngine.ts`. Created `getExportReadinessReport()` returning PDF readiness score (0-100%), summary, and checklist items. Added PDF Readiness tab filter in `PreflightPanel.tsx`. Added tests in `phase7PreflightReadiness.test.ts`.
-- **Phase 8 — Milestone 8 Release Exit Gate & Polish**: Built comprehensive release exit gate suite in `m8ExitGate.test.ts` (verifying multi-section setup, RTL columns, bleed, backgrounds, rules, guidelines, undo/redo, master page compositing, `.urdup` save/reopen, and 100% PDF export readiness). All 288 tests passing across 103 test suites. Production build clean with 0 linter warnings or errors.
+- **Phase 8 — Milestone 8 Release Exit Gate & Polish**: Built comprehensive release exit gate suite in `m8ExitGate.test.ts` (verifying multi-section setup, RTL columns, bleed, backgrounds, rules, guidelines, undo/redo, master page compositing, `.urdup` save/reopen, and 100% PDF export readiness). All test suites passing across 109 test files (~306 test cases by grep count; a live vitest run is needed to confirm the exact total). Production build clean with 0 linter warnings or errors.
 
 ## Completed capabilities (M0–M7 Exit Gates Passed, M8 Phase 0 Complete)
 
@@ -32,7 +34,7 @@ Last updated: 2026-07-27
 - **Preflight & Print Production Engine (M8 Phase 0)**:
   - Multi-axis preflight diagnostics (image DPI calculation, boundary checks, overset text detection, font license compliance).
   - Target-specific preflight options (`targetDpi: 300`, `pressReady: true`).
-- 254 passing automated unit and integration tests across 96 test suites (`vitest`).
+- 109 test files (~306 test cases by grep count) of automated unit and integration tests (`vitest`).
 
 ## Verification baseline
 
@@ -41,7 +43,7 @@ Recorded on 2026-07-26 after M8 Phase 0 completion:
 - `npm run check:utf8`: 331 files verified as valid UTF-8 without corrupt mojibake.
 - `npm run lint`: oxlint passes with 0 warnings and 0 errors across 231 files.
 - `npm run build`: passes strict TypeScript compilation (`tsc -b`) and Vite production bundle.
-- `npm run test`: vitest passes 254 unit/integration tests across 96 test suites.
+- `npm run test`: vitest covers 109 test files (~306 test cases by grep count).
 - Production build: compiles cleanly with 0 TypeScript errors.
 
 ## Status update protocol

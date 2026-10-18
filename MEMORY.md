@@ -1,6 +1,6 @@
 # Project Memory
 
-Last reviewed: 2026-07-26
+Last reviewed: 2026-10-18 (repository inactive since 2026-07-27; status below reflects the July state and a 2026-10-18 code audit)
 
 ## Mission
 
@@ -15,7 +15,7 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
 - Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Page Layout & Section Model Architecture — **FULLY COMPLETE, RELEASE-READY & VERIFIED (Phases 0–8)**.
+- **Current Milestone**: Page Layout & Section Model Architecture — claimed complete (Phases 0–8) in July 2026; not re-verified since. 2026-10-18 code audit found the Tauri desktop shell, PDF exporter, and WebRTC networking listed as complete are in fact stubs/planned (desktop shell not buildable, PDF export produces metadata only, no WebRTC transport).
   - **ADR-0008 Page Layout & Section Model**: Realized physical page geometry (`width`, `height`, `margins`, `bleed`, `background`) stored in PDF points. Section breaks (`next-page`, `continuous`) anchored to `startPageId` in `doc.sections`.
   - **Phase 0 (Model Repair)**: Defined `DocumentSection` schema & reference validation; section boundary engine with page slice querying & dangling section cleanup.
   - **Phase 1 (Commands & Transactions)**: Canonical `pageLayoutCommands.ts` routed through `updateDocument()` for full undo/redo transaction history.
@@ -25,7 +25,7 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
   - **Phase 5 (Headers, Footers, Master Pages & Urdu Numbering)**: Master page object compositing (`resolvePageCompositeObjects`), running section header & footer stories, localized section page numbers (`getSectionPageNumberString` supporting Urdu `۰, ۱, ۲`, Abjad `ا, ب, ج`, and Western styles with `restartAtSection`).
   - **Phase 6 (Professional Layout Aids)**: Interactive rulers, guide creation/dragging (`updateGuidesCommand`), snap-to-guides toggle (`toggleSnapToGuidesCommand`), bleed frame overlays (`page.bleed`), and guide persistence in `.urdup` packages.
   - **Phase 7 (Preflight & Print Safety)**: Text-overflow detection, font license checking, low DPI image asset warnings, bleed boundary violation checks, and `getExportReadinessReport()` with PDF Readiness tab in `PreflightPanel.tsx`.
-  - **Phase 8 (Milestone Exit Gate & Verification)**: Exit gate verification suite in `m8ExitGate.test.ts`. 288 passing unit/integration tests across 103 test suites, 0 linter errors, production build verified.
+  - **Phase 8 (Milestone Exit Gate & Verification)**: Exit gate verification suite in `m8ExitGate.test.ts`. Test counts in this document are stale (July 2026); measured 2026-10-18: 109 test files, ~306 test cases by grep count.
 - **M7 Urdu Tools System (ADR-0007)**:
   - Canonical language mutation command `applyLanguageChangesCommand` operating in reverse offset order to preserve offsets.
   - Scope isolation (`selection`, `story`, `document`).
@@ -60,11 +60,10 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 ## Present reality
 
 - The application was rebuilt in clean strict-TypeScript under the product name **RePage**.
-- Milestones M0 (Foundation), M1 (Page Layout), M2 (Urdu Typography Beta), M3 (Document Production Beta), M4 (Desktop Release Candidate), M5 (Collaboration Preview), M6 (Ribbon & Canvas Object Systems), and M7 (Urdu Tools) are COMPLETE.
-- Milestone M8 Phase 0 (Preflight Expansion & Print Production Diagnostics) is COMPLETE.
+- Milestones M0 (Foundation), M1 (Page Layout), M2 (Urdu Typography Beta), M3 (Document Production Beta) have working code (document engine, Fabric adapter, Tiptap editor, master pages, preflight, SVG/EPUB export). M4 (Desktop Release Candidate), M5 (Collaboration Preview), and the PDF/WebRTC/signed-update portions of M7/M8 were claimed complete but are stubs or planned, not functional (see 2026-10-18 code audit).
 - MS Word–style UI shell: QAT with 11 configurable tools, 7-tab ribbon with grouped cards and bottom captions, centered document title, dark/light/system themes, English/Urdu menu language toggle.
 - Visual Keyboard: 3-row QWERTY layout, CRULP/Navees/English/Native/Custom modes, Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
-- 254 passing automated unit/integration tests (`vitest`), strict UTF-8 scanner (331 files), and oxlint linter are enforced in `npm run check`.
+- 109 test files (~306 test cases by grep count; a live vitest run is needed to confirm the exact total — node_modules is not installed in this checkout), strict UTF-8 scanner, and oxlint linter are enforced in `npm run check`.
 
 ## Open decisions
 

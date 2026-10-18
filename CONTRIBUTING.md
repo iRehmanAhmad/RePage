@@ -1,6 +1,6 @@
 # Contributing
 
-UrduPage is in a pre-foundation stage. Contributions should improve the documented milestone rather than expand the prototype horizontally.
+RePage is in a pre-foundation stage. Contributions should improve the documented milestone rather than expand the prototype horizontally.
 
 ## Before contributing
 

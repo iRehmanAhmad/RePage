@@ -4,7 +4,7 @@ Status: target architecture; current Foundation implements the domain, command, 
 
 ## 1. Architectural shape
 
-UrduPage uses a shared React/TypeScript editor core and an optional Tauri desktop shell. The canonical document domain remains independent of browser rendering, native packaging, collaboration, and export technologies.
+RePage uses a shared React/TypeScript editor core and an optional Tauri desktop shell. The canonical document domain remains independent of browser rendering, native packaging, collaboration, and export technologies.
 
 ```text
 Desktop shell / Browser host

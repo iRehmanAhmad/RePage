@@ -2,7 +2,7 @@
 
 RePage is a modern, offline-first, cross-platform Urdu desktop-publishing application. Its purpose is to offer a simpler and more dependable alternative to legacy Urdu publishing tools while preserving professional page-layout capabilities.
 
-The repository contains a clean, strict TypeScript implementation featuring a canonical schema version 1 document engine, Fabric canvas adapter, DOM rich-text editor, master pages, linked text frames, preflight diagnostics panel, standalone vector SVG/PDF prepress exporter, Tauri 2 cross-platform desktop shell (Windows NSIS, macOS DMG, Linux AppImage/DEB/RPM), signed update manager, Yjs CRDT real-time multi-user collaboration engine, WebRTC networking, and identity authorization.
+The repository contains a clean, strict TypeScript implementation featuring a canonical schema version 1 document engine, Fabric canvas adapter, DOM rich-text editor, master pages, linked text frames, preflight diagnostics panel, vector SVG and EPUB export, and a local Yjs CRDT collaboration core. The following are on the roadmap but not yet complete: Tauri 2 desktop shell (desktop shell stub only — not yet buildable), PDF export (SVG and EPUB export work today; PDF export planned), signed update manager (planned), and WebRTC networking for multi-user collaboration (local Yjs collaboration core only — no network transport yet).
 
 ## Product priorities
 
@@ -51,10 +51,10 @@ Specialized specifications:
 
 - **Product name**: RePage
 - **Application type**: Desktop-first DTP editor with browser core
-- **Frontend stack**: React 19, strict TypeScript, Tailwind CSS, Vite
+- **Frontend stack**: React 19, strict TypeScript, hand-rolled CSS, Vite
 - **Canvas adapter**: Fabric canvas geometry adapter
 - **Text editor**: Tiptap / ProseMirror DOM rich-text adapter
-- **Desktop shell**: Tauri 2 (`src-tauri/`) with least-privilege security
+- **Desktop shell**: Tauri 2 stub (`src-tauri/`) — desktop shell planned, not yet buildable
 - **Package extension**: `.urdup` (`application/vnd.urdup+zip`)
 - **Completed Milestones**: M0 Foundation, M1 Page Layout, M2 Urdu Typography, M3 Document Production, M4 Desktop RC, M5 Collaboration Preview (100% Verified)
 
