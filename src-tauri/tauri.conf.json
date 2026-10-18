@@ -34,7 +34,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "category": "Office",
+    "category": "public.app-category.productivity",
     "shortDescription": "Authentic Urdu Document Publishing System",
     "longDescription": "RePage is an offline-first frame-oriented desktop publishing system tailored for authentic Urdu Nastaliq and complex multi-lingual document production.",
     "copyright": "Copyright © 2026 RePage Contributors",
