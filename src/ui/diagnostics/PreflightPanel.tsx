@@ -6,20 +6,25 @@ import {
   type PreflightSeverity,
 } from '../../domain/diagnostics/preflightEngine';
 import type { RePageDocument } from '../../domain/document/types';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 interface PreflightPanelProps {
   result: PreflightResult;
   document?: RePageDocument | undefined;
   onClose?: () => void;
   onSelectIssue?: (targetId?: string) => void;
+  t?: Translations;
 }
 
 export const PreflightPanel: React.FC<PreflightPanelProps> = ({
   result,
   document,
   onClose,
+  t,
+
   onSelectIssue,
 }) => {
+  const tt = t ?? DICTIONARY.en;
   const [filter, setFilter] = useState<'all' | PreflightSeverity | 'readiness'>('all');
 
   const filteredIssues = result.issues.filter(
@@ -68,7 +73,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
             gap: '8px',
           }}
         >
-          <AppIcon name="search" /> پری فلائٹ رپورٹ (Preflight Diagnostics)
+          <AppIcon name="search" /> {tt.pfTitle}
         </h3>
         {onClose && (
           <button
@@ -85,7 +90,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
               fontWeight: 600,
             }}
           >
-            <AppIcon name="dismiss" /> بند کریں
+            <AppIcon name="dismiss" /> {tt.panelClose}
           </button>
         )}
       </div>
@@ -190,7 +195,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
             fontWeight: 600,
           }}
         >
-          <AppIcon name="clipboard" /> PDF تیاری (PDF Readiness)
+          <AppIcon name="clipboard" /> {tt.pfReadiness}
         </button>
       </div>
 
@@ -233,7 +238,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
                   >
                     <span style={{ fontWeight: 600, color: '#f8fafc' }}>{check.name}</span>
                     <span style={{ color: check.passed ? '#4ade80' : '#f87171', fontWeight: 700 }}>
-                      {check.passed ? 'پاس (Passed)' : 'نااہل (Failed)'}
+                      {check.passed ? tt.pfPassed : tt.pfFailed}
                     </span>
                   </div>
                 ))}
@@ -241,7 +246,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
             </>
           ) : (
             <div style={{ textAlign: 'center', color: '#94a3b8', padding: '20px', fontSize: '12px' }}>
-              دستاویز ڈیٹا لوڈ ہو رہا ہے... (Loading PDF Readiness Report)
+              {tt.pfLoading}
             </div>
           )}
         </div>
@@ -249,7 +254,7 @@ export const PreflightPanel: React.FC<PreflightPanelProps> = ({
         <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filteredIssues.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#94a3b8', padding: '24px 0', fontSize: '13px' }}>
-              کوئی مسائل نہیں پائے گئے (No preflight issues found)
+              {tt.pfNoIssues}
             </div>
           ) : (
             filteredIssues.map((issue) => (

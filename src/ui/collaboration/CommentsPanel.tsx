@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppIcon } from '../icons/AppIcon';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface CommentReply {
   id: string;
@@ -24,6 +25,7 @@ interface CommentsPanelProps {
   onAddReply?: ((threadId: string, text: string) => void) | undefined;
   onToggleResolve?: ((threadId: string) => void) | undefined;
   onClose?: (() => void) | undefined;
+  t?: Translations;
 }
 
 export const CommentsPanel: React.FC<CommentsPanelProps> = ({
@@ -32,12 +34,14 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
   onAddReply,
   onToggleResolve,
   onClose,
+  t,
 }) => {
+  const tt = t ?? DICTIONARY.en;
   const [newCommentText, setNewCommentText] = useState('');
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
   const [showResolved, setShowResolved] = useState(false);
 
-  const filteredThreads = threads.filter((t) => (showResolved ? true : !t.isResolved));
+  const filteredThreads = threads.filter((thread) => (showResolved ? true : !thread.isResolved));
 
   const handleCreateComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +71,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
               onChange={(e) => setShowResolved(e.target.checked)}
               className="mr-1 rounded bg-slate-800 border-slate-700"
             />
-            Resolved
+            {tt.cmtResolved}
           </label>
           <button
             type="button"
@@ -84,7 +88,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
         <textarea
           value={newCommentText}
           onChange={(e) => setNewCommentText(e.target.value)}
-          placeholder="نیا تبصرہ لکھیں... (Write a comment)"
+          placeholder={tt.cmtWriteComment}
           className="w-80 w-full p-2 bg-slate-800 text-sm text-white rounded border border-slate-700 focus:outline-none focus:border-emerald-500 resize-none h-16"
         />
         <button
@@ -92,7 +96,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
           disabled={!newCommentText.trim()}
           className="mt-2 w-full py-1 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-bold rounded transition-colors"
         >
-          Post Comment
+          {tt.cmtPostComment}
         </button>
       </form>
 
@@ -142,14 +146,14 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
                     onChange={(e) =>
                       setReplyInputs((prev) => ({ ...prev, [thread.id]: e.target.value }))
                     }
-                    placeholder="جواب دیں (Reply...)"
+                    placeholder={tt.cmtWriteReply}
                     className="flex-1 px-2 py-0.5 bg-slate-900 text-white rounded text-[11px] border border-slate-700"
                   />
                   <button
                     type="submit"
                     className="px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-[11px]"
                   >
-                    Reply
+                    {tt.cmtReply}
                   </button>
                 </form>
               )}

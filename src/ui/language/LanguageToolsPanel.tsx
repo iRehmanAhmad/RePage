@@ -9,6 +9,7 @@ import { addPersonalWord, isPersonalWord, loadPersonalDictionary } from '../../d
 import { proofreadUrduText } from '../../domain/language/urduProofreader';
 import { romanToUrdu, urduToRoman } from '../../domain/language/transliteration';
 import { previewNormalization } from '../../domain/language/characterNormalization';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface SelectionInfo {
   storyId: string;
@@ -23,6 +24,7 @@ export interface LanguageToolsPanelProps {
   initialTab?: 'proofread' | 'dictionary' | 'transliterate' | 'normalize' | 'spelling' | undefined;
   onApplyChanges?: (changes: LanguageChange[]) => void;
   onClose?: () => void;
+  t?: Translations;
 }
 
 export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
@@ -31,7 +33,9 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
   initialTab = 'proofread',
   onApplyChanges,
   onClose,
+  t,
 }) => {
+  const tt = t ?? DICTIONARY.en;
   const [activeTab, setActiveTab] = useState<'proofread' | 'dictionary' | 'transliterate' | 'normalize'>(
     initialTab === 'dictionary'
       ? 'dictionary'
@@ -256,7 +260,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             gap: '8px',
           }}
         >
-          <AppIcon name="language" /> اردو زبان کے آلات (Language Tools)
+          <AppIcon name="language" /> {tt.ltTitle}
         </h3>
         {onClose && (
           <button
@@ -273,7 +277,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
               fontWeight: 600,
             }}
           >
-            <AppIcon name="dismiss" /> بند کریں
+            <AppIcon name="dismiss" /> {tt.panelClose}
           </button>
         )}
       </div>
@@ -291,7 +295,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ color: '#94a3b8', fontWeight: 600 }}>دائرہ کار (Scope):</span>
+          <span style={{ color: '#94a3b8', fontWeight: 600 }}>{tt.ltScope}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: hasSelection ? 'pointer' : 'not-allowed', opacity: hasSelection ? 1 : 0.4 }}>
               <input
@@ -314,7 +318,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 onChange={() => setScopeKind('story')}
                 style={{ accentColor: '#10b981' }}
               />
-              <span>موجودہ تحریر</span>
+              <span>{tt.ltCurrentStory}</span>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
               <input
@@ -325,7 +329,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 onChange={() => setScopeKind('document')}
                 style={{ accentColor: '#10b981' }}
               />
-              <span>مکمل دستاویز</span>
+              <span>{tt.ltWholeDocument}</span>
             </label>
           </div>
         </div>
@@ -333,22 +337,22 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
         {/* Structured Summary Badges */}
         <div style={{ display: 'flex', gap: '6px', paddingTop: '6px', borderTop: '1px solid #1e293b', fontSize: '11px', direction: 'rtl' }}>
           <span style={{ padding: '2px 8px', backgroundColor: '#450a0a', border: '1px solid #991b1b', color: '#fca5a5', borderRadius: '4px', fontWeight: 600 }}>
-            املاء: {spellingErrors.length}
+            {tt.ltSpelling} {spellingErrors.length}
           </span>
           <span style={{ padding: '2px 8px', backgroundColor: '#451a03', border: '1px solid #854d0e', color: '#fde047', borderRadius: '4px', fontWeight: 600 }}>
-            رموزِ اوقاف: {punctuationCount}
+            {tt.ltPunctuation} {punctuationCount}
           </span>
           <span style={{ padding: '2px 8px', backgroundColor: '#172554', border: '1px solid #1e40af', color: '#93c5fd', borderRadius: '4px', fontWeight: 600 }}>
-            حروفی متبادلات: {normPreview.replacementCount}
+            {tt.ltCharReplacements} {normPreview.replacementCount}
           </span>
           <span style={{ padding: '2px 8px', backgroundColor: '#3b0764', border: '1px solid #7e22ce', color: '#e9d5ff', borderRadius: '4px', fontWeight: 600 }}>
-            سپیس: {spaceCount}
+            {tt.ltSpaces} {spaceCount}
           </span>
         </div>
       </div>
 
       {/* Tabs Header */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #334155', fontSize: '12px', backgroundColor: '#0f172a' }} role="tablist" aria-label="Language Tools Tabs">
+      <div style={{ display: 'flex', borderBottom: '1px solid #334155', fontSize: '12px', backgroundColor: '#0f172a' }} role="tablist" aria-label={tt.ltTabsLabel}>
         <button
           type="button"
           role="tab"
@@ -366,7 +370,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             cursor: 'pointer',
           }}
         >
-          املاء و تصحیح ({spellingErrors.length + proofreadIssues.length})
+          {tt.ltTabProofread} ({spellingErrors.length + proofreadIssues.length})
         </button>
         <button
           type="button"
@@ -385,7 +389,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             cursor: 'pointer',
           }}
         >
-          لغت (Dictionary)
+          {tt.dictionary}
         </button>
         <button
           type="button"
@@ -404,7 +408,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             cursor: 'pointer',
           }}
         >
-          رومن اردو
+          {tt.transliteration}
         </button>
         <button
           type="button"
@@ -423,7 +427,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             cursor: 'pointer',
           }}
         >
-          حروف کی جانچ ({normPreview.replacementCount})
+          {tt.ltTabNormalize} ({normPreview.replacementCount})
         </button>
       </div>
 
@@ -435,21 +439,21 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
             <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#cbd5e1' }}>
               مطلوبہ دائرہ کار کا متن ({concatenatedText.length} حروف):
               <div style={{ marginTop: '6px', padding: '8px 12px', backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '6px', fontSize: '13px', color: '#34d399', maxHeight: '96px', overflowY: 'auto', direction: 'rtl' }}>
-                {concatenatedText || 'کوئی متن منتخب نہیں ہے۔'}
+                {concatenatedText || tt.ltNoTextSelected}
               </div>
             </div>
 
             {spellingErrors.length === 0 && proofreadIssues.length === 0 ? (
               <div style={{ padding: '12px', backgroundColor: '#064e3b', border: '1px solid #065f46', borderRadius: '8px', color: '#6ee7b7', textAlign: 'center' }}>
-                <AppIcon name="check" /> اس دائرہ کار میں املاء اور زبان کی کوئی غلطی نہیں ملی!
+                <AppIcon name="check" /> {tt.ltNoErrors}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h4 style={{ fontWeight: 600, color: '#f8fafc', margin: 0 }}>نشاندہیاں:</h4>
+                <h4 style={{ fontWeight: 600, color: '#f8fafc', margin: 0 }}>{tt.ltFlags}</h4>
                 {spellingErrors.map((err, idx) => (
                   <div key={`spell-${idx}`} style={{ padding: '12px', backgroundColor: '#450a0a', border: '1px solid #991b1b', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: '#fca5a5' }}>
-                      <span>املاء کی غلطی: "{err.word}"</span>
+                      <span>{tt.ltSpellingError} "{err.word}"</span>
                     </div>
 
                     {/* Per-finding actions */}
@@ -459,27 +463,27 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                         onClick={() => handleIgnoreOnce(err.index + idx)}
                         style={{ padding: '4px 8px', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f8fafc', borderRadius: '4px', cursor: 'pointer' }}
                       >
-                        ایک بار نظر انداز
+                        {tt.ltIgnoreOnce}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleIgnoreAll(err.word)}
                         style={{ padding: '4px 8px', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f8fafc', borderRadius: '4px', cursor: 'pointer' }}
                       >
-                        دستاویز میں نظر انداز
+                        {tt.ltIgnoreInDoc}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleAddWordToPersonalDict(err.word)}
                         style={{ padding: '4px 8px', backgroundColor: '#064e3b', border: '1px solid #047857', color: '#6ee7b7', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
                       >
-                        + لغت میں شامل کریں
+                        {tt.ltAddToDict}
                       </button>
                     </div>
 
                     {err.suggestions.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                        <span style={{ color: '#cbd5e1' }}>تجویز:</span>
+                        <span style={{ color: '#cbd5e1' }}>{tt.ltSuggestion}</span>
                         {err.suggestions.map((sug, i) => (
                           <button
                             type="button"
@@ -499,13 +503,13 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                   <div key={`proof-${idx}`} style={{ padding: '10px 12px', backgroundColor: '#451a03', border: '1px solid #854d0e', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ color: '#fde047', fontWeight: 600 }}>{issue.description}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#f8fafc' }}>
-                      <span>اصل: <code style={{ color: '#fca5a5' }}>{issue.originalSnippet}</code></span>
+                      <span>{tt.ltOriginal} <code style={{ color: '#fca5a5' }}>{issue.originalSnippet}</code></span>
                       <button
                         type="button"
                         onClick={() => handleApplySingleReplacement(issue.originalSnippet, issue.replacementSuggestion, issue.description, 'proofread')}
                         style={{ padding: '4px 10px', backgroundColor: '#d97706', border: '1px solid #f59e0b', color: '#ffffff', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
                       >
-                        تبدیل کریں ("{issue.replacementSuggestion}")
+                        {tt.ltApplyChange} ("{issue.replacementSuggestion}")
                       </button>
                     </div>
                   </div>
@@ -523,7 +527,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 type="text"
                 value={dictQuery}
                 onChange={(e) => setDictQuery(e.target.value)}
-                placeholder="لفظ تلاش کریں (مثلاً: پاکستان، علم، ترانہ)..."
+                placeholder={tt.ltSearchPlaceholder}
                 style={{ flex: 1, padding: '8px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc', outline: 'none' }}
               />
               <button
@@ -531,7 +535,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 onClick={() => setDictResult(lookupUrduWord(dictQuery))}
                 style={{ padding: '8px 16px', backgroundColor: '#059669', border: '1px solid #10b981', color: '#ffffff', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
               >
-                تلاش
+                {tt.ltSearch}
               </button>
             </div>
 
@@ -544,7 +548,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                     onClick={() => handleAddWordToPersonalDict(dictResult.word)}
                     style={{ padding: '4px 8px', backgroundColor: '#064e3b', border: '1px solid #047857', color: '#6ee7b7', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
                   >
-                    + ذاتی لغت میں شامل
+                    {tt.ltAddPersonal}
                   </button>
                 </div>
                 {dictResult.grammaticalCategory && (
@@ -556,23 +560,23 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
 
                 {dictResult.synonyms && dictResult.synonyms.length > 0 && (
                   <div style={{ paddingTop: '8px', borderTop: '1px solid #334155', fontSize: '11px', color: '#6ee7b7' }}>
-                    <span style={{ color: '#94a3b8' }}>مترادفات (Synonyms): </span>
+                    <span style={{ color: '#94a3b8' }}>{tt.ltSynonyms} </span>
                     {dictResult.synonyms.join('، ')}
                   </div>
                 )}
                 {dictResult.antonyms && dictResult.antonyms.length > 0 && (
                   <div style={{ fontSize: '11px', color: '#fde047' }}>
-                    <span style={{ color: '#94a3b8' }}>متضادات (Antonyms): </span>
+                    <span style={{ color: '#94a3b8' }}>{tt.ltAntonyms} </span>
                     {dictResult.antonyms.join('، ')}
                   </div>
                 )}
               </div>
             ) : (
               <div style={{ color: '#94a3b8', textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div>لغت میں لفظ تلاش کرنے کے لیے اوپر ٹائپ کریں۔</div>
+                <div>{tt.ltDictHint}</div>
                 {personalWords.length > 0 && (
                   <div style={{ fontSize: '11px', color: '#64748b', paddingTop: '8px', borderTop: '1px solid #1e293b' }}>
-                    ذاتی لغت کے جملہ الفاظ ({personalWords.length}): {personalWords.slice(0, 5).join('، ')}
+                    {tt.ltPersonalWords} ({personalWords.length}): {personalWords.slice(0, 5).join('، ')}
                   </div>
                 )}
               </div>
@@ -584,7 +588,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
         {activeTab === 'transliterate' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '4px', fontWeight: 600 }}>رومن اردو درج کریں (Roman Input):</label>
+              <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '4px', fontWeight: 600 }}>{tt.ltRomanLabel}</label>
               <input
                 type="text"
                 value={romanInput}
@@ -599,7 +603,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
 
             {transliteratedOutput && (
               <div style={{ padding: '12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ display: 'block', color: '#cbd5e1', fontSize: '11px', fontWeight: 600 }}>اردو نستعلیق پیش نظارہ (Nastaliq Output):</label>
+                <label style={{ display: 'block', color: '#cbd5e1', fontSize: '11px', fontWeight: 600 }}>{tt.ltUrduOutput}</label>
                 <div style={{ fontSize: '18px', fontWeight: 700, color: '#34d399', direction: 'rtl' }}>{transliteratedOutput}</div>
                 <button
                   type="button"
@@ -625,7 +629,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                     cursor: hasSelection && scopeKind === 'selection' ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  منتخب متن کو اس تبدیل شدہ اردو سے بدلیں
+                  {tt.ltReplaceWithConverted}
                 </button>
               </div>
             )}
@@ -640,7 +644,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 }}
                 style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f8fafc', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
               >
-                موجودہ دائرہ کار کے اردو متن کو رومن میں لائیں
+                {tt.ltScopeToRoman}
               </button>
             </div>
           </div>
@@ -650,13 +654,13 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
         {activeTab === 'normalize' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', borderRadius: '6px', border: '1px solid #334155', color: '#cbd5e1' }}>
-              اردو کریکٹر ریویو: غیر نقصان دہ تبدیلی کے ساتھ عربی کاف (ك) اور یاء (ي) کو معیاری اردو (ک/ی) میں لاتی ہے۔
+              {tt.ltCharReview}
             </div>
 
             {normPreview.replacementCount > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ color: '#fde047', fontWeight: 600 }}>
-                  {normPreview.replacementCount} حروف کی تبدیلی کے امکانات ملے:
+                  {normPreview.replacementCount} {tt.ltReplacementsFound}
                 </div>
                 <div style={{ padding: '8px', backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '6px', fontSize: '11px', maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {normPreview.segments.map((seg, i) =>
@@ -671,7 +675,7 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                           onClick={() => handleApplySingleReplacement(seg.originalText!, seg.normalizedText!, seg.reason || 'Normalization', 'normalization')}
                           style={{ padding: '3px 8px', backgroundColor: '#d97706', border: '1px solid #f59e0b', color: '#ffffff', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}
                         >
-                          تبدیل
+                          {tt.ltConvert}
                         </button>
                       </div>
                     ) : null,
@@ -683,12 +687,12 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                   onClick={handleApplyAllNormalizations}
                   style={{ width: '100%', padding: '10px', backgroundColor: '#059669', border: '1px solid #10b981', color: '#ffffff', fontWeight: 700, borderRadius: '6px', cursor: 'pointer' }}
                 >
-                  تمام کا اطلاق کریں ({normPreview.replacementCount} تبدیلیاں)
+                  {tt.ltApplyAll} ({normPreview.replacementCount})
                 </button>
               </div>
             ) : (
               <div style={{ padding: '12px', backgroundColor: '#064e3b', border: '1px solid #065f46', borderRadius: '8px', color: '#6ee7b7', textAlign: 'center' }}>
-                اس دائرہ کار کا متن پہلے سے مکمل معیاری اردو پر مشتمل ہے۔
+                {tt.ltAlreadyStandard}
               </div>
             )}
           </div>

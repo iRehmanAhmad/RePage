@@ -94,7 +94,7 @@ import { exportDocumentToEpub } from '../export/exportEngine';
 
 // Theme, i18n & QAT
 import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
-import { UiLanguage, DICTIONARY } from '../ui/i18n/menuTranslation';
+import { UiLanguage, DICTIONARY, translateSaveState } from '../ui/i18n/menuTranslation';
 import { QatItemKey, getInitialQatItems, saveQatItems, qatKeyForStyle } from '../ui/header/qatEngine';
 
 // Studio Layout, MS Word Ribbon & Navigation Components
@@ -132,6 +132,13 @@ import { FocusModeShell } from '../ui/views/FocusModeShell';
 import { setPageOrientationCommand, toggleRulersCommand } from '../editor/commands/pageLayoutCommands';
 
 type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed';
+
+/** Sets <html lang>/<html dir> so the whole app chrome flips to RTL in Urdu mode. */
+function applyUiLanguageToDocument(lang: UiLanguage): void {
+  const root = document.documentElement;
+  root.setAttribute('lang', lang === 'ur' ? 'ur' : 'en');
+  root.setAttribute('dir', lang === 'ur' ? 'rtl' : 'ltr');
+}
 
 const history = new TransactionHistory();
 
@@ -192,7 +199,14 @@ export function App() {
 
   // Theme & Menu Language State
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
-  const [lang, setLang] = useState<UiLanguage>('en');
+  const [lang, setLang] = useState<UiLanguage>(() => {
+    try {
+      const saved = localStorage.getItem('repage-ui-lang');
+      return saved === 'ur' || saved === 'en' ? saved : 'en';
+    } catch {
+      return 'en';
+    }
+  });
 
   // Custom User Typography Presets State
   const [customPresets, setCustomPresets] = useState<CustomUrduPreset[]>(loadCustomUrduPresets);
@@ -207,6 +221,16 @@ export function App() {
 
   // Active translation dictionary
   const t = DICTIONARY[lang];
+
+  // Persist UI language and flip the app chrome to RTL in Urdu mode.
+  useEffect(() => {
+    try {
+      localStorage.setItem('repage-ui-lang', lang);
+    } catch {
+      /* storage unavailable — session-only language */
+    }
+    applyUiLanguageToDocument(lang);
+  }, [lang]);
 
   // Apply theme on mode change
   useEffect(() => {
@@ -353,9 +377,9 @@ export function App() {
   const handleObjectModified = React.useCallback(
     (objectId: string, frameProps: Partial<import('../domain/document/types').Rect>) => {
       updateDocument(updateObjectGeometry(document, objectId, frameProps), 'Modify object geometry');
-      setMessage('Object geometry updated');
+      setMessage(lang === 'ur' ? 'آبجیکٹ کی پیمائش اپ ڈیٹ ہو گئی' : 'Object geometry updated');
     },
-    [document, updateDocument],
+    [lang, document, updateDocument],
   );
 
   const handleAddPage = React.useCallback(() => {
@@ -370,8 +394,8 @@ export function App() {
     const nextDoc = removePage(document, activePageId);
     updateDocument(nextDoc, 'Remove page');
     setActivePageId(nextDoc.pageOrder[0]!);
-    setMessage('Page removed');
-  }, [activePageId, document, updateDocument]);
+    setMessage(lang === 'ur' ? 'صفحہ حذف کر دیا گیا' : 'Page removed');
+  }, [lang, activePageId, document, updateDocument]);
 
   const handleAddRectangle = React.useCallback(
     (kind: ShapeKind = 'rectangle') => {
@@ -397,8 +421,8 @@ export function App() {
       setSelectedObjectId(newTextFrameId);
       setEditingObjectId(null);
     }
-    setMessage('Text Box inserted and selected. Double-click or press Enter to edit text.');
-  }, [activePageId, document, updateDocument]);
+    setMessage(lang === 'ur' ? 'ٹیکسٹ باکس داخل کر دیا گیا۔ تدوین کے لیے ڈبل کلک کریں یا Enter دبائیں۔' : 'Text Box inserted and selected. Double-click or press Enter to edit text.');
+  }, [lang, activePageId, document, updateDocument]);
 
   // Text-frame flow-chain candidates for the Link menu (all text frames except the selected one).
   // Frames already in the selected frame's chain are excluded (linking them would be circular).
@@ -493,14 +517,14 @@ export function App() {
   const handleAddFootnote = React.useCallback(() => {
     const nextDoc = addFootnoteCommand(document, activePageId, 'نیا حاشیہ (New Footnote)');
     updateDocument(nextDoc, 'Add Footnote');
-    setMessage('Footnote added');
-  }, [activePageId, document, updateDocument]);
+    setMessage(lang === 'ur' ? 'حاشیہ شامل کر دیا گیا' : 'Footnote added');
+  }, [lang, activePageId, document, updateDocument]);
 
   const handleAddEndnote = React.useCallback(() => {
     const nextDoc = addEndnoteCommand(document, activePageId, 'نئی تعلیق (New Endnote)');
     updateDocument(nextDoc, 'Add Endnote');
-    setMessage('Endnote added');
-  }, [activePageId, document, updateDocument]);
+    setMessage(lang === 'ur' ? 'تعلیق شامل کر دی گئی' : 'Endnote added');
+  }, [lang, activePageId, document, updateDocument]);
 
   // File Workflows
   const handleSaveNative = React.useCallback(async () => {
@@ -510,12 +534,12 @@ export function App() {
       const updatedRef = await saveDocumentWorkflow(document, fileRef, platform);
       setFileRef(updatedRef);
       setSaveState('Saved locally');
-      setMessage('Saved successfully');
+      setMessage(lang === 'ur' ? 'کامیابی سے محفوظ ہو گیا' : 'Saved successfully');
     } catch {
       setSaveState('Save failed');
-      setMessage('Save failed');
+      setMessage(lang === 'ur' ? 'محفوظ نہیں ہو سکا' : 'Save failed');
     }
-  }, [document, fileRef]);
+  }, [lang, document, fileRef]);
 
   const handleSaveAsNative = React.useCallback(async () => {
     setSaveState('Saving…');
@@ -524,12 +548,12 @@ export function App() {
       const updatedRef = await saveAsDocumentWorkflow(document, platform);
       setFileRef(updatedRef);
       setSaveState('Saved locally');
-      setMessage('Saved successfully');
+      setMessage(lang === 'ur' ? 'کامیابی سے محفوظ ہو گیا' : 'Saved successfully');
     } catch {
       setSaveState('Save failed');
-      setMessage('Save failed');
+      setMessage(lang === 'ur' ? 'محفوظ نہیں ہو سکا' : 'Save failed');
     }
-  }, [document]);
+  }, [lang, document]);
 
   const handleOpenDocumentWorkflow = React.useCallback(async () => {
     try {
@@ -618,8 +642,8 @@ export function App() {
     a.download = `${document.metadata.title || 'RePage_Document'}.epub`;
     a.click();
     URL.revokeObjectURL(url);
-    setMessage('ePUB 3.0 exported successfully');
-  }, [document]);
+    setMessage(lang === 'ur' ? 'ePUB 3.0 کامیابی سے برآمد ہو گیا' : 'ePUB 3.0 exported successfully');
+  }, [lang, document]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -642,11 +666,11 @@ export function App() {
         if (editingObjectId) {
           e.preventDefault();
           setEditingObjectId(null);
-          setMessage('Exited text editing mode. Object remains selected.');
+          setMessage(lang === 'ur' ? 'متن کی تدوین ختم۔ آبجیکٹ منتخب ہے۔' : 'Exited text editing mode. Object remains selected.');
         } else if (selectedObjectId) {
           e.preventDefault();
           setSelectedObjectId(null);
-          setMessage('Object deselected.');
+          setMessage(lang === 'ur' ? 'آبجیکٹ غیر منتخب کر دیا گیا۔' : 'Object deselected.');
         }
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedObjectId && !editingObjectId) {
         const activeElem = window.document.activeElement;
@@ -657,14 +681,14 @@ export function App() {
             const nextDoc = deleteObject(document, selectedObjectId);
             updateDocument(nextDoc, 'Delete object');
             setSelectedObjectId(null);
-            setMessage('Object deleted.');
+            setMessage(lang === 'ur' ? 'آبجیکٹ حذف کر دیا گیا۔' : 'Object deleted.');
           } catch {}
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [document, selectedObjectId, editingObjectId, updateDocument]);
+  }, [lang, document, selectedObjectId, editingObjectId, updateDocument]);
 
   const [showOcrImportDialog, setShowOcrImportDialog] = useState(false);
 
@@ -703,9 +727,9 @@ export function App() {
       'Place OCR result on canvas',
     );
     setShowOcrPanel(false);
-    setMessage('OCR text frame and source image added to page');
+    setMessage(lang === 'ur' ? 'OCR ٹیکسٹ فریم اور اصل تصویر صفحے میں شامل کر دی گئی' : 'OCR text frame and source image added to page');
     ocrSourceBufferRef.current = null;
-  }, [activePageId, document, updateDocument]);
+  }, [lang, activePageId, document, updateDocument]);
 
   const imageFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -713,12 +737,12 @@ export function App() {
     (file: File) => {
       const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
       if (!allowedTypes.includes(file.type) && !file.name.match(/\.(png|jpe?g|webp|svg)$/i)) {
-        setMessage('Unsupported image format. Please select PNG, JPEG, WebP, or SVG.');
+        setMessage(lang === 'ur' ? 'غیر معاون تصویری فارمیٹ۔ PNG، JPEG، WebP یا SVG منتخب کریں۔' : 'Unsupported image format. Please select PNG, JPEG, WebP, or SVG.');
         return;
       }
       const maxSize = 25 * 1024 * 1024; // 25MB limit
       if (file.size > maxSize) {
-        setMessage('Image file size exceeds 25MB limit.');
+        setMessage(lang === 'ur' ? 'تصویر کا سائز 25MB کی حد سے زیادہ ہے۔' : 'Image file size exceeds 25MB limit.');
         return;
       }
 
@@ -777,7 +801,7 @@ export function App() {
       };
       reader.readAsDataURL(file);
     },
-    [activePageId, document, selectedObject, updateDocument],
+    [lang, activePageId, document, selectedObject, updateDocument],
   );
 
   // Handle Shape Style Updates (Fill, Stroke, StrokeWidth, CornerRadius)
@@ -842,7 +866,7 @@ export function App() {
         const text = editor.state.doc.textBetween(from, to);
         await copyToClipboard(text);
         editor.chain().focus().deleteSelection().run();
-        setMessage('Cut selection to clipboard');
+        setMessage(lang === 'ur' ? 'منتخب حصہ کلپ بورڈ میں کاٹ دیا گیا' : 'Cut selection to clipboard');
         return;
       }
     }
@@ -873,8 +897,8 @@ export function App() {
 
     const { doc: nextDoc } = await cutSelection(document, { storyId, start, end, text: selText });
     updateDocument(nextDoc, 'Cut selection');
-    setMessage('Cut selection to clipboard');
-  }, [document, getTargetStoryId, updateDocument]);
+    setMessage(lang === 'ur' ? 'منتخب حصہ کلپ بورڈ میں کاٹ دیا گیا' : 'Cut selection to clipboard');
+  }, [lang, document, getTargetStoryId, updateDocument]);
 
   const handleCopy = React.useCallback(async () => {
     const editor = activeEditorRef.current;
@@ -883,7 +907,7 @@ export function App() {
       if (from !== to) {
         const text = editor.state.doc.textBetween(from, to);
         await copyToClipboard(text);
-        setMessage('Copied selection to clipboard');
+        setMessage(lang === 'ur' ? 'منتخب حصہ کلپ بورڈ میں کاپی کر دیا گیا' : 'Copied selection to clipboard');
         return;
       }
     }
@@ -894,8 +918,8 @@ export function App() {
     } else {
       try { window.document.execCommand('copy'); } catch {}
     }
-    setMessage('Copied selection to clipboard');
-  }, []);
+    setMessage(lang === 'ur' ? 'منتخب حصہ کلپ بورڈ میں کاپی کر دیا گیا' : 'Copied selection to clipboard');
+  }, [lang]);
 
   const handlePaste = React.useCallback(
     async (mode: 'all' | 'special' | 'text-only' | 'merge' = 'all') => {
@@ -985,12 +1009,12 @@ export function App() {
   const handleFormatPainter = React.useCallback(() => {
     if (isFormatPainterActive) {
       setIsFormatPainterActive(false);
-      setMessage('Format Painter deactivated');
+      setMessage(lang === 'ur' ? 'فارمیٹ پینٹر بند کر دیا گیا' : 'Format Painter deactivated');
     } else {
       setIsFormatPainterActive(true);
-      setMessage('Format Painter active: Select text or object to apply formatting');
+      setMessage(lang === 'ur' ? 'فارمیٹ پینٹر فعال: فارمیٹ لگانے کے لیے متن یا آبجیکٹ منتخب کریں' : 'Format Painter active: Select text or object to apply formatting');
     }
-  }, [isFormatPainterActive]);
+  }, [lang, isFormatPainterActive]);
 
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -1193,8 +1217,8 @@ export function App() {
     if (activeEditorRef.current) {
       activeEditorRef.current.chain().focus().unsetAllMarks().clearNodes().run();
     }
-    setMessage('Cleared formatting');
-  }, []);
+    setMessage(lang === 'ur' ? 'فارمیٹنگ ختم کر دی گئی' : 'Cleared formatting');
+  }, [lang]);
 
   const [activeDirection, setActiveDirection] = useState<TextDirection>('rtl');
   const [isBulletList, setIsBulletList] = useState(false);
@@ -1481,8 +1505,8 @@ export function App() {
       setIsBulletList(editor.isActive('bulletList'));
       setIsOrderedList(editor.isActive('orderedList'));
     }
-    setMessage('Decreased list level / indent');
-  }, []);
+    setMessage(lang === 'ur' ? 'فہرست کی سطح / حاشیہ کم کر دیا گیا' : 'Decreased list level / indent');
+  }, [lang]);
 
   const handleIncreaseIndent = React.useCallback(() => {
     if (activeEditorRef.current) {
@@ -1493,8 +1517,8 @@ export function App() {
       setIsBulletList(editor.isActive('bulletList'));
       setIsOrderedList(editor.isActive('orderedList'));
     }
-    setMessage('Increased list level / indent');
-  }, []);
+    setMessage(lang === 'ur' ? 'فہرست کی سطح / حاشیہ بڑھا دیا گیا' : 'Increased list level / indent');
+  }, [lang]);
 
   const handleChangeListLevel = React.useCallback((targetLevel: number) => {
     if (activeEditorRef.current) {
@@ -1514,8 +1538,8 @@ export function App() {
   }, []);
 
   const handleSortParagraphs = React.useCallback(() => {
-    setMessage('Sorted paragraphs alphabetically');
-  }, []);
+    setMessage(lang === 'ur' ? 'پیراگراف حروفِ تہجی کے حساب سے ترتیب دیے گئے' : 'Sorted paragraphs alphabetically');
+  }, [lang]);
 
   const handleApplyQuickUrduPreset = React.useCallback(
     (
@@ -1532,7 +1556,7 @@ export function App() {
         setNumeralSystem('urdu');
         const nextDoc = applyStyleToStory(document, storyId, 'prose');
         updateDocument(nextDoc, 'Apply Prose & Column Preset');
-        setMessage('Applied Justified Prose & Column Preset (13pt, Justified, 1.5x Line Height)');
+        setMessage(lang === 'ur' ? 'ہموار نثر و کالم پری سیٹ لاگو کر دیا گیا' : 'Applied Justified Prose & Column Preset (13pt, Justified, 1.5x Line Height)');
       } else if (kind === 'poetry') {
         setActiveFontFamily('Noto Nastaliq Urdu');
         setActiveFontSize(16);
@@ -1542,7 +1566,7 @@ export function App() {
         setNumeralSystem('urdu');
         const nextDoc = applyStyleToStory(document, storyId, 'poetry');
         updateDocument(nextDoc, 'Apply Poetry & Verses Preset');
-        setMessage('Applied Poetry & Verses Preset (16pt, Centered, 2.0x Line Height)');
+        setMessage(lang === 'ur' ? 'شاعری پری سیٹ لاگو کر دیا گیا' : 'Applied Poetry & Verses Preset (16pt, Centered, 2.0x Line Height)');
       } else if (kind === 'heading') {
         setActiveFontFamily('Noto Nastaliq Urdu');
         setActiveFontSize(22);
@@ -1552,7 +1576,7 @@ export function App() {
         setNumeralSystem('urdu');
         const nextDoc = applyStyleToStory(document, storyId, 'heading');
         updateDocument(nextDoc, 'Apply Heading Preset');
-        setMessage('Applied Headings & Titles Preset (22pt, Right, 1.3x Line Height)');
+        setMessage(lang === 'ur' ? 'سرخیوں کا پری سیٹ لاگو کر دیا گیا' : 'Applied Headings & Titles Preset (22pt, Right, 1.3x Line Height)');
       } else if (kind === 'citation') {
         setActiveFontFamily('Amiri');
         setActiveFontSize(18);
@@ -1562,7 +1586,7 @@ export function App() {
         setNumeralSystem('urdu');
         const nextDoc = applyStyleToStory(document, storyId, 'citation');
         updateDocument(nextDoc, 'Apply Sacred Citation Preset');
-        setMessage('Applied Arabic & Sacred Citation Preset (Amiri 18pt, Centered, 1.8x Line Height)');
+        setMessage(lang === 'ur' ? 'عربی اقتباس پری سیٹ لاگو کر دیا گیا' : 'Applied Arabic & Sacred Citation Preset (Amiri 18pt, Centered, 1.8x Line Height)');
       } else {
         setActiveFontFamily('Noto Nastaliq Urdu');
         setActiveFontSize(14);
@@ -1572,11 +1596,10 @@ export function App() {
         setNumeralSystem('urdu');
         const nextDoc = applyStyleToStory(document, storyId, 'standard');
         updateDocument(nextDoc, 'Apply Standard Urdu Preset');
-        setMessage('Applied Standard Urdu Body Preset (14pt, Right, 1.5x Line Height)');
+        setMessage(lang === 'ur' ? 'عام اردو متن کا پری سیٹ لاگو کر دیا گیا' : 'Applied Standard Urdu Body Preset (14pt, Right, 1.5x Line Height)');
       }
     },
-    [
-      document,
+    [lang, document,
       getTargetStoryId,
       updateDocument,
       setActiveFontFamily,
@@ -1585,8 +1608,7 @@ export function App() {
       setActiveAlignment,
       setLineHeight,
       setNumeralSystem,
-      setMessage,
-    ],
+      setMessage,],
   );
 
   const handleSaveCustomPreset = React.useCallback(
@@ -1610,9 +1632,9 @@ export function App() {
     (id: string) => {
       const updated = deleteCustomUrduPreset(id);
       setCustomPresets(updated);
-      setMessage('Deleted Custom Preset');
+      setMessage(lang === 'ur' ? 'اپنا پری سیٹ حذف کر دیا گیا' : 'Deleted Custom Preset');
     },
-    [setMessage],
+    [lang, setMessage],
   );
 
   const handleApplyCustomPreset = React.useCallback(
@@ -1625,27 +1647,25 @@ export function App() {
       setActiveDirection('rtl');
       setMessage(`Applied Custom Preset: "${preset.name}"`);
     },
-    [
-      setActiveFontFamily,
+    [setActiveFontFamily,
       setActiveFontSize,
       setLineHeight,
       setActiveAlignment,
       setNumeralSystem,
       setActiveDirection,
-      setMessage,
-    ],
+      setMessage,],
   );
 
   const handleToggleFormattingMarks = React.useCallback(() => {
     setShowFormattingMarks((prev) => !prev);
-    setMessage(showFormattingMarks ? 'Formatting marks hidden' : 'Formatting marks shown (¶, spaces, tabs)');
-  }, [showFormattingMarks]);
+    setMessage(lang === 'ur' ? (showFormattingMarks ? 'فارمیٹنگ نشان چھپا دیے گئے' : 'فارمیٹنگ نشان دکھا دیے گئے') : (showFormattingMarks ? 'Formatting marks hidden' : 'Formatting marks shown (¶, spaces, tabs)'));
+  }, [lang, showFormattingMarks]);
 
   const handleSelectParagraphBorder = React.useCallback(
     (side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all' | 'none') => {
-      setMessage(`Applied ${side} paragraph border`);
+      setMessage(lang === 'ur' ? 'پیراگراف کا کنارہ لگا دیا گیا' : `Applied ${side} paragraph border`);
     },
-    [],
+    [lang],
   );
 
   const handleKeyboardModeChange = React.useCallback((mode: KeyboardMode) => {
@@ -1721,7 +1741,7 @@ export function App() {
   }, []);
 
   return (
-    <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)}>
+    <DragAndDropOverlay onFileDrop={(file) => void handleOpenImportFile(file)} lang={lang}>
       <div className="app-shell">
         <input
           ref={imageFileInputRef}
@@ -1750,7 +1770,7 @@ export function App() {
           onSaveAsDocument={() => void handleSaveAsNative()}
           onShowRecentFiles={() => setShowRecent(!showRecent)}
           onRunPreflight={() => setShowPreflight(true)}
-          onToggleCollab={() => setMessage('Live collaboration room active')}
+          onToggleCollab={() => setMessage(lang === 'ur' ? 'لائیو تعاون روم فعال ہے' : 'Live collaboration room active')}
           onOpenLanguageTools={() => setShowLanguageTools(true)}
           onOpenOcr={() => void handleTriggerOcr()}
           onExportPdf={handleBrowserPrint}
@@ -1885,9 +1905,9 @@ export function App() {
             } else {
               try { window.document.execCommand('selectAll'); } catch {}
             }
-            setMessage('Selected all text content');
+            setMessage(lang === 'ur' ? 'تمام متن منتخب کر دیا گیا' : 'Selected all text content');
           }}
-          onOpenAddins={() => setMessage('Add-ins & Extensions panel')}
+          onOpenAddins={() => setMessage(lang === 'ur' ? 'ایڈ انز اور ایکسٹینشنز پینل' : 'Add-ins & Extensions panel')}
           onAddPage={handleAddPage}
           onRemovePage={handleRemovePage}
           onAddFootnote={handleAddFootnote}
@@ -1910,9 +1930,10 @@ export function App() {
           onToggleSpellcheck={handleToggleSpellcheck}
           onOpenOcr={() => void handleTriggerOcr()}
           onExportPdf={handleBrowserPrint}
+          onExportVectorPdf={handleExportVectorPdf}
           onExportEpub={() => void handleExportEpub()}
           onRunPreflight={() => setShowPreflight(true)}
-          onToggleCollab={() => setMessage('Live collaboration room active')}
+          onToggleCollab={() => setMessage(lang === 'ur' ? 'لائیو تعاون روم فعال ہے' : 'Live collaboration room active')}
           onOpenFileBackstage={() => setIsFileBackstageOpen(true)}
           onToggleNavigationPane={() => { setNavPaneTab('headings'); setIsNavigationPaneOpen((prev) => !prev); }}
           viewMode={viewMode}
@@ -2087,7 +2108,7 @@ export function App() {
             if (selectedObjectId) {
               updateDocument(addCaptionToObject(document, selectedObjectId, 'figure', 'نمونہ کیپشن'), 'Add Caption');
             } else {
-              setMessage('Please select an object to attach a caption');
+              setMessage(lang === 'ur' ? 'کیپشن لگانے کے لیے پہلے کوئی آبجیکٹ منتخب کریں' : 'Please select an object to attach a caption');
             }
           }}
           onInsertBookmark={() => {
@@ -2164,7 +2185,7 @@ export function App() {
             }
 
             updateDocument(docWithIndex, 'Insert Subject Index');
-            setMessage('Subject Index placed on page layout canvas');
+            setMessage(lang === 'ur' ? 'اشاریہ صفحے پر رکھ دیا گیا' : 'Subject Index placed on page layout canvas');
           }}
           onOpenCharacterSubstitution={() => setShowCharSub(true)}
           onOpenKeyboardEditor={() => setShowKeyboardEditor(true)}
@@ -2250,6 +2271,7 @@ export function App() {
                 document={document}
                 activePageId={activePageId}
                 zoomLevel={zoomLevel}
+                lang={lang}
                 activeFontFamily={activeFontFamily}
                 pairedLatinFont={activeEnglishFont}
                 disableUrduKeyMapping={writingLanguage === 'english'}
@@ -2372,6 +2394,7 @@ export function App() {
               onInsertChar={handleInsertChar}
               isMinimized={isKeyboardMinimized}
               onToggleMinimize={() => setIsKeyboardMinimized((prev) => !prev)}
+              t={t}
             />
           </div>
         )}
@@ -2379,11 +2402,30 @@ export function App() {
         {/* Bottom Studio Statusbar (MS Word layout: page info left, keyboard toggle center, zoom right) */}
         <footer className="studio-statusbar">
           <div className="statusbar-left">
-            <span>صفحہ {document.pageOrder.indexOf(activePageId) + 1} از {document.pageOrder.length}</span>
+            <span>{lang === 'ur' ? `صفحہ ${document.pageOrder.indexOf(activePageId) + 1} از ${document.pageOrder.length}` : `Page ${document.pageOrder.indexOf(activePageId) + 1} of ${document.pageOrder.length}`}</span>
             <span className="statusbar-separator">|</span>
             <span>{Math.round(pointsToMillimetres(activePage.width))} × {Math.round(pointsToMillimetres(activePage.height))} mm</span>
             <span className="statusbar-separator">|</span>
-            <span>{saveState}</span>
+            <span>{translateSaveState(saveState, lang)}</span>
+            <span className="statusbar-separator">|</span>
+            <button
+              type="button"
+              title={lang === 'ur' ? 'مینیو کی زبان بدلیں' : 'Switch menu language'}
+              onClick={() => setLang(lang === 'ur' ? 'en' : 'ur')}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '1px 8px',
+                borderRadius: '3px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#c084fc',
+                backgroundColor: 'rgba(192, 132, 252, 0.1)',
+              }}
+            >
+              {lang === 'ur' ? 'اردو' : 'EN'}
+            </button>
             <span className="statusbar-separator">|</span>
             <button
               type="button"
@@ -2409,7 +2451,7 @@ export function App() {
             <button
               type="button"
               onClick={handleToggleSpellcheck}
-              title={spellcheckOn ? 'لائیو املا بند کریں' : 'لائیو املا آن کریں'}
+              title={lang === 'ur' ? (spellcheckOn ? 'لائیو املا بند کریں' : 'لائیو املا آن کریں') : (spellcheckOn ? 'Turn off live spellcheck' : 'Turn on live spellcheck')}
               aria-pressed={spellcheckOn}
               style={{
                 background: 'none',
@@ -2423,7 +2465,7 @@ export function App() {
                 backgroundColor: spellcheckOn ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
               }}
             >
-              {spellcheckOn ? '✓ املا' : 'املا'}
+              {lang === 'ur' ? (spellcheckOn ? '✓ املا' : 'املا') : (spellcheckOn ? '✓ Spell' : 'Spell')}
             </button>
           </div>
 
@@ -2444,10 +2486,10 @@ export function App() {
                 alignItems: 'center',
                 gap: '4px',
               }}
-              title={isKeyboardMinimized ? 'Expand Visual Keyboard' : 'Minimize Visual Keyboard'}
+              title={lang === 'ur' ? (isKeyboardMinimized ? t.kbExpand : t.kbMinimize) : (isKeyboardMinimized ? 'Expand Visual Keyboard' : 'Minimize Visual Keyboard')}
             >
               <AppIcon name="keyboard" />
-              <span>{isKeyboardMinimized ? 'Expand Keyboard' : 'Minimize Keyboard'}</span>
+              <span>{lang === 'ur' ? (isKeyboardMinimized ? t.kbExpandShort : t.kbMinimizeShort) : (isKeyboardMinimized ? 'Expand Keyboard' : 'Minimize Keyboard')}</span>
               <AppIcon name={isKeyboardMinimized ? 'chevron-up' : 'chevron-down'} size={12} />
             </button>
           </div>
@@ -2464,7 +2506,7 @@ export function App() {
             />
             <span className="zoom-label">{zoomLevel}%</span>
             <button onClick={() => setZoomLevel((z) => Math.min(200, z + 10))} className="zoom-btn">+</button>
-            <button onClick={() => setZoomLevel(100)} className="zoom-btn" style={{ width: 'auto', borderRadius: '4px', padding: '0 6px', fontSize: '10px' }}>Fit</button>
+            <button onClick={() => setZoomLevel(100)} className="zoom-btn" style={{ width: 'auto', borderRadius: '4px', padding: '0 6px', fontSize: '10px' }} title={lang === 'ur' ? '100% پر لائیں' : 'Zoom to 100%'}>{lang === 'ur' ? 'مکمل' : 'Fit'}</button>
           </div>
         </footer>
 
@@ -2494,9 +2536,10 @@ export function App() {
                 onApplyChanges={(changes) => {
                   const nextDoc = applyLanguageChangesCommand(document, changes);
                   updateDocument(nextDoc, `Apply ${changes.length} Urdu language change(s)`);
-                  setMessage(`Applied ${changes.length} language change(s) cleanly`);
+                  setMessage(lang === 'ur' ? `${changes.length} لسانی تبدیلیاں لاگو کر دی گئیں` : `Applied ${changes.length} language change(s) cleanly`);
                 }}
                 onClose={() => setShowLanguageTools(false)}
+                t={t}
               />
             </div>
           </div>
@@ -2524,6 +2567,7 @@ export function App() {
                 ocrResult={ocrResult}
                 onClose={() => setShowOcrPanel(false)}
                 onCommitToDocument={handleCommitOcrToCanvas}
+                t={t}
               />
             </div>
           </div>
@@ -2594,6 +2638,7 @@ export function App() {
                 result={runPreflightCheck(document)}
                 document={document}
                 onClose={() => setShowPreflight(false)}
+                t={t}
               />
             </div>
           </div>
@@ -2703,6 +2748,7 @@ export function App() {
               document={document}
               activePageId={activePageId}
               zoomLevel={zoomLevel}
+              lang={lang}
               activeFontFamily={activeFontFamily}
               activeFontSize={activeFontSize}
               pendingChar={pendingChar}
@@ -2770,7 +2816,7 @@ export function App() {
             const starter = createStarterDocument();
             setDocumentState(starter);
             setActivePageId(starter.pageOrder[0]!);
-            setMessage('New blank document created');
+            setMessage(lang === 'ur' ? 'نئی خالی دستاویز بنا دی گئی' : 'New blank document created');
           }}
           onNewFromTemplate={(templateId) => handleNewFromTemplate(templateId)}
           onOpenDocument={() => {
@@ -2820,9 +2866,10 @@ export function App() {
             setIsStrikethrough(props.isStrikethrough);
             setIsSubscript(props.isSubscript);
             setIsSuperscript(props.isSuperscript);
-            setMessage('Applied font formatting');
+            setMessage(lang === 'ur' ? 'فونٹ فارمیٹنگ لاگو کر دی گئی' : 'Applied font formatting');
           }}
           onClose={() => setShowFontDialog(false)}
+          t={t}
         />
 
         {/* Advanced Paragraph Dialog Modal */}
@@ -2853,9 +2900,10 @@ export function App() {
               editor.chain().focus().updateAttributes('paragraph', attrs).run();
               editor.chain().focus().updateAttributes('heading', attrs).run();
             }
-            setMessage('Applied paragraph formatting');
+            setMessage(lang === 'ur' ? 'پیراگراف فارمیٹنگ لاگو کر دی گئی' : 'Applied paragraph formatting');
           }}
           onClose={() => setShowParagraphDialog(false)}
+          t={t}
         />
         {/* Page Setup Modal */}
         <PageSetupModal
@@ -2911,7 +2959,7 @@ export function App() {
             if (recoveryPrompt) {
               setDocumentState(recoveryPrompt.document);
               setActivePageId(recoveryPrompt.document.pageOrder[0]!);
-              setMessage('Auto-saved document restored successfully');
+              setMessage(lang === 'ur' ? 'خودکار محفوظ شدہ دستاویز بحال کر دی گئی' : 'Auto-saved document restored successfully');
             }
             setRecoveryPrompt(null);
           }}

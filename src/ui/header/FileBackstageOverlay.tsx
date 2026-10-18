@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { RePageDocument } from '../../domain/document/types';
-import type { UiLanguage } from '../i18n/menuTranslation';
+import { translateSaveState, type UiLanguage } from '../i18n/menuTranslation';
 import { AppIcon } from '../icons/AppIcon';
 import { TEMPLATE_REGISTRY } from '../../templates';
 
@@ -319,7 +319,7 @@ export function FileBackstageOverlay({
               <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 600, color: '#f8fafc' }}>{document.metadata.title}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>{saveState}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>{translateSaveState(saveState, lang)}</div>
                 </div>
                 <div style={{ fontSize: '12px', color: '#94a3b8' }}>
                   {new Date(document.metadata.modifiedAt).toLocaleDateString()}
@@ -449,8 +449,8 @@ export function FileBackstageOverlay({
                     fontSize: '13px',
                   }}
                 >
-                  <option value="mm">Millimeters (mm)</option>
-                  <option value="pt">Points (pt)</option>
+                  <option value="mm">{lang === 'ur' ? 'ملی میٹر (mm)' : 'Millimeters (mm)'}</option>
+                  <option value="pt">{lang === 'ur' ? 'پوائنٹس (pt)' : 'Points (pt)'}</option>
                 </select>
               </div>
             </div>

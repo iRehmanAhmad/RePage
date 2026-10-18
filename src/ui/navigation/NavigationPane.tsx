@@ -229,7 +229,7 @@ export function NavigationPane({
     >
       <div
         onMouseDown={handleMouseDownResize}
-        title="Drag to resize Navigation Pane width"
+        title={lang === 'ur' ? 'نیویگیشن پینل کی چوڑائی بدلنے کے لیے گھسیٹیں' : 'Drag to resize Navigation Pane width'}
         style={{
           position: 'absolute',
           top: 0,
@@ -265,7 +265,7 @@ export function NavigationPane({
             fontSize: '14px',
             cursor: 'pointer',
           }}
-          title="Close Navigation Pane"
+          title={lang === 'ur' ? 'نیویگیشن پینل بند کریں' : 'Close Navigation Pane'}
         >
           <AppIcon name="dismiss" />
         </button>

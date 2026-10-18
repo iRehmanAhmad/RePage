@@ -9,6 +9,7 @@ import {
   type KeyboardMode,
 } from '../../domain/unicode/keyboardLayouts';
 import { loadCustomKeyboardLayouts } from '../../domain/unicode/customKeyboardEngine';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface VisualKeyboardProps {
   mode: KeyboardMode;
@@ -16,6 +17,7 @@ export interface VisualKeyboardProps {
   onInsertChar: (char: string) => void;
   isMinimized?: boolean;
   onToggleMinimize?: () => void;
+  t?: Translations;
 }
 
 export function VisualKeyboard({
@@ -23,6 +25,7 @@ export function VisualKeyboard({
   onModeChange,
   onInsertChar,
   isMinimized: externalMinimized,
+  t,
   onToggleMinimize,
 }: VisualKeyboardProps) {
   const [isShift, setIsShift] = useState(false);
@@ -134,10 +137,10 @@ export function VisualKeyboard({
             alignItems: 'center',
             gap: '4px',
           }}
-          title="Expand Visual Keyboard"
+          title={(t ?? DICTIONARY.en).kbExpand}
         >
           <AppIcon name="keyboard" />
-          <span>Expand Keyboard</span>
+          <span>{(t ?? DICTIONARY.en).kbExpandShort}</span>
           <AppIcon name="chevron-up" size={12} />
         </button>
       </div>
@@ -168,7 +171,7 @@ export function VisualKeyboard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 700, color: '#10b981' }}>اردو کی بورڈ (Keyboard Mode):</span>
+          <span style={{ fontWeight: 700, color: '#10b981' }}>{(t ?? DICTIONARY.en).kbHeader}</span>
           <select
             value={mode}
             onChange={(e) => onModeChange(e.target.value as KeyboardMode)}
@@ -187,7 +190,7 @@ export function VisualKeyboard({
             <option value="crulp">CRULP Phonetic (Standard Urdu)</option>
             <option value="navees">Navees Phonetic</option>
             <option value="english">English (LTR Latin)</option>
-            <option value="native">Native OS Pass-through</option>
+            <option value="native">{(t ?? DICTIONARY.en).nativeOsPassthrough}</option>
             {customLayouts.map((l) => (
               <option key={l.id} value={`custom:${l.id}`}>
                 {l.name} (Custom)
@@ -287,10 +290,10 @@ export function VisualKeyboard({
             alignItems: 'center',
             gap: '4px',
           }}
-          title="Minimize Visual Keyboard"
+          title={(t ?? DICTIONARY.en).kbMinimize}
         >
           <AppIcon name="keyboard" />
-          <span>Minimize Keyboard</span>
+          <span>{(t ?? DICTIONARY.en).kbMinimizeShort}</span>
           <AppIcon name="chevron-down" size={12} />
         </button>
       </div>
@@ -309,7 +312,7 @@ export function VisualKeyboard({
             fontWeight: 600,
           }}
         >
-          <AppIcon name="keyboard" /> Native OS Keyboard Mode Active — Key mapping grid is disabled. Type directly using your operating system keyboard.
+          <AppIcon name="keyboard" /> {(t ?? DICTIONARY.en).nativeOsKeyboardHelp}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>

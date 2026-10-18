@@ -157,7 +157,7 @@ export const FocusModeShell: React.FC<FocusModeShellProps> = ({
           <button
             type="button"
             onClick={() => setTheme('dark')}
-            title="Dark Theme"
+            title={isUr ? 'ڈارک تھیم' : 'Dark Theme'}
             style={{
               width: '18px',
               height: '18px',
@@ -170,7 +170,7 @@ export const FocusModeShell: React.FC<FocusModeShellProps> = ({
           <button
             type="button"
             onClick={() => setTheme('sepia')}
-            title="Sepia Theme"
+            title={isUr ? 'سیپیا تھیم' : 'Sepia Theme'}
             style={{
               width: '18px',
               height: '18px',
@@ -183,7 +183,7 @@ export const FocusModeShell: React.FC<FocusModeShellProps> = ({
           <button
             type="button"
             onClick={() => setTheme('light')}
-            title="Light Theme"
+            title={isUr ? 'لائٹ تھیم' : 'Light Theme'}
             style={{
               width: '18px',
               height: '18px',

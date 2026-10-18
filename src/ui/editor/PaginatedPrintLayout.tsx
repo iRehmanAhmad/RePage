@@ -46,6 +46,7 @@ export interface PaginatedPrintLayoutProps {
   onUpdateTableCell?: ((tableId: string, rowIndex: number, colIndex: number, text: string) => void) | undefined;
   onActiveTableCellChange?: ((rowIndex: number, colIndex: number) => void) | undefined;
   onUpdateGuides?: ((pageId: string, guides: import('../../domain/document/types').PageGuide[]) => void) | undefined;
+  lang?: 'ur' | 'en';
 }
 
 /**
@@ -118,6 +119,7 @@ export function PaginatedPrintLayout({
   onUpdateTableCell,
   onActiveTableCellChange,
   onUpdateGuides,
+  lang = 'ur',
 }: PaginatedPrintLayoutProps) {
   const primaryStoryId = 'primary-body-story';
   const primaryStory = document.stories[primaryStoryId] || {
@@ -737,7 +739,7 @@ export function PaginatedPrintLayout({
                           borderRadius: '4px',
                           cursor: 'pointer',
                         }}
-                        title="Exit text edit mode and enable dragging/resizing table on canvas"
+                        title={lang === 'ur' ? 'متن کی تدوین سے نکلیں اور جدول کو گھسیٹیں' : 'Exit text edit mode and enable dragging/resizing table on canvas'}
                       >
                         <span>✥</span>
                         <span>جدول منتقل کریں (Move Table)</span>

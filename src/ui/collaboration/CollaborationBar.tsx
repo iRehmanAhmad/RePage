@@ -2,6 +2,7 @@ import React from 'react';
 import type { CollaboratorPresence } from '../../collaboration/awareness';
 import type { NetworkConnectionState } from '../../collaboration/networkProvider';
 import { AppIcon } from '../icons/AppIcon';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 interface CollaborationBarProps {
   connectionState: NetworkConnectionState;
@@ -11,6 +12,7 @@ interface CollaborationBarProps {
   onToggleComments?: (() => void) | undefined;
   unreadCommentsCount?: number | undefined;
   isLocalRecoveryActive?: boolean | undefined;
+  t?: Translations;
 }
 
 export const CollaborationBar: React.FC<CollaborationBarProps> = ({
@@ -21,18 +23,20 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
   onToggleComments,
   unreadCommentsCount = 0,
   isLocalRecoveryActive = false,
+  t,
 }) => {
+  const tt = t ?? DICTIONARY.en;
   const getStatusBadge = () => {
     switch (connectionState) {
       case 'connected':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Online</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">{tt.collabOnline}</span>;
       case 'relay-forced':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"><AppIcon name="shield-check" size={14} /> TURN Relay</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"><AppIcon name="shield-check" size={14} /> {tt.collabRelay}</span>;
       case 'reconnecting':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Reconnecting...</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">{tt.collabReconnecting}</span>;
       case 'disconnected':
       default:
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 font-sans">Offline</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 font-sans">{tt.collabOffline}</span>;
     }
   };
 
@@ -41,7 +45,7 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
       <div className="flex items-center space-x-3 space-x-reverse">
         {getStatusBadge()}
         {isLocalRecoveryActive && (
-          <span className="text-xs text-emerald-400 font-medium"><AppIcon name="check" size={14} /> Local recovery active</span>
+          <span className="text-xs text-emerald-400 font-medium"><AppIcon name="check" size={14} /> {tt.collabLocalRecovery}</span>
         )}
       </div>
 

@@ -70,7 +70,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
       {/* Left Resizer Drag Handle */}
       <div
         onMouseDown={handleMouseDownResize}
-        title="Drag to resize Properties Panel width"
+        title={t.tipResizeInspector}
         style={{
           position: 'absolute',
           top: 0,
@@ -103,7 +103,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               cursor: 'pointer',
               padding: '2px 4px',
             }}
-            title="Close Properties Inspector"
+            title={t.tipCloseInspector}
           >
             <AppIcon name="dismiss" />
           </button>
@@ -116,18 +116,18 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             {/* Object Header */}
             <div className="inspector-card highlight">
               <div className="flex-between mb-1">
-                <span className="card-title">عنصر ID: {selectedObject.id}</span>
+                <span className="card-title">{t.inspElementId} {selectedObject.id}</span>
                 <span className="font-active-tag">{selectedObject.type}</span>
               </div>
-              <div className="card-sub">پوزیشن اور پیمائش درج کریں (pt / mm)</div>
+              <div className="card-sub">{t.inspPosHint}</div>
             </div>
 
             {/* Geometry X, Y, W, H Inputs */}
             <div className="space-y-card">
-              <span className="field-label">مقام اور جسامت (Geometry)</span>
+              <span className="field-label">{t.inspGeometry}</span>
               <div className="grid-2">
                 <div className="inspector-field">
-                  <label>X (pt)</label>
+                  <label>{t.lblCoordX}</label>
                   <input
                     type="number"
                     value={Math.round(selectedObject.frame.x)}
@@ -138,7 +138,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   />
                 </div>
                 <div className="inspector-field">
-                  <label>Y (pt)</label>
+                  <label>{t.lblCoordY}</label>
                   <input
                     type="number"
                     value={Math.round(selectedObject.frame.y)}
@@ -152,7 +152,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 
               <div className="grid-2">
                 <div className="inspector-field">
-                  <label>چوڑائی Width (pt)</label>
+                  <label>{t.inspWidth}</label>
                   <input
                     type="number"
                     value={Math.round(selectedObject.frame.width)}
@@ -163,7 +163,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   />
                 </div>
                 <div className="inspector-field">
-                  <label>اونچائی Height (pt)</label>
+                  <label>{t.inspHeight}</label>
                   <input
                     type="number"
                     value={Math.round(selectedObject.frame.height)}
@@ -179,7 +179,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             {/* Rotation */}
             <div className="inspector-card">
               <div className="flex-between mb-2">
-                <span className="field-label">زاویہ (Rotation)</span>
+                <span className="field-label">{t.inspRotation}</span>
                 <span className="font-mono text-xs">{selectedObject.frame.rotation}°</span>
               </div>
               <input
@@ -198,12 +198,12 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             {selectedObject.type === 'rectangle' && (
               <div className="space-y-card" style={{ marginTop: '12px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
                 <span className="field-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
-                  شکل کی خصوصیات (Shape Format)
+                  {t.inspShapeFormat}
                 </span>
 
                 {/* Fill Color */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>مطلوبہ رنگ (Fill Color):</label>
+                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>{t.inspFillColor}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                       type="color"
@@ -219,7 +219,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 
                 {/* Outline Color */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
-                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>آؤٹ لائن رنگ (Outline Color):</label>
+                  <label style={{ fontSize: '11px', color: '#94a3b8' }}>{t.inspOutlineColor}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                       type="color"
@@ -236,7 +236,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 {/* Outline Width */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
                   <div className="flex-between">
-                    <label style={{ fontSize: '11px', color: '#94a3b8' }}>آؤٹ لائن چوڑائی (Stroke Width):</label>
+                    <label style={{ fontSize: '11px', color: '#94a3b8' }}>{t.inspStrokeWidth}</label>
                     <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{selectedObject.strokeWidth} pt</span>
                   </div>
                   <input
@@ -254,7 +254,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 {/* Corner Radius */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
                   <div className="flex-between">
-                    <label style={{ fontSize: '11px', color: '#94a3b8' }}>گولائی (Corner Radius):</label>
+                    <label style={{ fontSize: '11px', color: '#94a3b8' }}>{t.inspCornerRadius}</label>
                     <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{selectedObject.cornerRadius} pt</span>
                   </div>
                   <input
@@ -276,26 +276,26 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           <div className="space-y-section">
             <div className="inspector-card empty">
               <AppIcon name="document" size={24} className="block mb-1" />
-              <span>کینوس پر کوئی عنصر منتخب نہیں۔ عنصر کے خواص دیکھنے کے لیے اس پر کلک کریں۔</span>
+              <span>{t.inspEmpty}</span>
             </div>
 
             {activePage && (
               <div className="inspector-card">
-                <span className="card-title block mb-2">صفحہ کی پیمائش (Page Dimensions)</span>
+                <span className="card-title block mb-2">{t.inspPageDims}</span>
                 <div className="space-y-1 text-xs">
                   <div className="flex-between">
-                    <span className="text-slate-400">سائز:</span>
+                    <span className="text-slate-400">{t.inspSize}</span>
                     <span>
                       {Math.round(pointsToMillimetres(activePage.width))} ×{' '}
                       {Math.round(pointsToMillimetres(activePage.height))} mm
                     </span>
                   </div>
                   <div className="flex-between">
-                    <span className="text-slate-400">حواشی (Top):</span>
+                    <span className="text-slate-400">{t.inspMarginTop}</span>
                     <span>{activePage.margins.top} pt</span>
                   </div>
                   <div className="flex-between">
-                    <span className="text-slate-400">حواشی (Right):</span>
+                    <span className="text-slate-400">{t.inspMarginRight}</span>
                     <span>{activePage.margins.right} pt</span>
                   </div>
                 </div>

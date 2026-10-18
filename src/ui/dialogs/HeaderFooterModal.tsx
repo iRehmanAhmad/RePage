@@ -234,7 +234,7 @@ export const HeaderFooterModal: React.FC<HeaderFooterModalProps> = ({
               >
                 <option value="urdu">اردو (۰، ۱، ۲)</option>
                 <option value="abjad">ابجد (ا، ب، ج)</option>
-                <option value="western">Western (1, 2, 3)</option>
+                <option value="western">{isUr ? 'مغربی (1, 2, 3)' : 'Western (1, 2, 3)'}</option>
               </select>
             </div>
 

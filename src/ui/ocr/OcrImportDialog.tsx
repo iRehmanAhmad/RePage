@@ -68,7 +68,7 @@ export function OcrImportDialog({
       onClose();
     } catch (err: unknown) {
       setIsProcessing(false);
-      const msg = err instanceof Error ? err.message : 'OCR Failed';
+      const msg = err instanceof Error ? err.message : (isUr ? 'OCR ناکام' : 'OCR Failed');
       setErrorMessage(msg);
     }
   };

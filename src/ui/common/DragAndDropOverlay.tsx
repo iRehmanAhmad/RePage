@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { AppIcon } from '../icons/AppIcon';
+import type { UiLanguage } from '../i18n/menuTranslation';
 
 interface DragAndDropOverlayProps {
   onFileDrop: (file: File) => void;
   children?: React.ReactNode;
+  lang?: UiLanguage;
 }
 
-export function DragAndDropOverlay({ onFileDrop, children }: DragAndDropOverlayProps) {
+export function DragAndDropOverlay({ onFileDrop, children, lang = 'ur' }: DragAndDropOverlayProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function DragAndDropOverlay({ onFileDrop, children }: DragAndDropOverlayP
       {children}
       {isDraggingOver && (
         <div
-          aria-label="Drop file overlay"
+          aria-label={lang === 'ur' ? 'فائل ڈراپ کریں' : 'Drop file overlay'}
           style={{
             position: 'fixed',
             inset: 0,
@@ -68,9 +70,9 @@ export function DragAndDropOverlay({ onFileDrop, children }: DragAndDropOverlayP
         >
           <AppIcon name="document-add" size={48} style={{ marginBottom: '16px' }} />
           <h2 style={{ margin: 0, fontSize: '24px', fontFamily: 'Noto Nastaliq Urdu, sans-serif' }}>
-            دستاویز یہاں ڈراپ کریں (.urdup / .pdf / .docx)
+            {lang === 'ur' ? 'دستاویز یہاں ڈراپ کریں (.urdup / .pdf / .docx)' : 'Drop your document here (.urdup / .pdf / .docx)'}
           </h2>
-          <p style={{ margin: '8px 0 0', opacity: 0.8 }}>Drop package or file to open in RePage Studio</p>
+          <p style={{ margin: '8px 0 0', opacity: 0.8 }}>{lang === 'ur' ? 'ری پیج اسٹوڈیو میں کھولنے کے لیے پیکج یا فائل ڈراپ کریں' : 'Drop package or file to open in RePage Studio'}</p>
         </div>
       )}
     </>

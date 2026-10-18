@@ -97,7 +97,7 @@ export function SelectionPane({
       {/* Right Resizer Drag Handle */}
       <div
         onMouseDown={handleMouseDownResize}
-        title="Drag to resize Selection Pane width"
+        title={lang === 'ur' ? 'انتخابی پینل کی چوڑائی بدلنے کے لیے گھسیٹیں' : 'Drag to resize Selection Pane width'}
         style={{
           position: 'absolute',
           top: 0,
@@ -152,7 +152,7 @@ export function SelectionPane({
           <button
             type="button"
             onClick={() => onReorderObject(selectedObjectId, 'front')}
-            title="Bring to Front"
+            title={lang === 'ur' ? 'سب سے آگے لائیں' : 'Bring to Front'}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
             <AppIcon name="arrow-up" />
@@ -160,7 +160,7 @@ export function SelectionPane({
           <button
             type="button"
             onClick={() => onReorderObject(selectedObjectId, 'forward')}
-            title="Bring Forward"
+            title={lang === 'ur' ? 'آگے لائیں' : 'Bring Forward'}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
             <AppIcon name="arrow-up" />
@@ -168,7 +168,7 @@ export function SelectionPane({
           <button
             type="button"
             onClick={() => onReorderObject(selectedObjectId, 'backward')}
-            title="Send Backward"
+            title={lang === 'ur' ? 'پیچھے بھیجیں' : 'Send Backward'}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
             <AppIcon name="arrow-down" />
@@ -176,7 +176,7 @@ export function SelectionPane({
           <button
             type="button"
             onClick={() => onReorderObject(selectedObjectId, 'back')}
-            title="Send to Back"
+            title={lang === 'ur' ? 'سب سے پیچھے بھیجیں' : 'Send to Back'}
             style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
           >
             <AppIcon name="arrow-down" />

@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { FontDialogModal } from './FontDialogModal';
+import { DICTIONARY } from '../i18n/menuTranslation';
 
 describe('FontDialogModal', () => {
   it('renders MS Word Font dialog when open and triggers onApply', () => {
@@ -24,6 +25,7 @@ describe('FontDialogModal', () => {
         }}
         onApply={handleApply}
         onClose={handleClose}
+        t={DICTIONARY.en}
       />,
     );
 

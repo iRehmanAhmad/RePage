@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import type { ThemeMode } from '../theme/themeEngine';
-import type { UiLanguage, Translations } from '../i18n/menuTranslation';
+import { translateSaveState, type UiLanguage, type Translations } from '../i18n/menuTranslation';
 import { QatItemKey, QAT_CATALOG, isStyleQatKey, styleIdFromQatKey } from '../header/qatEngine';
 import { GALLERY_STYLE_IDS, getStyleDisplayName } from '../../editor/commands/styleCommands';
 import { AppIcon } from '../icons/AppIcon';
@@ -147,14 +147,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             <button
               onClick={() => setShowQatDropdown(!showQatDropdown)}
               className="qat-btn customize-btn"
-              title="Customize Quick Access Toolbar"
+              title={t.tipCustomizeQat}
             >
               <AppIcon name="chevron-down" size={14} />
             </button>
 
             {showQatDropdown && (
               <div className="qat-dropdown-menu">
-                <div className="qat-dropdown-header">Customize Quick Access Toolbar</div>
+                <div className="qat-dropdown-header">{t.tipCustomizeQat}</div>
                 {QAT_CATALOG.map((item) => {
                   const isChecked = qatItems.includes(item.key);
                   const itemLabel = lang === 'ur' ? item.labelUr : item.labelEn;
@@ -202,10 +202,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             type="text"
             value={documentTitle}
             onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Document Name..."
+            placeholder={t.phDocumentName}
             dir={lang === 'ur' ? 'rtl' : 'ltr'}
           />
-          <span className="save-badge">{saveState}</span>
+          <span className="save-badge">{translateSaveState(saveState, lang)}</span>
         </div>
       </div>
 
@@ -216,10 +216,10 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           value={lang}
           onChange={(e) => onLanguageChange(e.target.value as UiLanguage)}
           className="header-select"
-          title="Software Menu Language"
+          title={t.tipMenuLanguage}
         >
-          <option value="en">English</option>
-          <option value="ur">اردو</option>
+          <option value="en">{t.langEnglish}</option>
+          <option value="ur">{t.langUrdu}</option>
         </select>
 
         {/* Theme Selector */}
@@ -227,7 +227,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           value={themeMode}
           onChange={(e) => onThemeModeChange(e.target.value as ThemeMode)}
           className="header-select"
-          title="Color Theme Mode"
+          title={t.tipThemeMode}
         >
           <option value="light">{t.themeLight}</option>
           <option value="dark">{t.themeDark}</option>

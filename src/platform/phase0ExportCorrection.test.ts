@@ -17,24 +17,24 @@ describe('Phase 0 — Stop Misleading Users Verification', () => {
     }
   });
 
-  it('2. Menu translations dictionary contains honest Browser Print and disabled PDF labels without 1200 DPI claims', () => {
+  it('2. Menu translations dictionary contains honest Browser Print and Vector PDF labels without 1200 DPI claims', () => {
     // English
     expect(DICTIONARY.en.browserPrint).toBe('Browser Print…');
-    expect(DICTIONARY.en.pdfExportDisabled).toBe('PDF Export (Coming Soon)');
+    expect(DICTIONARY.en.vectorPdfExport).toBe('Vector PDF Export');
     expect(DICTIONARY.en.browserPrint).not.toContain('1200 DPI');
     expect(DICTIONARY.en.exportPdf).not.toContain('1200 DPI');
 
     // Urdu
     expect(DICTIONARY.ur.browserPrint).toBe('پرنٹ… (براؤزر)');
-    expect(DICTIONARY.ur.pdfExportDisabled).toBe('PDF برآمد (عنقریب)');
+    expect(DICTIONARY.ur.vectorPdfExport).toBe('ویکٹر PDF برآمد');
     expect(DICTIONARY.ur.browserPrint).not.toContain('1200 DPI');
   });
 
-  it('3. Honest tooltips explain browser print vs native PDF export limitation', () => {
+  it('3. Honest tooltips explain browser print vs vector PDF export', () => {
     const browserPrintTooltipEn = 'Opens your browser/system print dialog. It does not generate a RePage PDF file.';
-    const pdfDisabledTooltipEn = 'Native vector PDF export is currently under development and unavailable.';
+    const vectorPdfTooltipEn = 'Generates a vector PDF from the document (choose "Save as PDF" in the print dialog).';
 
     expect(browserPrintTooltipEn).toContain('It does not generate a RePage PDF file.');
-    expect(pdfDisabledTooltipEn).toContain('unavailable');
+    expect(vectorPdfTooltipEn).toContain('Save as PDF');
   });
 });

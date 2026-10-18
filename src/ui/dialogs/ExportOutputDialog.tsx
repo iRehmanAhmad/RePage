@@ -251,9 +251,9 @@ export const ExportOutputDialog: React.FC<ExportOutputDialogProps> = ({
                     onChange={(e) => setDpi(Number(e.target.value) as any)}
                     style={{ padding: '6px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc' }}
                   >
-                    <option value={150}>150 DPI (Draft / Screen)</option>
-                    <option value={300}>300 DPI (High Quality Print)</option>
-                    <option value={600}>600 DPI (Ultra High Detail)</option>
+                    <option value={150}>{isUr ? '150 DPI (مسودہ / اسکرین)' : '150 DPI (Draft / Screen)'}</option>
+                    <option value={300}>{isUr ? '300 DPI (اعلیٰ معیار پرنٹ)' : '300 DPI (High Quality Print)'}</option>
+                    <option value={600}>{isUr ? '600 DPI (انتہائی تفصیل)' : '600 DPI (Ultra High Detail)'}</option>
                   </select>
 
                   {readiness.memoryEstimate && (

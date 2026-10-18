@@ -50,7 +50,8 @@ describe('Urdu Tools Phase 6 — Accessibility & Ribbon Organization', () => {
       />,
     );
 
-    const toolbar = screen.getByRole('toolbar', { name: /Urdu Authoring Tools Toolbar/i });
+    // Rendered with lang="ur", so the toolbar carries the Urdu accessible name.
+    const toolbar = screen.getByRole('toolbar', { name: 'اردو تحریری آلات کی پٹی' });
     expect(toolbar).toBeInTheDocument();
 
     const regions = screen.getAllByRole('region');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppIcon } from '../icons/AppIcon';
 import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
+import type { Translations } from '../i18n/menuTranslation';
 
 export interface ParagraphProps {
   alignment: TextAlignment;
@@ -18,6 +19,7 @@ export interface ParagraphDialogModalProps {
   currentProps: ParagraphProps;
   onApply: (props: ParagraphProps) => void;
   onClose: () => void;
+  t: Translations;
 }
 
 export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
@@ -25,6 +27,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
   currentProps,
   onApply,
   onClose,
+  t,
 }) => {
   const [activeTab, setActiveTab] = useState<'spacing' | 'breaks'>('spacing');
   const [alignment, setAlignment] = useState<TextAlignment>(currentProps.alignment || 'start');
@@ -75,7 +78,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
     <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.65)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="modal-card" style={{ width: '450px', padding: '14px 18px', backgroundColor: '#1e293b', color: '#f8fafc', border: '1px solid #334155', borderRadius: '6px', boxShadow: '0 16px 36px rgba(0, 0, 0, 0.6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>Paragraph Formatting</h3>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>{t.dlgParaTitle}</h3>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', borderRadius: '3px' }}>
             <AppIcon name="dismiss" size={14} />
           </button>
@@ -96,7 +99,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            Indents and Spacing
+            {t.dlgParaSpacingTab}
           </button>
           <button
             onClick={() => setActiveTab('breaks')}
@@ -111,7 +114,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            Line and Page Breaks
+            {t.dlgParaBreaksTab}
           </button>
         </div>
 
@@ -119,40 +122,40 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
         {activeTab === 'spacing' && (
           <div>
             {/* General Section */}
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>General:</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.dlgParaGeneral}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Alignment:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaAlignment}</label>
                 <select
                   value={alignment}
                   onChange={(e) => setAlignment(e.target.value as TextAlignment)}
                   style={fieldInputStyle}
                 >
-                  <option value="start" style={optionStyle}>Right (Urdu) / Left (English)</option>
-                  <option value="left" style={optionStyle}>Left</option>
-                  <option value="center" style={optionStyle}>Centered</option>
-                  <option value="right" style={optionStyle}>Right</option>
-                  <option value="justify" style={optionStyle}>Justified</option>
+                  <option value="start" style={optionStyle}>{t.dlgParaAlignStart}</option>
+                  <option value="left" style={optionStyle}>{t.dlgParaAlignLeft}</option>
+                  <option value="center" style={optionStyle}>{t.dlgParaAlignCenter}</option>
+                  <option value="right" style={optionStyle}>{t.dlgParaAlignRight}</option>
+                  <option value="justify" style={optionStyle}>{t.dlgParaAlignJustify}</option>
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Direction:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaDirection}</label>
                 <select
                   value={direction}
                   onChange={(e) => setDirection(e.target.value as TextDirection)}
                   style={fieldInputStyle}
                 >
-                  <option value="rtl" style={optionStyle}>Right-to-Left (Urdu)</option>
-                  <option value="ltr" style={optionStyle}>Left-to-Right (English)</option>
+                  <option value="rtl" style={optionStyle}>{t.dlgParaRtl}</option>
+                  <option value="ltr" style={optionStyle}>{t.dlgParaLtr}</option>
                 </select>
               </div>
             </div>
 
             {/* Indentation Section */}
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Indentation:</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.dlgParaIndentation}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Indent Level:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaIndentLevel}</label>
                 <input
                   type="number"
                   min={0}
@@ -163,7 +166,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                 />
               </div>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>First Line Indent (pt):</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaFirstLineIndent}</label>
                 <input
                   type="number"
                   step={6}
@@ -175,10 +178,10 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
             </div>
 
             {/* Spacing Section */}
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Spacing:</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.dlgParaSpacing}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Before (pt):</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaBefore}</label>
                 <input
                   type="number"
                   min={0}
@@ -189,7 +192,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                 />
               </div>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>After (pt):</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaAfter}</label>
                 <input
                   type="number"
                   min={0}
@@ -200,18 +203,18 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                 />
               </div>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Line Spacing:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaLineSpacing}</label>
                 <select
                   value={lineHeight}
                   onChange={(e) => setLineHeight(Number(e.target.value))}
                   style={fieldInputStyle}
                 >
-                  <option value={1.0} style={optionStyle}>Single (1.0)</option>
-                  <option value={1.15} style={optionStyle}>1.15 lines</option>
-                  <option value={1.5} style={optionStyle}>1.5 lines</option>
-                  <option value={2.0} style={optionStyle}>Double (2.0)</option>
-                  <option value={2.5} style={optionStyle}>2.5 lines</option>
-                  <option value={3.0} style={optionStyle}>3.0 lines</option>
+                  <option value={1.0} style={optionStyle}>{t.dlgParaSingle}</option>
+                  <option value={1.15} style={optionStyle}>{t.dlgParaLines115}</option>
+                  <option value={1.5} style={optionStyle}>{t.dlgParaLines15}</option>
+                  <option value={2.0} style={optionStyle}>{t.dlgParaDouble}</option>
+                  <option value={2.5} style={optionStyle}>{t.dlgParaLines25}</option>
+                  <option value={3.0} style={optionStyle}>{t.dlgParaLines30}</option>
                 </select>
               </div>
             </div>
@@ -221,7 +224,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
         {/* Line and Page Breaks Tab */}
         {activeTab === 'breaks' && (
           <div style={{ marginBottom: '10px', fontSize: '11px' }}>
-            <div style={{ fontWeight: 700, color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pagination:</div>
+            <div style={{ fontWeight: 700, color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.dlgParaPagination}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#cbd5e1' }}>
                 <input
@@ -229,7 +232,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                   checked={widowOrphanControl}
                   onChange={(e) => setWidowOrphanControl(e.target.checked)}
                 />
-                Widow/Orphan control
+                {t.dlgParaWidowOrphan}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#cbd5e1' }}>
                 <input
@@ -237,14 +240,14 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                   checked={keepWithNext}
                   onChange={(e) => setKeepWithNext(e.target.checked)}
                 />
-                Keep with next paragraph
+                {t.dlgParaKeepWithNext}
               </label>
             </div>
           </div>
         )}
 
         {/* Live Bilingual Preview Box */}
-        <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginBottom: '3px' }}>Preview:</div>
+        <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginBottom: '3px' }}>{t.dlgPreviewLabel}</div>
         <div
           style={{
             border: '1px solid #334155',
@@ -283,7 +286,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            Cancel
+            {t.dlgCancel}
           </button>
           <button
             onClick={handleSave}
@@ -298,7 +301,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            OK
+            {t.dlgOk}
           </button>
         </div>
       </div>

@@ -1,16 +1,19 @@
 import React from 'react';
 import { FontColorPalette } from './FontColorPalette';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface ParagraphShadingPaletteProps {
   activeColor?: string | undefined;
   onSelectColor: (color: string | null) => void;
   onClose: () => void;
+  t?: Translations;
 }
 
 export const ParagraphShadingPalette: React.FC<ParagraphShadingPaletteProps> = ({
   activeColor,
   onSelectColor,
   onClose,
+  t,
 }) => {
   return (
     <div
@@ -30,7 +33,7 @@ export const ParagraphShadingPalette: React.FC<ParagraphShadingPaletteProps> = (
       }}
     >
       <div style={{ fontWeight: 600, fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-        Paragraph Shading Color
+        {(t ?? DICTIONARY.en).clrParagraphShading}
       </div>
       <FontColorPalette
         activeColor={activeColor}
@@ -71,7 +74,7 @@ export const ParagraphShadingPalette: React.FC<ParagraphShadingPaletteProps> = (
             backgroundColor: 'transparent',
           }}
         />
-        <span>No Color / No Fill</span>
+        <span>{(t ?? DICTIONARY.en).clrNoFill}</span>
       </button>
     </div>
   );

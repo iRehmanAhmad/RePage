@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getFontCategoryBadge } from '../../domain/unicode/fontRegistry';
 import { AppIcon } from '../icons/AppIcon';
+import type { Translations } from '../i18n/menuTranslation';
 
 export interface FontProps {
   fontFamily: string;
@@ -22,6 +23,7 @@ export interface FontDialogModalProps {
   currentProps: FontProps;
   onApply: (props: FontProps) => void;
   onClose: () => void;
+  t: Translations;
 }
 
 const FONT_FAMILIES = [
@@ -43,6 +45,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
   currentProps,
   onApply,
   onClose,
+  t,
 }) => {
   const [activeTab, setActiveTab] = useState<'font' | 'advanced'>('font');
   const [fontFamily, setFontFamily] = useState(currentProps.fontFamily || 'Noto Nastaliq Urdu');
@@ -82,7 +85,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
     <div className="modal-backdrop">
       <div className="modal-card" style={{ width: '560px', padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Font Formatting</h3>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{t.dlgFontTitle}</h3>
           <button onClick={onClose} className="modal-close-btn"><AppIcon name="dismiss" /></button>
         </div>
 
@@ -101,7 +104,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            Font
+            {t.dlgFontTab}
           </button>
           <button
             onClick={() => setActiveTab('advanced')}
@@ -116,7 +119,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            Advanced Character Spacing
+            {t.dlgFontAdvancedTab}
           </button>
         </div>
 
@@ -126,7 +129,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
               {/* Font Family List */}
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Font:</label>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgFontLabel}</label>
                 <div style={{ border: '1px solid var(--panel-border)', borderRadius: '4px', height: '110px', overflowY: 'auto', background: 'var(--panel-bg)', marginTop: '4px' }}>
                   {FONT_FAMILIES.map((fam) => {
                     const badge = getFontCategoryBadge(fam);
@@ -157,38 +160,38 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
 
               {/* Font Style */}
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Font style:</label>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgFontStyleLabel}</label>
                 <div style={{ border: '1px solid var(--panel-border)', borderRadius: '4px', height: '110px', overflowY: 'auto', background: 'var(--panel-bg)', marginTop: '4px' }}>
                   <div
                     onClick={() => { setIsBold(false); setIsItalic(false); }}
                     style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer', backgroundColor: !isBold && !isItalic ? 'rgba(16, 185, 129, 0.15)' : 'transparent' }}
                   >
-                    Regular
+                    {t.dlgFontRegular}
                   </div>
                   <div
                     onClick={() => { setIsBold(false); setIsItalic(true); }}
                     style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer', fontStyle: 'italic', backgroundColor: !isBold && isItalic ? 'rgba(16, 185, 129, 0.15)' : 'transparent' }}
                   >
-                    Italic
+                    {t.italic}
                   </div>
                   <div
                     onClick={() => { setIsBold(true); setIsItalic(false); }}
                     style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer', fontWeight: 700, backgroundColor: isBold && !isItalic ? 'rgba(16, 185, 129, 0.15)' : 'transparent' }}
                   >
-                    Bold
+                    {t.bold}
                   </div>
                   <div
                     onClick={() => { setIsBold(true); setIsItalic(true); }}
                     style={{ padding: '4px 8px', fontSize: '11px', cursor: 'pointer', fontWeight: 700, fontStyle: 'italic', backgroundColor: isBold && isItalic ? 'rgba(16, 185, 129, 0.15)' : 'transparent' }}
                   >
-                    Bold Italic
+                    {t.dlgFontBoldItalic}
                   </div>
                 </div>
               </div>
 
               {/* Size List */}
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Size:</label>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgFontSizeLabel}</label>
                 <div style={{ border: '1px solid var(--panel-border)', borderRadius: '4px', height: '110px', overflowY: 'auto', background: 'var(--panel-bg)', marginTop: '4px' }}>
                   {FONT_SIZES.map((s) => (
                     <div
@@ -212,7 +215,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
             {/* Colors & Underline Section */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Font color:</label>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgFontColorLabel}</label>
                 <input
                   type="color"
                   value={color}
@@ -221,7 +224,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
                 />
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Underline style:</label>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgUnderlineStyleLabel}</label>
                 <select
                   value={isUnderline ? underlineStyle : 'none'}
                   onChange={(e) => {
@@ -234,17 +237,17 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
                   }}
                   style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
                 >
-                  <option value="none">(None)</option>
-                  <option value="single">Single Line</option>
-                  <option value="double">Double Line</option>
-                  <option value="thick">Thick Line</option>
-                  <option value="dotted">Dotted</option>
-                  <option value="dashed">Dashed</option>
-                  <option value="wave">Wave / Wavey</option>
+                  <option value="none">{t.dlgUnderlineNone}</option>
+                  <option value="single">{t.dlgUnderlineSingle}</option>
+                  <option value="double">{t.dlgUnderlineDouble}</option>
+                  <option value="thick">{t.dlgUnderlineThick}</option>
+                  <option value="dotted">{t.dlgUnderlineDotted}</option>
+                  <option value="dashed">{t.dlgUnderlineDashed}</option>
+                  <option value="wave">{t.dlgUnderlineWavy}</option>
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Underline color:</label>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgUnderlineColorLabel}</label>
                 <input
                   type="color"
                   value={underlineColor}
@@ -256,19 +259,19 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
             </div>
 
             {/* Effects Checkboxes */}
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>Effects:</div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>{t.dlgEffectsLabel}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '16px', fontSize: '11px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={isStrikethrough} onChange={(e) => setIsStrikethrough(e.target.checked)} />
-                Strikethrough
+                {t.dlgStrikethrough}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={isSubscript} onChange={(e) => { setIsSubscript(e.target.checked); if (e.target.checked) setIsSuperscript(false); }} />
-                Subscript
+                {t.dlgSubscript}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={isSuperscript} onChange={(e) => { setIsSuperscript(e.target.checked); if (e.target.checked) setIsSubscript(false); }} />
-                Superscript
+                {t.dlgSuperscript}
               </label>
             </div>
           </div>
@@ -278,7 +281,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
         {activeTab === 'advanced' && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Character Spacing (Kashida / Tracking):</label>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t.dlgCharSpacingLabel}</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
                 <input
                   type="range"
@@ -296,7 +299,7 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
         )}
 
         {/* Live Preview Box */}
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Preview:</div>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>{t.dlgPreviewLabel}</div>
         <div
           style={{
             border: '1px solid var(--panel-border)',
@@ -326,8 +329,8 @@ export const FontDialogModal: React.FC<FontDialogModalProps> = ({
 
         {/* Modal Buttons */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-          <button onClick={onClose} className="ribbon-action-btn">Cancel</button>
-          <button onClick={handleSave} className="ribbon-action-btn primary">OK</button>
+          <button onClick={onClose} className="ribbon-action-btn">{t.dlgCancel}</button>
+          <button onClick={handleSave} className="ribbon-action-btn primary">{t.dlgOk}</button>
         </div>
       </div>
     </div>

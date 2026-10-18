@@ -2,6 +2,7 @@ import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { PreflightPanel } from './PreflightPanel';
+import { DICTIONARY } from '../i18n/menuTranslation';
 import type { PreflightResult } from '../../domain/diagnostics/preflightEngine';
 
 afterEach(() => {
@@ -31,7 +32,7 @@ describe('PreflightPanel (M3.6)', () => {
       ],
     };
 
-    render(<PreflightPanel result={mockResult} />);
+    render(<PreflightPanel result={mockResult} t={DICTIONARY.ur} />);
 
     expect(screen.getByTestId('preflight-panel')).toBeDefined();
     expect(screen.getByText(/پری فلائٹ رپورٹ/i)).toBeDefined();

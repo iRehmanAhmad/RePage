@@ -100,11 +100,11 @@ export function ReadAloudToolbar({
           cursor: 'pointer',
         }}
       >
-        <AppIcon name="stop" /> Stop
+        <AppIcon name="stop" /> {isUr ? 'روکیں' : 'Stop'}
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span style={{ fontSize: '10px', color: '#94a3b8' }}>Speed:</span>
+        <span style={{ fontSize: '10px', color: '#94a3b8' }}>{lang === 'ur' ? 'رفتار:' : 'Speed:'}</span>
         <input
           type="range"
           min="0.5"

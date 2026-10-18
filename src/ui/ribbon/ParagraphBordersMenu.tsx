@@ -1,16 +1,19 @@
 import React from 'react';
 import { AppIcon } from '../icons/AppIcon';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface ParagraphBordersMenuProps {
   onSelectBorder: (side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all' | 'none') => void;
   onClose: () => void;
   onOpenBorderDialog?: (() => void) | undefined;
+  t?: Translations;
 }
 
 export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
   onSelectBorder,
   onClose,
   onOpenBorderDialog,
+  t,
 }) => {
   return (
     <div
@@ -35,7 +38,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="border-bottom" />
-        <span>Bottom Border</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderBottom}</span>
       </button>
       <button
         onClick={() => { onSelectBorder('top'); onClose(); }}
@@ -43,7 +46,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="border-top" />
-        <span>Top Border</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderTop}</span>
       </button>
       <button
         onClick={() => { onSelectBorder('left'); onClose(); }}
@@ -51,7 +54,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="border-left" />
-        <span>Left Border</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderLeft}</span>
       </button>
       <button
         onClick={() => { onSelectBorder('right'); onClose(); }}
@@ -59,7 +62,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="border-right" />
-        <span>Right Border</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderRight}</span>
       </button>
 
       <div style={{ height: '1px', backgroundColor: 'var(--panel-border)', margin: '4px 0' }} />
@@ -70,7 +73,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="border-none" />
-        <span>No Border</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderNone}</span>
       </button>
       <button
         onClick={() => { onSelectBorder('all'); onClose(); }}
@@ -78,7 +81,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="border-all" />
-        <span>All Borders</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderAll}</span>
       </button>
       <button
         onClick={() => { onSelectBorder('box'); onClose(); }}
@@ -86,7 +89,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
       >
         <AppIcon name="square" />
-        <span>Outside Borders</span>
+        <span>{(t ?? DICTIONARY.en).mnuBorderOutside}</span>
       </button>
 
       <div style={{ height: '1px', backgroundColor: 'var(--panel-border)', margin: '4px 0' }} />
@@ -97,7 +100,7 @@ export const ParagraphBordersMenu: React.FC<ParagraphBordersMenuProps> = ({
         style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', fontWeight: 600 }}
       >
         <AppIcon name="settings" />
-        <span>Borders and Shading...</span>
+        <span>{(t ?? DICTIONARY.en).mnuBordersShading}</span>
       </button>
     </div>
   );

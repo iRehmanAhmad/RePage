@@ -86,7 +86,7 @@ export interface Translations {
   shareLink: string;
   exportPdf: string;
   browserPrint: string;
-  pdfExportDisabled: string;
+  vectorPdfExport: string;
   exportEpub: string;
 
   // Inspector & Status
@@ -100,6 +100,224 @@ export interface Translations {
   themeSystem: string;
   langEnglish: string;
   langUrdu: string;
+
+  // List, style & selection tools
+  bulletLibrary: string;
+  numberingLibrary: string;
+  changeListLevel: string;
+  lineSpacingOptions: string;
+  modifyStyle: string;
+  renameStyle: string;
+  removeFromStyleGallery: string;
+  addGalleryToQat: string;
+  selectAll: string;
+  selectAllMatching: string;
+  selectObjects: string;
+  standardJustify: string;
+  straightLine: string;
+  stopPlayback: string;
+  nativeOsPassthrough: string;
+  nativeOsKeyboardHelp: string;
+
+  // Header chrome
+  tipMenuLanguage: string;
+  tipThemeMode: string;
+  phDocumentName: string;
+  tipCustomizeQat: string;
+
+  // Save state (rendered from the SaveState union in App)
+  saveStateSaved: string;
+  saveStateUnsaved: string;
+  saveStateSaving: string;
+  saveStateFailed: string;
+
+  // Inspector dock
+  tipResizeInspector: string;
+  tipCloseInspector: string;
+  lblCoordX: string;
+  lblCoordY: string;
+  inspPosHint: string;
+  inspGeometry: string;
+  inspWidth: string;
+  inspHeight: string;
+  inspRotation: string;
+  inspShapeFormat: string;
+  inspFillColor: string;
+  inspOutlineColor: string;
+  inspStrokeWidth: string;
+  inspCornerRadius: string;
+  inspEmpty: string;
+  inspPageDims: string;
+  inspElementId: string;
+  inspSize: string;
+  inspMarginTop: string;
+  inspMarginRight: string;
+
+  // Font dialog
+  dlgFontTitle: string;
+  dlgFontTab: string;
+  dlgFontAdvancedTab: string;
+  dlgFontLabel: string;
+  dlgFontStyleLabel: string;
+  dlgFontRegular: string;
+  dlgFontBoldItalic: string;
+  dlgFontSizeLabel: string;
+  dlgFontColorLabel: string;
+  dlgUnderlineStyleLabel: string;
+  dlgUnderlineNone: string;
+  dlgUnderlineSingle: string;
+  dlgUnderlineDouble: string;
+  dlgUnderlineThick: string;
+  dlgUnderlineDotted: string;
+  dlgUnderlineDashed: string;
+  dlgUnderlineWavy: string;
+  dlgUnderlineColorLabel: string;
+  dlgEffectsLabel: string;
+  dlgStrikethrough: string;
+  dlgSubscript: string;
+  dlgSuperscript: string;
+  dlgCharSpacingLabel: string;
+  dlgPreviewLabel: string;
+  dlgCancel: string;
+  dlgOk: string;
+
+  // Paragraph dialog
+  dlgParaTitle: string;
+  dlgParaSpacingTab: string;
+  dlgParaBreaksTab: string;
+  dlgParaGeneral: string;
+  dlgParaAlignment: string;
+  dlgParaAlignStart: string;
+  dlgParaAlignLeft: string;
+  dlgParaAlignCenter: string;
+  dlgParaAlignRight: string;
+  dlgParaAlignJustify: string;
+  dlgParaDirection: string;
+  dlgParaRtl: string;
+  dlgParaLtr: string;
+  dlgParaIndentation: string;
+  dlgParaIndentLevel: string;
+  dlgParaFirstLineIndent: string;
+  dlgParaSpacing: string;
+  dlgParaBefore: string;
+  dlgParaAfter: string;
+  dlgParaLineSpacing: string;
+  dlgParaSingle: string;
+  dlgParaLines115: string;
+  dlgParaLines15: string;
+  dlgParaLines25: string;
+  dlgParaLines30: string;
+  dlgParaDouble: string;
+  dlgParaPagination: string;
+  dlgParaWidowOrphan: string;
+  dlgParaKeepWithNext: string;
+
+  // Borders menu
+  mnuBorderBottom: string;
+  mnuBorderTop: string;
+  mnuBorderLeft: string;
+  mnuBorderRight: string;
+  mnuBorderNone: string;
+  mnuBorderAll: string;
+  mnuBorderOutside: string;
+  mnuBordersShading: string;
+
+  // Color palettes
+  clrAutomatic: string;
+  clrCustom: string;
+  clrNoColor: string;
+  clrNoFill: string;
+  clrThemeColors: string;
+  clrStandardColors: string;
+  clrHighlightColor: string;
+  clrParagraphShading: string;
+
+  // Visual keyboard
+  kbExpand: string;
+  kbExpandShort: string;
+  kbMinimize: string;
+  kbMinimizeShort: string;
+  kbHeader: string;
+
+  // Language tools panel
+  ltTabsLabel: string;
+  ltTitle: string;
+  panelClose: string;
+  ltScope: string;
+  ltCurrentStory: string;
+  ltWholeDocument: string;
+  ltSpelling: string;
+  ltPunctuation: string;
+  ltCharReplacements: string;
+  ltSpaces: string;
+  ltTabProofread: string;
+  ltTabNormalize: string;
+  ltNoTextSelected: string;
+  ltNoErrors: string;
+  ltFlags: string;
+  ltSpellingError: string;
+  ltIgnoreOnce: string;
+  ltIgnoreInDoc: string;
+  ltAddToDict: string;
+  ltSuggestion: string;
+  ltOriginal: string;
+  ltApplyChange: string;
+  ltSearchPlaceholder: string;
+  ltSearch: string;
+  ltAddPersonal: string;
+  ltSynonyms: string;
+  ltAntonyms: string;
+  ltDictHint: string;
+  ltPersonalWords: string;
+  ltRomanLabel: string;
+  ltUrduOutput: string;
+  ltReplaceWithConverted: string;
+  ltScopeToRoman: string;
+  ltCharReview: string;
+  ltReplacementsFound: string;
+  ltConvert: string;
+  ltApplyAll: string;
+  ltAlreadyStandard: string;
+
+  // OCR correction panel
+  ocrTitle: string;
+  ocrFile: string;
+  ocrConfidence: string;
+  ocrUncertainWords: string;
+  ocrAcceptAllTitle: string;
+  ocrAcceptAll: string;
+  ocrFixBeforeCommit: string;
+  ocrCommit: string;
+  ocrSourceImage: string;
+  ocrSourceSaved: string;
+  ocrSourcePreview: string;
+  ocrRecognizedTitle: string;
+  ocrSuspicious: string;
+  ocrLine: string;
+  ocrCorrectWord: string;
+  ocrConfidenceLbl: string;
+
+  // Preflight panel
+  pfTitle: string;
+  pfReadiness: string;
+  pfPassed: string;
+  pfFailed: string;
+  pfLoading: string;
+  pfNoIssues: string;
+
+  // Collaboration bar
+  collabOnline: string;
+  collabRelay: string;
+  collabReconnecting: string;
+  collabOffline: string;
+  collabLocalRecovery: string;
+
+  // Comments panel
+  cmtResolved: string;
+  cmtPostComment: string;
+  cmtReply: string;
+  cmtWriteComment: string;
+  cmtWriteReply: string;
 }
 
 export const DICTIONARY: Record<UiLanguage, Translations> = {
@@ -180,7 +398,7 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     shareLink: 'لنک شیئر',
     exportPdf: 'PDF برآمد',
     browserPrint: 'پرنٹ… (براؤزر)',
-    pdfExportDisabled: 'PDF برآمد (عنقریب)',
+    vectorPdfExport: 'ویکٹر PDF برآمد',
     exportEpub: 'ePUB 3.0 برآمد',
 
     inspectorProps: 'خواص',
@@ -193,6 +411,212 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     themeSystem: 'سسٹم تھیم',
     langEnglish: 'English',
     langUrdu: 'اردو',
+
+    bulletLibrary: 'بلیٹ لائبریری',
+    numberingLibrary: 'نمبرنگ لائبریری',
+    changeListLevel: 'فہرست کی سطح بدلیں',
+    lineSpacingOptions: 'لائن اسپیسنگ کے اختیارات...',
+    modifyStyle: 'ترمیم...',
+    renameStyle: 'نام بدلیں...',
+    removeFromStyleGallery: 'اسٹائل گیلری سے ہٹائیں',
+    addGalleryToQat: 'گیلری کو کوئیک ایکسس ٹول بار میں شامل کریں',
+    selectAll: 'سب منتخب کریں (Ctrl+A)',
+    selectAllMatching: 'سب منتخب کریں: (مماثل مثالیں)',
+    selectObjects: 'آبجیکٹس منتخب کریں',
+    standardJustify: 'معیاری برابر',
+    straightLine: 'سیدھی لکیر',
+    stopPlayback: 'روکیں',
+    nativeOsPassthrough: 'آپریٹنگ سسٹم کی بورڈ',
+    nativeOsKeyboardHelp: 'آپریٹنگ سسٹم کی بورڈ موڈ فعال — کی میپنگ گرڈ غیر فعال ہے۔ اپنے آپریٹنگ سسٹم کے کی بورڈ سے براہ راست لکھیں۔',
+
+    tipMenuLanguage: 'سافٹ ویئر مینیو کی زبان',
+    tipThemeMode: 'رنگوں کی تھیم',
+    phDocumentName: 'دستاویز کا نام...',
+    tipCustomizeQat: 'فوری رسائی پٹی ترتیب دیں',
+
+    saveStateSaved: 'مقامی طور پر محفوظ',
+    saveStateUnsaved: 'غیر محفوظ تبدیلیاں',
+    saveStateSaving: 'محفوظ ہو رہا ہے...',
+    saveStateFailed: 'محفوظ نہیں ہوا',
+
+    tipResizeInspector: 'پراپرٹیز پینل کی چوڑائی بدلنے کے لیے گھسیٹیں',
+    tipCloseInspector: 'پراپرٹیز انسپکٹر بند کریں',
+    lblCoordX: 'X (پوائنٹ)',
+    lblCoordY: 'Y (پوائنٹ)',
+
+    inspPosHint: 'پوزیشن اور پیمائش درج کریں (pt / mm)',
+    inspGeometry: 'مقام اور جسامت',
+    inspWidth: 'چوڑائی (pt)',
+    inspHeight: 'اونچائی (pt)',
+    inspRotation: 'زاویہ',
+    inspShapeFormat: 'شکل کی خصوصیات',
+    inspFillColor: 'مطلوبہ رنگ:',
+    inspOutlineColor: 'آؤٹ لائن رنگ:',
+    inspStrokeWidth: 'آؤٹ لائن چوڑائی:',
+    inspCornerRadius: 'گولائی:',
+    inspEmpty: 'کینوس پر کوئی عنصر منتخب نہیں۔ عنصر کے خواص دیکھنے کے لیے اس پر کلک کریں۔',
+    inspPageDims: 'صفحہ کی پیمائش',
+    inspElementId: 'عنصر ID:',
+    inspSize: 'سائز:',
+    inspMarginTop: 'حواشی (اوپر):',
+    inspMarginRight: 'حواشی (دائیں):',
+
+    dlgFontTitle: 'فونٹ کی تشکیل',
+    dlgFontTab: 'فونٹ',
+    dlgFontAdvancedTab: 'حروف کا اضافی فاصلہ',
+    dlgFontLabel: 'فونٹ:',
+    dlgFontStyleLabel: 'فونٹ کا انداز:',
+    dlgFontRegular: 'عام',
+    dlgFontBoldItalic: 'جلی ترچھا',
+    dlgFontSizeLabel: 'سائز:',
+    dlgFontColorLabel: 'فونٹ کا رنگ:',
+    dlgUnderlineStyleLabel: 'خطِ کشیدہ کا انداز:',
+    dlgUnderlineNone: '(کوئی نہیں)',
+    dlgUnderlineSingle: 'اکہری لکیر',
+    dlgUnderlineDouble: 'دوہری لکیر',
+    dlgUnderlineThick: 'موٹی لکیر',
+    dlgUnderlineDotted: 'نقطہ دار',
+    dlgUnderlineDashed: 'وقفے دار',
+    dlgUnderlineWavy: 'لہر دار',
+    dlgUnderlineColorLabel: 'خطِ کشیدہ کا رنگ:',
+    dlgEffectsLabel: 'اثرات:',
+    dlgStrikethrough: 'خطِ تنسیخ',
+    dlgSubscript: 'زیر نویس',
+    dlgSuperscript: 'بالا نویس',
+    dlgCharSpacingLabel: 'حروف کا باہمی فاصلہ (کشیدہ / ٹریکنگ):',
+    dlgPreviewLabel: 'پیش نظارہ:',
+    dlgCancel: 'منسوخ کریں',
+    dlgOk: 'ٹھیک ہے',
+
+    dlgParaTitle: 'پیراگراف کی تشکیل',
+    dlgParaSpacingTab: 'حاشیے اور فاصلے',
+    dlgParaBreaksTab: 'سطر اور صفحے کی تقسیم',
+    dlgParaGeneral: 'عمومی:',
+    dlgParaAlignment: 'ترتیب:',
+    dlgParaAlignStart: 'دائیں (اردو) / بائیں (انگریزی)',
+    dlgParaAlignLeft: 'بائیں',
+    dlgParaAlignCenter: 'درمیان',
+    dlgParaAlignRight: 'دائیں',
+    dlgParaAlignJustify: 'برابر',
+    dlgParaDirection: 'سمت:',
+    dlgParaRtl: 'دائیں سے بائیں (اردو)',
+    dlgParaLtr: 'بائیں سے دائیں (انگریزی)',
+    dlgParaIndentation: 'حاشیہ بندی:',
+    dlgParaIndentLevel: 'حاشیے کی سطح:',
+    dlgParaFirstLineIndent: 'پہلی سطر کا حاشیہ (پوائنٹ):',
+    dlgParaSpacing: 'فاصلے:',
+    dlgParaBefore: 'اوپر (پوائنٹ):',
+    dlgParaAfter: 'نیچے (پوائنٹ):',
+    dlgParaLineSpacing: 'سطور کا فاصلہ:',
+    dlgParaSingle: 'اکہرا (1.0)',
+    dlgParaLines115: '1.15 سطریں',
+    dlgParaLines15: '1.5 سطریں',
+    dlgParaLines25: '2.5 سطریں',
+    dlgParaLines30: '3.0 سطریں',
+    dlgParaDouble: 'دوہرا (2.0)',
+    dlgParaPagination: 'صفحہ بندی:',
+    dlgParaWidowOrphan: 'اکیلی سطر کا کنٹرول',
+    dlgParaKeepWithNext: 'اگلے پیراگراف کے ساتھ رکھیں',
+
+    mnuBorderBottom: 'نچلا کنارہ',
+    mnuBorderTop: 'اوپری کنارہ',
+    mnuBorderLeft: 'بایاں کنارہ',
+    mnuBorderRight: 'دایاں کنارہ',
+    mnuBorderNone: 'کنارہ نہیں',
+    mnuBorderAll: 'تمام کنارے',
+    mnuBorderOutside: 'بیرونی کنارے',
+    mnuBordersShading: 'کنارے اور رنگ...',
+
+    clrAutomatic: 'خودکار',
+    clrCustom: 'اپنی پسند:',
+    clrNoColor: 'کوئی رنگ نہیں',
+    clrNoFill: 'کوئی رنگ / خالی',
+    clrThemeColors: 'تھیم کے رنگ',
+    clrStandardColors: 'معیاری رنگ',
+    clrHighlightColor: 'نمایاں رنگ',
+    clrParagraphShading: 'پیراگراف کا شیڈنگ رنگ',
+
+    kbExpand: 'بصری کی بورڈ کھولیں',
+    kbExpandShort: 'کی بورڈ کھولیں',
+    kbMinimize: 'بصری کی بورڈ چھپائیں',
+    kbMinimizeShort: 'کی بورڈ چھپائیں',
+    kbHeader: 'اردو کی بورڈ:',
+
+    ltTabsLabel: 'زبان کے آلات کے ٹیب',
+
+    ltTitle: 'اردو زبان کے آلات',
+    panelClose: 'بند کریں',
+    ltScope: 'دائرہ کار:',
+    ltCurrentStory: 'موجودہ تحریر',
+    ltWholeDocument: 'مکمل دستاویز',
+    ltSpelling: 'املاء:',
+    ltPunctuation: 'رموزِ اوقاف:',
+    ltCharReplacements: 'حروفی متبادلات:',
+    ltSpaces: 'سپیس:',
+    ltTabProofread: 'املاء و تصحیح',
+    ltTabNormalize: 'حروف کی جانچ',
+    ltNoTextSelected: 'کوئی متن منتخب نہیں ہے۔',
+    ltNoErrors: 'اس دائرہ کار میں املاء اور زبان کی کوئی غلطی نہیں ملی!',
+    ltFlags: 'نشاندہیاں:',
+    ltSpellingError: 'املاء کی غلطی:',
+    ltIgnoreOnce: 'ایک بار نظر انداز کریں',
+    ltIgnoreInDoc: 'دستاویز میں نظر انداز کریں',
+    ltAddToDict: '+ لغت میں شامل کریں',
+    ltSuggestion: 'تجویز:',
+    ltOriginal: 'اصل:',
+    ltApplyChange: 'تبدیل لاگو کریں',
+    ltSearchPlaceholder: 'لفظ تلاش کریں (مثلاً: پاکستان، علم، ترانہ)...',
+    ltSearch: 'تلاش',
+    ltAddPersonal: '+ ذاتی لغت میں شامل کریں',
+    ltSynonyms: 'مترادفات:',
+    ltAntonyms: 'متضادات:',
+    ltDictHint: 'لغت میں لفظ تلاش کرنے کے لیے اوپر ٹائپ کریں۔',
+    ltPersonalWords: 'ذاتی لغت کے الفاظ',
+    ltRomanLabel: 'رومن اردو درج کریں:',
+    ltUrduOutput: 'اردو نستعلیق پیش نظارہ:',
+    ltReplaceWithConverted: 'منتخب متن کو اس تبدیل شدہ اردو سے بدلیں',
+    ltScopeToRoman: 'موجودہ دائرہ کار کے اردو متن کو رومن میں لائیں',
+    ltCharReview: 'اردو کریکٹر ریویو: عربی کاف (ك) اور یاء (ي) کو معیاری اردو (ک/ی) میں بدلتا ہے۔',
+    ltReplacementsFound: 'حروف کی تبدیلی کے امکانات ملے:',
+    ltConvert: 'تبدیل کریں',
+    ltApplyAll: 'تمام کا اطلاق کریں',
+    ltAlreadyStandard: 'اس دائرہ کار کا متن پہلے سے مکمل معیاری اردو پر مشتمل ہے۔',
+
+    ocrTitle: 'اردو تصویر / PDF متن شناسی',
+    ocrFile: 'فائل:',
+    ocrConfidence: 'مجموعی اعتماد:',
+    ocrUncertainWords: 'مشکوک الفاظ:',
+    ocrAcceptAllTitle: 'تمام مشکوک الفاظ کو باقاعدہ قبول کریں',
+    ocrAcceptAll: 'تمام الفاظ کی تائید کریں',
+    ocrFixBeforeCommit: 'صفحے پر شامل کرنے سے پہلے تمام مشکوک الفاظ کی تصحیح کریں',
+    ocrCommit: 'صفحے پر شامل کریں',
+    ocrSourceImage: 'اصل تصویر:',
+    ocrSourceSaved: 'باقاعدہ محفوظ شدہ اصل اثاثہ',
+    ocrSourcePreview: '[محفوظ شدہ اصل تصویر کا منظر]',
+    ocrRecognizedTitle: 'شناخت شدہ اردو متن اور تصحیح:',
+    ocrSuspicious: 'مشکوک',
+    ocrLine: 'سطر',
+    ocrCorrectWord: 'منتخب لفظ کی تصحیح:',
+    ocrConfidenceLbl: 'اعتماد:',
+    pfTitle: 'پری فلائٹ رپورٹ',
+    pfReadiness: 'PDF تیاری',
+    pfPassed: 'پاس',
+    pfFailed: 'نااہل',
+    pfLoading: 'دستاویز ڈیٹا لوڈ ہو رہا ہے...',
+    pfNoIssues: 'کوئی مسائل نہیں پائے گئے',
+
+    collabOnline: 'آن لائن',
+    collabRelay: 'TURN ریلے',
+    collabReconnecting: 'دوبارہ رابطہ...',
+    collabOffline: 'آف لائن',
+    collabLocalRecovery: 'مقامی بحالی فعال',
+
+    // Comments panel
+    cmtResolved: 'حل شدہ دکھائیں',
+    cmtPostComment: 'تبصرہ بھیجیں',
+    cmtReply: 'جواب دیں',
+    cmtWriteComment: 'نیا تبصرہ لکھیں...',
+    cmtWriteReply: 'جواب لکھیں...',
   },
   en: {
     tabFile: 'File',
@@ -271,7 +695,7 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     shareLink: 'Share Link',
     exportPdf: 'Export PDF',
     browserPrint: 'Browser Print…',
-    pdfExportDisabled: 'PDF Export (Coming Soon)',
+    vectorPdfExport: 'Vector PDF Export',
     exportEpub: 'Export ePUB 3.0',
 
     inspectorProps: 'Properties',
@@ -284,5 +708,231 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     themeSystem: 'System Theme',
     langEnglish: 'English',
     langUrdu: 'Urdu',
+
+    bulletLibrary: 'BULLET LIBRARY',
+    numberingLibrary: 'NUMBERING LIBRARY',
+    changeListLevel: 'CHANGE LIST LEVEL',
+    lineSpacingOptions: 'Line Spacing Options...',
+    modifyStyle: 'Modify...',
+    renameStyle: 'Rename...',
+    removeFromStyleGallery: 'Remove from Style Gallery',
+    addGalleryToQat: 'Add Gallery to Quick Access Toolbar',
+    selectAll: 'Select All (Ctrl+A)',
+    selectAllMatching: 'Select All: (Matching Instances)',
+    selectObjects: 'Select Objects',
+    standardJustify: 'Standard Justify',
+    straightLine: 'Straight Line',
+    stopPlayback: 'Stop',
+    nativeOsPassthrough: 'Native OS Pass-through',
+    nativeOsKeyboardHelp: 'Native OS Keyboard Mode Active — Key mapping grid is disabled. Type directly using your operating system keyboard.',
+
+    tipMenuLanguage: 'Software Menu Language',
+    tipThemeMode: 'Color Theme Mode',
+    phDocumentName: 'Document Name...',
+    tipCustomizeQat: 'Customize Quick Access Toolbar',
+
+    saveStateSaved: 'Saved locally',
+    saveStateUnsaved: 'Unsaved changes',
+    saveStateSaving: 'Saving…',
+    saveStateFailed: 'Save failed',
+
+    tipResizeInspector: 'Drag to resize Properties Panel width',
+    tipCloseInspector: 'Close Properties Inspector',
+    lblCoordX: 'X (pt)',
+    lblCoordY: 'Y (pt)',
+
+    inspPosHint: 'Enter position and measurements (pt / mm)',
+    inspGeometry: 'Geometry',
+    inspWidth: 'Width (pt)',
+    inspHeight: 'Height (pt)',
+    inspRotation: 'Rotation',
+    inspShapeFormat: 'Shape Format',
+    inspFillColor: 'Fill Color:',
+    inspOutlineColor: 'Outline Color:',
+    inspStrokeWidth: 'Stroke Width:',
+    inspCornerRadius: 'Corner Radius:',
+    inspEmpty: 'No element selected on canvas. Click an element to see its properties.',
+    inspPageDims: 'Page Dimensions',
+    inspElementId: 'Element ID:',
+    inspSize: 'Size:',
+    inspMarginTop: 'Margins (Top):',
+    inspMarginRight: 'Margins (Right):',
+
+    dlgFontTitle: 'Font Formatting',
+    dlgFontTab: 'Font',
+    dlgFontAdvancedTab: 'Advanced Character Spacing',
+    dlgFontLabel: 'Font:',
+    dlgFontStyleLabel: 'Font style:',
+    dlgFontRegular: 'Regular',
+    dlgFontBoldItalic: 'Bold Italic',
+    dlgFontSizeLabel: 'Size:',
+    dlgFontColorLabel: 'Font color:',
+    dlgUnderlineStyleLabel: 'Underline style:',
+    dlgUnderlineNone: '(None)',
+    dlgUnderlineSingle: 'Single Line',
+    dlgUnderlineDouble: 'Double Line',
+    dlgUnderlineThick: 'Thick Line',
+    dlgUnderlineDotted: 'Dotted',
+    dlgUnderlineDashed: 'Dashed',
+    dlgUnderlineWavy: 'Wave / Wavy',
+    dlgUnderlineColorLabel: 'Underline color:',
+    dlgEffectsLabel: 'Effects:',
+    dlgStrikethrough: 'Strikethrough',
+    dlgSubscript: 'Subscript',
+    dlgSuperscript: 'Superscript',
+    dlgCharSpacingLabel: 'Character Spacing (Kashida / Tracking):',
+    dlgPreviewLabel: 'Preview:',
+    dlgCancel: 'Cancel',
+    dlgOk: 'OK',
+
+    dlgParaTitle: 'Paragraph Formatting',
+    dlgParaSpacingTab: 'Indents and Spacing',
+    dlgParaBreaksTab: 'Line and Page Breaks',
+    dlgParaGeneral: 'General:',
+    dlgParaAlignment: 'Alignment:',
+    dlgParaAlignStart: 'Right (Urdu) / Left (English)',
+    dlgParaAlignLeft: 'Left',
+    dlgParaAlignCenter: 'Centered',
+    dlgParaAlignRight: 'Right',
+    dlgParaAlignJustify: 'Justified',
+    dlgParaDirection: 'Direction:',
+    dlgParaRtl: 'Right-to-Left (Urdu)',
+    dlgParaLtr: 'Left-to-Right (English)',
+    dlgParaIndentation: 'Indentation:',
+    dlgParaIndentLevel: 'Indent Level:',
+    dlgParaFirstLineIndent: 'First Line Indent (pt):',
+    dlgParaSpacing: 'Spacing:',
+    dlgParaBefore: 'Before (pt):',
+    dlgParaAfter: 'After (pt):',
+    dlgParaLineSpacing: 'Line Spacing:',
+    dlgParaSingle: 'Single (1.0)',
+    dlgParaLines115: '1.15 lines',
+    dlgParaLines15: '1.5 lines',
+    dlgParaLines25: '2.5 lines',
+    dlgParaLines30: '3.0 lines',
+    dlgParaDouble: 'Double (2.0)',
+    dlgParaPagination: 'Pagination:',
+    dlgParaWidowOrphan: 'Widow/Orphan control',
+    dlgParaKeepWithNext: 'Keep with next paragraph',
+
+    mnuBorderBottom: 'Bottom Border',
+    mnuBorderTop: 'Top Border',
+    mnuBorderLeft: 'Left Border',
+    mnuBorderRight: 'Right Border',
+    mnuBorderNone: 'No Border',
+    mnuBorderAll: 'All Borders',
+    mnuBorderOutside: 'Outside Borders',
+    mnuBordersShading: 'Borders and Shading...',
+
+    clrAutomatic: 'Automatic',
+    clrCustom: 'Custom:',
+    clrNoColor: 'No Color',
+    clrNoFill: 'No Color / No Fill',
+    clrThemeColors: 'Theme Colors',
+    clrStandardColors: 'Standard Colors',
+    clrHighlightColor: 'Highlight Color',
+    clrParagraphShading: 'Paragraph Shading Color',
+
+    kbExpand: 'Expand Visual Keyboard',
+    kbExpandShort: 'Expand Keyboard',
+    kbMinimize: 'Minimize Visual Keyboard',
+    kbMinimizeShort: 'Minimize Keyboard',
+    kbHeader: 'Urdu Keyboard:',
+
+    ltTabsLabel: 'Language Tools Tabs',
+
+    ltTitle: 'Urdu Language Tools',
+    panelClose: 'Close',
+    ltScope: 'Scope:',
+    ltCurrentStory: 'Current Story',
+    ltWholeDocument: 'Whole Document',
+    ltSpelling: 'Spelling:',
+    ltPunctuation: 'Punctuation:',
+    ltCharReplacements: 'Character replacements:',
+    ltSpaces: 'Spaces:',
+    ltTabProofread: 'Spelling & Proofread',
+    ltTabNormalize: 'Character Check',
+    ltNoTextSelected: 'No text selected.',
+    ltNoErrors: 'No spelling or language errors found in this scope!',
+    ltFlags: 'Flags:',
+    ltSpellingError: 'Spelling error:',
+    ltIgnoreOnce: 'Ignore once',
+    ltIgnoreInDoc: 'Ignore in document',
+    ltAddToDict: '+ Add to dictionary',
+    ltSuggestion: 'Suggestion:',
+    ltOriginal: 'Original:',
+    ltApplyChange: 'Apply',
+    ltSearchPlaceholder: 'Search word (e.g. Pakistan, ilm, tarana)...',
+    ltSearch: 'Search',
+    ltAddPersonal: '+ Add to personal dictionary',
+    ltSynonyms: 'Synonyms:',
+    ltAntonyms: 'Antonyms:',
+    ltDictHint: 'Type above to search the dictionary.',
+    ltPersonalWords: 'Personal dictionary words',
+    ltRomanLabel: 'Type Roman Urdu:',
+    ltUrduOutput: 'Urdu Nastaliq preview:',
+    ltReplaceWithConverted: 'Replace selected text with this converted Urdu',
+    ltScopeToRoman: "Convert this scope's Urdu text to Roman",
+    ltCharReview: 'Urdu character review: converts Arabic Kaaf (ك) and Yaa (ي) to standard Urdu (ک/ی).',
+    ltReplacementsFound: 'character replacements available:',
+    ltConvert: 'Convert',
+    ltApplyAll: 'Apply all',
+    ltAlreadyStandard: "This scope's text is already standard Urdu.",
+
+    ocrTitle: 'Urdu Image / PDF OCR',
+    ocrFile: 'File:',
+    ocrConfidence: 'Overall Confidence:',
+    ocrUncertainWords: 'Uncertain words:',
+    ocrAcceptAllTitle: 'Accept all uncertain words as correct',
+    ocrAcceptAll: 'Accept all words',
+    ocrFixBeforeCommit: 'Fix all uncertain words before adding to page',
+    ocrCommit: 'Add to page',
+    ocrSourceImage: 'Source image:',
+    ocrSourceSaved: 'Preserved source asset',
+    ocrSourcePreview: '[Preserved source image preview]',
+    ocrRecognizedTitle: 'Recognized Urdu text & corrections:',
+    ocrSuspicious: 'suspicious',
+    ocrLine: 'Line',
+    ocrCorrectWord: 'Correct selected word:',
+    ocrConfidenceLbl: 'Confidence:',
+    pfTitle: 'Preflight Report',
+    pfReadiness: 'PDF Readiness',
+    pfPassed: 'Passed',
+    pfFailed: 'Failed',
+    pfLoading: 'Loading document data...',
+    pfNoIssues: 'No issues found',
+
+    collabOnline: 'Online',
+    collabRelay: 'TURN Relay',
+    collabReconnecting: 'Reconnecting...',
+    collabOffline: 'Offline',
+    collabLocalRecovery: 'Local recovery active',
+
+    // Comments panel
+    cmtResolved: 'Resolved',
+    cmtPostComment: 'Post Comment',
+    cmtReply: 'Reply',
+    cmtWriteComment: 'Write a comment...',
+    cmtWriteReply: 'Write a reply...',
   },
 };
+
+/**
+ * Maps the App-level SaveState union ('Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save failed')
+ * to the current UI language for display. Keeps the state machine itself language-neutral.
+ */
+export function translateSaveState(state: string, lang: UiLanguage): string {
+  const t = DICTIONARY[lang];
+  switch (state) {
+    case 'Saved locally':
+      return t.saveStateSaved;
+    case 'Unsaved changes':
+      return t.saveStateUnsaved;
+    case 'Saving…':
+      return t.saveStateSaving;
+    case 'Save failed':
+      return t.saveStateFailed;
+    default:
+      return state;
+  }
+}

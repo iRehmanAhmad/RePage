@@ -586,7 +586,7 @@ export function PageSetupModal({
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '10px' }}>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>Bleed Top</label>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>{isUr ? 'بلیڈ اوپر' : 'Bleed Top'}</label>
                 <input
                   type="number"
                   step="0.1"
@@ -596,7 +596,7 @@ export function PageSetupModal({
                 />
               </div>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>Bleed Right</label>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>{isUr ? 'بلیڈ دائیں' : 'Bleed Right'}</label>
                 <input
                   type="number"
                   step="0.1"
@@ -606,7 +606,7 @@ export function PageSetupModal({
                 />
               </div>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>Bleed Bottom</label>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>{isUr ? 'بلیڈ نیچے' : 'Bleed Bottom'}</label>
                 <input
                   type="number"
                   step="0.1"
@@ -616,7 +616,7 @@ export function PageSetupModal({
                 />
               </div>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>Bleed Left</label>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>{isUr ? 'بلیڈ بائیں' : 'Bleed Left'}</label>
                 <input
                   type="number"
                   step="0.1"

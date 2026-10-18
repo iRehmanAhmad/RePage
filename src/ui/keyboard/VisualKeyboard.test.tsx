@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { VisualKeyboard } from './VisualKeyboard';
+import { DICTIONARY } from '../i18n/menuTranslation';
 
 describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize Toggle', () => {
   it('renders consolidated top row controls, special marks, centered spacebar, and minimize toggle', () => {
@@ -17,6 +18,8 @@ describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize T
         onInsertChar={handleInsert}
         isMinimized={false}
         onToggleMinimize={handleToggleMinimize}
+        lang="ur"
+        t={DICTIONARY.ur}
       />,
     );
 
@@ -41,6 +44,8 @@ describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize T
         onInsertChar={handleInsert}
         isMinimized={true}
         onToggleMinimize={handleToggleMinimize}
+        lang="ur"
+        t={DICTIONARY.ur}
       />,
     );
     expect(screen.queryByText('Space (وقفہ)')).not.toBeInTheDocument();

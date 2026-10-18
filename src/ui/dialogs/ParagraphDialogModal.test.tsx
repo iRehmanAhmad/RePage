@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ParagraphDialogModal } from './ParagraphDialogModal';
+import { DICTIONARY } from '../i18n/menuTranslation';
 
 describe('ParagraphDialogModal', () => {
   it('renders MS Word Paragraph dialog when open and triggers onApply', () => {
@@ -22,6 +23,7 @@ describe('ParagraphDialogModal', () => {
         }}
         onApply={handleApply}
         onClose={handleClose}
+        t={DICTIONARY.en}
       />,
     );
 

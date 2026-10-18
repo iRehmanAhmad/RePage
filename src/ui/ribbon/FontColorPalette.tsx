@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface FontColorPaletteProps {
   activeColor?: string | undefined;
   onSelectColor: (color: string) => void;
   onClose: () => void;
+  t?: Translations;
 }
 
 function getLightness(hex: string): number {
@@ -62,6 +64,7 @@ export const FontColorPalette: React.FC<FontColorPaletteProps> = ({
   activeColor,
   onSelectColor,
   onClose,
+  t,
 }) => {
   const [customColor, setCustomColor] = useState(activeColor || '#000000');
 
@@ -112,12 +115,12 @@ export const FontColorPalette: React.FC<FontColorPaletteProps> = ({
             backgroundColor: '#000000',
           }}
         />
-        <span>Automatic</span>
+        <span>{(t ?? DICTIONARY.en).clrAutomatic}</span>
       </button>
 
       {/* Theme Colors Section */}
       <div style={{ fontWeight: 600, fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-        Theme Colors
+        {(t ?? DICTIONARY.en).clrThemeColors}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '2px', marginBottom: '8px' }}>
         {[0, 1, 2, 3, 4, 5].map((rowIdx) =>
@@ -148,7 +151,7 @@ export const FontColorPalette: React.FC<FontColorPaletteProps> = ({
 
       {/* Standard Colors Section */}
       <div style={{ fontWeight: 600, fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-        Standard Colors
+        {(t ?? DICTIONARY.en).clrStandardColors}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '2px', marginBottom: '8px' }}>
         {STANDARD_COLORS.map((hex) => (
@@ -174,7 +177,7 @@ export const FontColorPalette: React.FC<FontColorPaletteProps> = ({
 
       {/* Custom Color Input */}
       <div style={{ borderTop: '1px solid var(--panel-border)', paddingTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>Custom:</span>
+        <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>{(t ?? DICTIONARY.en).clrCustom}</span>
         <input
           type="color"
           value={customColor}

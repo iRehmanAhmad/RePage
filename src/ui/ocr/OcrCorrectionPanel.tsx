@@ -2,18 +2,22 @@ import React, { useState } from 'react';
 import { OcrPageResult, OcrWordResult } from '../../domain/ocr/ocrEngine';
 import { correctOcrWord } from '../../domain/ocr/ocrCorrection';
 import { AppIcon } from '../icons/AppIcon';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface OcrCorrectionPanelProps {
   ocrResult: OcrPageResult;
   onClose?: () => void;
   onCommitToDocument?: (updatedResult: OcrPageResult) => void;
+  t?: Translations;
 }
 
 export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
   ocrResult: initialResult,
   onClose,
   onCommitToDocument,
+  t,
 }) => {
+  const tt = t ?? DICTIONARY.en;
   const [ocrResult, setOcrResult] = useState<OcrPageResult>(initialResult);
   const [selectedWordLoc, setSelectedWordLoc] = useState<{ lineIdx: number; wordIdx: number } | null>(null);
   const [editingText, setEditingText] = useState('');
@@ -49,10 +53,10 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
           <AppIcon name="camera" size={20} />
           <div>
             <h2 className="text-base font-bold text-emerald-400">
-              اردو تصویر / PDF متن شناسی (Urdu OCR & Correction)
+              {tt.ocrTitle}
             </h2>
             <p className="text-xs text-slate-400">
-              فائل: <span className="text-slate-200">{ocrResult.fileName}</span> | مجموعی اعتماد (Overall Confidence):{' '}
+              {tt.ocrFile} <span className="text-slate-200">{ocrResult.fileName}</span> | {tt.ocrConfidence}{' '}
               <span
                 className={`font-bold ${
                   ocrResult.overallConfidence >= 85
@@ -64,7 +68,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
               >
                 {ocrResult.overallConfidence}%
               </span>{' '}
-              | مشکوک الفاظ: <span className="font-bold text-rose-400">{ocrResult.uncertainWordCount}</span>
+              | {tt.ocrUncertainWords} <span className="font-bold text-rose-400">{ocrResult.uncertainWordCount}</span>
             </p>
           </div>
         </div>
@@ -83,9 +87,9 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
                 setOcrResult(copy);
               }}
               className="px-3 py-2 text-xs font-bold bg-amber-700 hover:bg-amber-600 text-white rounded shadow"
-              title="تمام مشکوک الفاظ کو باقاعدہ قبول کریں"
+              title={tt.ocrAcceptAllTitle}
             >
-              <AppIcon name="check" /> تمام الفاظ کی تائید کریں (Accept Low Confidence)
+              <AppIcon name="check" /> {tt.ocrAcceptAll}
             </button>
           )}
 
@@ -95,8 +99,8 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
               disabled={ocrResult.uncertainWordCount > 0}
               title={
                 ocrResult.uncertainWordCount > 0
-                  ? 'صفحے پر شامل کرنے سے پہلے تمام مشکوک الفاظ کی تصحیح کریں'
-                  : 'صفحے پر شامل کریں'
+                  ? tt.ocrFixBeforeCommit
+                  : tt.ocrCommit
               }
               className={`px-4 py-2 text-xs font-bold rounded flex items-center gap-1.5 transition ${
                 ocrResult.uncertainWordCount > 0
@@ -104,7 +108,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg'
               }`}
             >
-              <span>صفحے پر شامل کریں (Commit to Page)</span>
+              <span>{tt.ocrCommit}</span>
             </button>
           )}
 
@@ -113,7 +117,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
               onClick={onClose}
               className="px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700"
             >
-              <AppIcon name="dismiss" /> بند کریں
+              <AppIcon name="dismiss" /> {tt.panelClose}
             </button>
           )}
         </div>
@@ -124,13 +128,13 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
         {/* Left Pane: Preserved Source Image View */}
         <div className="w-1/2 p-4 bg-slate-900/60 border-r border-slate-800 flex flex-col">
           <div className="text-xs font-semibold text-slate-400 mb-2 flex justify-between items-center">
-            <span>اصل تصویر (Preserved Source Image):</span>
-            <span className="text-[10px] text-emerald-400">باقاعدہ محفوظ شدہ اصل اثاثہ</span>
+            <span>{tt.ocrSourceImage}</span>
+            <span className="text-[10px] text-emerald-400">{tt.ocrSourceSaved}</span>
           </div>
 
           <div className="flex-1 relative bg-slate-950 rounded border border-slate-800 overflow-hidden flex items-center justify-center p-4 dir-rtl">
             <div className="relative w-full h-full max-w-[500px] max-h-[350px] bg-slate-900 border border-dashed border-slate-700 rounded flex flex-col justify-around p-4">
-              <div className="text-center text-slate-500 text-xs mb-2">[محفوظ شدہ اصل تصویر کا منظر]</div>
+              <div className="text-center text-slate-500 text-xs mb-2">{tt.ocrSourcePreview}</div>
               {/* Highlight Bounding Boxes */}
               {ocrResult.lines.map((line, lIdx) => (
                 <div key={lIdx} className="flex justify-end gap-2 border-b border-slate-800/50 pb-2">
@@ -161,7 +165,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
         {/* Right Pane: Side-by-Side Recognized Urdu Text & Corrections */}
         <div className="w-1/2 p-4 bg-slate-950 flex flex-col dir-rtl space-y-4 overflow-y-auto">
           <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-            <h3 className="text-xs font-semibold text-slate-300">شناخت شدہ اردو متن اور تصحیح:</h3>
+            <h3 className="text-xs font-semibold text-slate-300">{tt.ocrRecognizedTitle}</h3>
             <div className="flex gap-2 text-[10px]">
               <span className="flex items-center gap-1 text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> 85%+
@@ -170,7 +174,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
                 <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span> 70-84%
               </span>
               <span className="flex items-center gap-1 text-rose-400">
-                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> &lt;70% (مشکوک)
+                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> &lt;70% ({tt.ocrSuspicious})
               </span>
             </div>
           </div>
@@ -179,7 +183,7 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
           <div className="space-y-3 flex-1">
             {ocrResult.lines.map((line, lIdx) => (
               <div key={lIdx} className="p-3 bg-slate-900/80 border border-slate-800 rounded-lg space-y-2">
-                <div className="text-xs text-slate-400 font-mono">سطر {lIdx + 1}:</div>
+                <div className="text-xs text-slate-400 font-mono">{tt.ocrLine} {lIdx + 1}:</div>
                 <div className="flex flex-wrap gap-1.5 items-center leading-relaxed">
                   {line.words.map((w, wIdx) => {
                     const isSelected = selectedWordLoc?.lineIdx === lIdx && selectedWordLoc?.wordIdx === wIdx;
@@ -212,8 +216,8 @@ export const OcrCorrectionPanel: React.FC<OcrCorrectionPanelProps> = ({
           {selectedWord && selectedWordLoc && (
             <div className="p-3 bg-slate-900 border border-emerald-500/50 rounded-xl space-y-2 shadow-xl">
               <div className="text-xs font-bold text-emerald-400 flex justify-between">
-                <span>منتخب لفظ کی تصحیح:</span>
-                <span>اعتماد: {selectedWord.confidence}%</span>
+                <span>{tt.ocrCorrectWord}</span>
+                <span>{tt.ocrConfidenceLbl} {selectedWord.confidence}%</span>
               </div>
               <div className="flex gap-2">
                 <input

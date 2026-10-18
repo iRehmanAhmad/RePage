@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppIcon } from '../icons/AppIcon';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export type ActiveTool = 'select' | 'text' | 'rectangle' | 'image' | 'pan';
 
@@ -18,6 +19,7 @@ export interface StudioRibbonProps {
   onToggleKashida: () => void;
   activeAlignment: string;
   onAlignmentChange: (align: string) => void;
+  t?: Translations;
 }
 
 export const StudioRibbon: React.FC<StudioRibbonProps> = ({
@@ -35,7 +37,9 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
   onToggleKashida,
   activeAlignment,
   onAlignmentChange,
+  t,
 }) => {
+  const tt = t ?? DICTIONARY.en;
   return (
     <div className="studio-ribbon">
       {/* Undo / Redo / Commands Group */}
@@ -47,7 +51,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="منسوخ کریں (Undo Ctrl+Z)"
         >
           <AppIcon name="undo" />
-          <span>Undo</span>
+          <span>{tt.undo}</span>
         </button>
 
         <button
@@ -57,7 +61,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="دوبارہ کریں (Redo Ctrl+Y)"
         >
           <AppIcon name="redo" />
-          <span>Redo</span>
+          <span>{tt.redo}</span>
         </button>
 
         <div className="ribbon-divider" />
@@ -69,7 +73,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="انتخاب آلہ (Select Tool)"
         >
           <AppIcon name="target" />
-          <span>Select</span>
+          <span>{tt.select}</span>
         </button>
 
         <button
@@ -78,7 +82,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="متن فریم (Text Frame Tool)"
         >
           <span>T</span>
-          <span>Text Frame</span>
+          <span>{tt.textFrame}</span>
         </button>
 
         <button
@@ -87,7 +91,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="مستطیل شکل (Rectangle Tool)"
         >
           <AppIcon name="square" />
-          <span>Shape</span>
+          <span>{tt.shape}</span>
         </button>
 
         <button
@@ -96,7 +100,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="تصویر فریم (Image Frame Tool)"
         >
           <AppIcon name="image" />
-          <span>Image Frame</span>
+          <span>{tt.imageFrame}</span>
         </button>
       </div>
 
@@ -134,7 +138,7 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
           title="کشیدہ کشش (Kashida Justification)"
         >
           <span>ـ</span>
-          <span>کشیدہ</span>
+          <span>{tt.kashida}</span>
         </button>
 
         {/* Alignment Controls */}
@@ -144,21 +148,21 @@ export const StudioRibbon: React.FC<StudioRibbonProps> = ({
             className={`ribbon-align-btn ${activeAlignment === 'start' ? 'active' : ''}`}
             title="دائیں (Right Alignment)"
           >
-            Right
+            {tt.alignRight}
           </button>
           <button
             onClick={() => onAlignmentChange('center')}
             className={`ribbon-align-btn ${activeAlignment === 'center' ? 'active' : ''}`}
             title="مرکز (Center Alignment)"
           >
-            Center
+            {tt.alignCenter}
           </button>
           <button
             onClick={() => onAlignmentChange('justify')}
             className={`ribbon-align-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
             title="برابر (Justify)"
           >
-            Justify
+            {tt.alignJustify}
           </button>
         </div>
       </div>

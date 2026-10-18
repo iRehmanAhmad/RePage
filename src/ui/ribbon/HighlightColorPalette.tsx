@@ -1,9 +1,11 @@
 import React from 'react';
+import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
 
 export interface HighlightColorPaletteProps {
   activeColor?: string | null | undefined;
   onSelectColor: (color: string | null) => void;
   onClose: () => void;
+  t?: Translations;
 }
 
 const HIGHLIGHT_COLORS = [
@@ -28,6 +30,7 @@ export const HighlightColorPalette: React.FC<HighlightColorPaletteProps> = ({
   activeColor,
   onSelectColor,
   onClose,
+  t,
 }) => {
   return (
     <div
@@ -47,7 +50,7 @@ export const HighlightColorPalette: React.FC<HighlightColorPaletteProps> = ({
       }}
     >
       <div style={{ fontWeight: 600, fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-        Highlight Color
+        {(t ?? DICTIONARY.en).clrHighlightColor}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', marginBottom: '8px' }}>
         {HIGHLIGHT_COLORS.map((item) => (
@@ -102,7 +105,7 @@ export const HighlightColorPalette: React.FC<HighlightColorPaletteProps> = ({
             position: 'relative',
           }}
         />
-        <span>No Color</span>
+        <span>{(t ?? DICTIONARY.en).clrNoColor}</span>
       </button>
     </div>
   );
