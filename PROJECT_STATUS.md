@@ -29,7 +29,7 @@ Last updated: 2026-10-18
 - **Preflight & Print Production Engine (M8 Phase 0)**:
   - Multi-axis preflight diagnostics (image DPI calculation, boundary checks, overset text detection, font license compliance).
   - Target-specific preflight options (`targetDpi: 300`, `pressReady: true`).
-- 121 test files (421 test cases) of automated unit and integration tests (`vitest`).
+- 123 test files (437 test cases) of automated unit and integration tests (`vitest`).
 - **Linked text-frame flow (Phase 2)**: text frames can be linked into flow chains from the ribbon (Shape Format → Text Flow → "Link frame…", target picker by page; "Unlink" breaks the chain). Story text is distributed across chained frames at word boundaries (`computeChainTextSlices` in `domain/document/textFlow.ts`) and rendered per-frame on the canvas; sequence badges `[#1]`, `[#2]` and the `[+]` overflow badge reflect the chain. Commands: `linkTextFramesCommand` / `unlinkTextFrameCommand` in `editor/commands/documentCommands.ts`.
   - **Measured shaping (Phase 2 batch 2)**: on-screen slice layout accepts an optional `ChainTextMeasurer`; the canvas adapter (`editor/canvas/canvasTextMeasurer.ts`, offscreen 2D canvas) measures real advance widths with font-load guards, falling back to the deterministic heuristic when fonts aren't loaded or no DOM exists. Headless paths (export, overflow flags, story fork) keep the heuristic.
   - **Story fork on unlink (Phase 2 batch 2)**: unlinking now forks the story — the detached frame's subchain gets an independent story copy with the text it displayed (middle/tail: A→F→G becomes A + F→G; head: A→B→C becomes A + B→C). Paragraphs are split at run level, preserving marks, styleId stamps, and paragraph attributes. Middle-frame unlink no longer splices the chain shut.
@@ -38,6 +38,7 @@ Last updated: 2026-10-18
 
 - **DOCX import (Phase 3 batch 1)**: real end-to-end `.docx` import. `src/persistence/import/docxParser.ts` unzips with the already-depended JSZip (hardened: entry-count cap, incremental uncompressed-size cap against ZIP bombs, path-traversal rejection) and parses `word/document.xml` namespace-agnostically: paragraphs, runs (bold/italic/underline/strike/sub/sup/color/highlight/size/fonts), headings (pStyle + outlineLvl → style presets, emphasis baked into runs), lists (numbering.xml with hierarchical markers, bullet fallback + warning when numbering is missing), alignment, bidi/RTL detection, simple tables (gridSpan/vMerge, cell shading), inline images (rels → `word/media`, magic-byte sniffing), footnotes (appendix section), tracked insertions accepted / deletions dropped / comments+OLE+textboxes counted and reported. `importDocxFile` (`src/persistence/import/docxImporter.ts`) assembles through `editor/commands` (`addFullPageTextFrame`, `linkTextFramesCommand`, new `addImportedTable`): text flows across chained full-page frames, tables/images go on dedicated pages after the text with marker paragraphs at anchor positions, footnotes append as a حواشی section. Output is zod-validated (`parseDocument`) before return. File → Import → "Word document (.docx)" in the backstage, plus drag-and-drop/ribbon open; an `ImportReportDialog` shows countable results and honest drop notes. Urdu text is never normalized. Limits: 50 MB file, 50k paragraphs, 100 images (15 MB each), 300-row tables, parse timeout.
 - **Asset round-trip hardening (Phase 3 batch 1, related fix)**: `createUrdupPackage` now falls back to decoding an asset's runtime `dataUrl` when no raw bytes are supplied, so imported (and UI-added) images survive saving; `openDocumentWorkflow` re-attaches displayable `dataUrl`s from package bytes on open; `computeSha256Hash` fallback emits schema-shaped 64-hex so validation never fails without WebCrypto.
+- **Pakistani template gallery (Phase 3 batch 2)**: `src/templates/` holds six print-ready builder functions — امتحانی پرچہ (exam paper, A4), ورک شیٹ (school worksheet, A4), شادی کارڈ (wedding card, 5×7 in), اخباری کالم (two-column newspaper column, A4), لیٹر ہیڈ (letterhead, A4), نعت کا صفحہ (naat page, A5). Shared helpers (`helpers.ts`) for pages, text frames, rules, borders and ruled answer lines; all content in proper Urdu with bracketed placeholders, RTL-correct, preflight-clean (OFL fonts only). File → New → Templates gallery in the backstage (`FileBackstageOverlay.tsx`) with Urdu/English cards; selection goes through the `file.newFromTemplate` command. 16 tests cover build/validation/preflight/structure per template plus command wiring.
 
 ## Verification baseline
 
@@ -46,7 +47,7 @@ Recorded on 2026-07-26 after M8 Phase 0 completion:
 - `npm run check:utf8`: 331 files verified as valid UTF-8 without corrupt mojibake.
 - `npm run lint`: oxlint passes with 0 warnings and 0 errors across 231 files.
 - `npm run build`: passes strict TypeScript compilation (`tsc -b`) and Vite production bundle.
-- `npm run test`: vitest covers 121 test files (421 test cases).
+- `npm run test`: vitest covers 123 test files (437 test cases).
 - Production build: compiles cleanly with 0 TypeScript errors.
 
 ## Status update protocol

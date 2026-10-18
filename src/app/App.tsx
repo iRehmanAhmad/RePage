@@ -6,6 +6,7 @@ import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePage
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
 import { isSpellcheckEnabled, setSpellcheckEnabled } from '../domain/language/spellcheckSettings';
+import { getTemplate } from '../templates';
 import { broadcastSpellcheckChanged } from '../ui/editor/spellcheckExtension';
 import { getFontFamilyCss } from '../domain/unicode/fontRegistry';
 import { updateCompositeFontRules } from '../ui/editor/compositeFontStyle';
@@ -587,6 +588,27 @@ export function App() {
     }
   }, [document, lang]);
 
+  const handleNewFromTemplate = React.useCallback(
+    (templateId: string) => {
+      const template = getTemplate(templateId);
+      if (!template) {
+        setMessage(
+          lang === 'ur' ? `نامعلوم نمونہ: ${templateId}` : `Unknown template: ${templateId}`,
+        );
+        return;
+      }
+      const doc = template.build();
+      setDocumentState(doc);
+      setActivePageId(doc.pageOrder[0]!);
+      setMessage(
+        lang === 'ur'
+          ? `نیا نمونہ تیار: ${template.titleUr}`
+          : `New document from template: ${template.titleEn}`,
+      );
+    },
+    [lang],
+  );
+
   const handleExportEpub = React.useCallback(async () => {
     const epubBytes = await exportDocumentToEpub(document);
     const blob = new Blob([new Uint8Array(epubBytes)], { type: 'application/epub+zip' });
@@ -957,7 +979,8 @@ export function App() {
     commandRegistry.setHandler('edit.paste', () => void handlePaste('all'));
     commandRegistry.setHandler('edit.pasteUnformatted', () => void handlePaste('text-only'));
     commandRegistry.setHandler('file.exportPdf', () => handleExportVectorPdf());
-  }, [handleCut, handleCopy, handlePaste, handleExportVectorPdf]);
+    commandRegistry.setHandler('file.newFromTemplate', (id: string) => handleNewFromTemplate(id));
+  }, [handleCut, handleCopy, handlePaste, handleExportVectorPdf, handleNewFromTemplate]);
 
   const handleFormatPainter = React.useCallback(() => {
     if (isFormatPainterActive) {
@@ -2749,6 +2772,7 @@ export function App() {
             setActivePageId(starter.pageOrder[0]!);
             setMessage('New blank document created');
           }}
+          onNewFromTemplate={(templateId) => handleNewFromTemplate(templateId)}
           onOpenDocument={() => {
             void handleOpenDocumentWorkflow();
           }}

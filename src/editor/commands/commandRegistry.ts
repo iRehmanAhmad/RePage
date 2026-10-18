@@ -115,6 +115,16 @@ commandRegistry.register({
   execute: () => {},
 });
 
+// Default Registration of Template Gallery Command
+commandRegistry.register({
+  id: 'file.newFromTemplate',
+  label: 'New From Template',
+  category: 'file',
+  icon: '📄',
+  isUndoable: false,
+  execute: () => {},
+});
+
 // Default Registration of Page Layout & View Commands
 commandRegistry.register({
   id: 'layout.applyPageSetup',

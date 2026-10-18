@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { RePageDocument } from '../../domain/document/types';
 import type { UiLanguage } from '../i18n/menuTranslation';
 import { AppIcon } from '../icons/AppIcon';
+import { TEMPLATE_REGISTRY } from '../../templates';
 
 export interface FileBackstageOverlayProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ export interface FileBackstageOverlayProps {
   lang: UiLanguage;
   saveState: string;
   onNewDocument: () => void;
+  /** Creates a new document from a template gallery id (see src/templates). */
+  onNewFromTemplate: (templateId: string) => void;
   onOpenDocument: () => void;
   onSaveDocument: () => void;
   onSaveAsDocument: () => void;
@@ -28,6 +31,7 @@ export function FileBackstageOverlay({
   lang,
   saveState,
   onNewDocument,
+  onNewFromTemplate,
   onOpenDocument,
   onSaveDocument,
   onSaveAsDocument,
@@ -321,6 +325,82 @@ export function FileBackstageOverlay({
                   {new Date(document.metadata.modifiedAt).toLocaleDateString()}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'new' && (
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>
+              {lang === 'ur' ? 'نمونے (Templates)' : 'Templates'}
+            </h1>
+            <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>
+              {lang === 'ur'
+                ? 'کسی نمونے پر کلک کریں — اس سے ایک نئی دستاویز بن جائے گی۔'
+                : 'Click a template to create a new document from it.'}
+            </p>
+
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <div
+                onClick={() => {
+                  onNewDocument();
+                  onClose();
+                }}
+                style={{
+                  width: '180px',
+                  minHeight: '150px',
+                  backgroundColor: '#1e293b',
+                  border: '2px dashed #334155',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  padding: '16px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                }}
+              >
+                <span style={{ fontSize: '32px', color: '#10b981' }}>+</span>
+                <span style={{ fontSize: '14px', fontWeight: 700 }}>
+                  {lang === 'ur' ? 'سادہ صفحہ' : 'Blank Document'}
+                </span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>A4</span>
+              </div>
+
+              {TEMPLATE_REGISTRY.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => {
+                    onNewFromTemplate(t.id);
+                    onClose();
+                  }}
+                  style={{
+                    width: '180px',
+                    minHeight: '150px',
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    padding: '16px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>
+                    {lang === 'ur' ? t.titleUr : t.titleEn}
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#94a3b8', flex: 1 }}>
+                    {lang === 'ur' ? t.descriptionUr : t.descriptionEn}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                    {t.pageSize}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
