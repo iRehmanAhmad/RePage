@@ -15,10 +15,11 @@ export interface FileBackstageOverlayProps {
   onSaveAsDocument: () => void;
   onExportPdf: () => void;
   onExportVectorPdf: () => void;
+  onImportDocxFile: (file: File) => void;
   onPrint: () => void;
 }
 
-type BackstageSection = 'home' | 'new' | 'open' | 'info' | 'export' | 'options';
+type BackstageSection = 'home' | 'new' | 'open' | 'import' | 'info' | 'export' | 'options';
 
 export function FileBackstageOverlay({
   isOpen,
@@ -32,6 +33,7 @@ export function FileBackstageOverlay({
   onSaveAsDocument,
   onExportPdf,
   onExportVectorPdf,
+  onImportDocxFile,
   onPrint,
 }: FileBackstageOverlayProps) {
   const [activeSection, setActiveSection] = useState<BackstageSection>('home');
@@ -139,6 +141,23 @@ export function FileBackstageOverlay({
           }}
         >
           {lang === 'ur' ? 'کھولیں (Open)' : 'Open'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('import')}
+          style={{
+            padding: '10px 14px',
+            textAlign: 'left',
+            backgroundColor: activeSection === 'import' ? '#1e293b' : 'transparent',
+            color: activeSection === 'import' ? '#38bdf8' : '#94a3b8',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {lang === 'ur' ? 'درآمد کریں (Import)' : 'Import'}
         </button>
 
         <div style={{ height: '1px', backgroundColor: '#1e293b', margin: '8px 0' }} />
@@ -355,6 +374,54 @@ export function FileBackstageOverlay({
                 </select>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeSection === 'import' && (
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>
+              {lang === 'ur' ? 'دستاویز درآمد کریں (Import Document)' : 'Import Document'}
+            </h1>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <label
+                style={{
+                  padding: '16px 24px',
+                  backgroundColor: '#0f766e',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+                title={
+                  lang === 'ur'
+                    ? 'ورڈ دستاویز (.docx) درآمد کریں — سرخیاں، فہرستیں، جدول اور تصاویر سمیت'
+                    : 'Import a Word document (.docx) — headings, lists, tables and images included'
+                }
+              >
+                <AppIcon name="document-text" />{' '}
+                {lang === 'ur' ? 'ورڈ دستاویز (.docx)' : 'Word document (.docx)'}
+                <input
+                  type="file"
+                  accept=".docx"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      onImportDocxFile(file);
+                      onClose();
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+            <p style={{ marginTop: '16px', fontSize: '12px', color: '#64748b', maxWidth: '420px' }}>
+              {lang === 'ur'
+                ? 'نوٹ: جدول اور تصاویر متن کے بعد الگ صفحات پر رکھی جاتی ہیں؛ درآمد کے بعد ایک رپورٹ دکھائی جاتی ہے۔'
+                : 'Note: tables and images are placed on dedicated pages after the text; an import report is shown afterwards.'}
+            </p>
           </div>
         )}
 

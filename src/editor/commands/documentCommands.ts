@@ -10,6 +10,7 @@ import type {
   RectangleObject,
   RePageDocument,
   ShapeKind,
+  StoryId,
   TextFrameObject,
   TextStory,
 } from '../../domain/document/types';
@@ -210,6 +211,59 @@ export function addTextFrame(
   pageId: PageId,
 ): RePageDocument {
   return addTextBox(document, pageId).document;
+}
+
+/**
+ * Adds a text frame covering the page content area (inside margins), bound to
+ * an existing story. Used by importers that flow a whole story across pages.
+ */
+export function addFullPageTextFrame(
+  document: RePageDocument,
+  pageId: PageId,
+  storyId: StoryId,
+  name = 'Imported text',
+): { document: RePageDocument; objectId: ObjectId } {
+  const page = document.pages[pageId];
+  if (!page) {
+    throw new Error(`Page ${pageId} does not exist.`);
+  }
+  if (!document.stories[storyId]) {
+    throw new Error(`Story ${storyId} does not exist.`);
+  }
+
+  const objectId = createId('object');
+  const textFrame: TextFrameObject = {
+    id: objectId,
+    pageId,
+    type: 'text-frame',
+    name,
+    storyId,
+    frame: {
+      x: page.margins.left,
+      y: page.margins.top,
+      width: Math.max(10, page.width - page.margins.left - page.margins.right),
+      height: Math.max(10, page.height - page.margins.top - page.margins.bottom),
+      rotation: 0,
+    },
+    locked: false,
+    hidden: false,
+    opacity: 1,
+    fontFamily: 'Noto Nastaliq Urdu',
+    fontSize: 16,
+    color: '#1e293b',
+    lineHeight: 2.0,
+    padding: { top: 6, right: 6, bottom: 6, left: 6 },
+  };
+
+  const updated = touch({
+    ...document,
+    pages: {
+      ...document.pages,
+      [pageId]: { ...page, objectOrder: [...page.objectOrder, objectId] },
+    },
+    objects: { ...document.objects, [objectId]: textFrame },
+  });
+  return { document: updated, objectId };
 }
 
 export function moveObject(

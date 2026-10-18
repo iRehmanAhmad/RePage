@@ -84,4 +84,28 @@ describe('.urdup package', () => {
     // Reading package must fail because asset entry is missing from ZIP
     await expect(readUrdupPackageWithAssets(pkgBytes)).rejects.toThrow(/missing required asset entry/i);
   });
+
+  it('preserves asset bytes from a runtime dataUrl when no assets map is given', async () => {
+    const document = createStarterDocument();
+    const assetData = new TextEncoder().encode('imported image bytes');
+    const hash = await computeSha256(assetData);
+    const assetId = 'asset-dataurl-1' as AssetId;
+    let binary = '';
+    for (const b of assetData) binary += String.fromCharCode(b);
+
+    document.assets[assetId] = {
+      id: assetId,
+      sha256: hash,
+      mediaType: 'image/png',
+      byteSize: assetData.byteLength,
+      originalName: 'imported.png',
+      packageEntry: `assets/${assetId}.png`,
+      dataUrl: `data:image/png;base64,${btoa(binary)}`,
+    };
+
+    // No assetsData map: bytes must come from the dataUrl.
+    const pkgBytes = await createUrdupPackage(document);
+    const result = await readUrdupPackageWithAssets(pkgBytes);
+    expect(Array.from(result.assets.get(assetId)!)).toEqual(Array.from(assetData));
+  });
 });

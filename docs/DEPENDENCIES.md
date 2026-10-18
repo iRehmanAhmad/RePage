@@ -27,7 +27,7 @@ GitHub popularity is supporting evidence, not proof of correctness.
 | Fabric.js | Canvas interaction | Keep behind adapter | Not canonical rich-text or file model |
 | Tiptap/ProseMirror | Structured DOM text editing | Keep/evaluate extensions | Open-source core only by default |
 | Dexie | IndexedDB persistence | Keep | Browser recovery adapter |
-| JSZip | Package container | Keep with hardening | ZIP bomb/path/resource protections required |
+| JSZip | Package container; also powers .docx import (`src/persistence/import/docxParser.ts`) | Keep with hardening | ZIP bomb/path/resource protections required — implemented: entry-count cap (2000), incremental uncompressed-size cap (200 MB), path-traversal rejection, per-image caps |
 | Zod or JSON Schema validator | Runtime validation | Select during Foundation | Avoid duplicating schema truth manually |
 | Yjs | Optional collaboration | Keep, later phase | Domain remains usable without it |
 | Tauri 2 | Desktop packaging | Add at desktop gate | Least-privilege capability design |

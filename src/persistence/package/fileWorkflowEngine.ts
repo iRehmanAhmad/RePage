@@ -1,6 +1,6 @@
 import type { RePageDocument } from '../../domain/document/types';
 import type { PlatformServices } from '../../platform/platformServices';
-import { createUrdupPackage, readUrdupPackage } from './urdupPackage';
+import { createUrdupPackage, readUrdupPackageWithAssets } from './urdupPackage';
 import { addRecentFile } from './recentFiles';
 
 export interface DocumentFileRef {
@@ -54,11 +54,28 @@ export async function openDocumentWorkflow(
     filename = opened.name;
   }
 
-  const document = await readUrdupPackage(buffer);
+  const { document, assets } = await readUrdupPackageWithAssets(buffer);
   addRecentFile(document.metadata.title, filename);
 
+  // Re-attach displayable data URLs from the package's raw asset bytes
+  // (the validated document never carries dataUrl; it is runtime-only).
+  const assetsWithUrls = { ...document.assets };
+  for (const [assetId, bytes] of assets) {
+    const ref = assetsWithUrls[assetId];
+    if (!ref || ref.dataUrl) continue;
+    let binary = '';
+    const CHUNK = 0x8000;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    assetsWithUrls[assetId] = {
+      ...ref,
+      dataUrl: `data:${ref.mediaType};base64,${btoa(binary)}`,
+    };
+  }
+
   return {
-    document,
+    document: { ...document, assets: assetsWithUrls },
     fileRef: {
       filePath: filename,
       lastModifiedMs: Date.now(),
@@ -139,9 +156,8 @@ export async function importExternalFileWorkflow(
     const text = new TextDecoder('utf-8').decode(buffer);
     return importHtml(text);
   } else if (ext === 'docx') {
-    const { importDocxXml } = await import('../import/docxImporter');
-    const text = new TextDecoder('utf-8').decode(buffer);
-    return importDocxXml(text);
+    const { importDocxFile } = await import('../import/docxImporter');
+    return importDocxFile(buffer, filename);
   } else if (ext === 'svg') {
     const { importSvg } = await import('../import/svgImporter');
     const text = new TextDecoder('utf-8').decode(buffer);

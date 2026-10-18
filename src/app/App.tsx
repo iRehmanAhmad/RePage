@@ -121,6 +121,8 @@ import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/docu
 import { applyLanguageChangesCommand } from '../editor/commands/languageCommands';
 import { HeaderFooterModal } from '../ui/dialogs/HeaderFooterModal';
 import { ExportOutputDialog } from '../ui/dialogs/ExportOutputDialog';
+import { ImportReportDialog } from '../ui/dialogs/ImportReportDialog';
+import type { ImportReport } from '../persistence/import/docxImporter';
 import type { ExportOptions } from '../export/types';
 import { PrintLayoutView } from '../ui/views/PrintLayoutView';
 import { WebReadingView } from '../ui/views/WebReadingView';
@@ -176,6 +178,7 @@ export function App() {
   const [showPageSetupModal, setShowPageSetupModal] = useState(false);
   const [showHeaderFooterModal, setShowHeaderFooterModal] = useState(false);
   const [showExportOutputDialog, setShowExportOutputDialog] = useState(false);
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [showGrid, setShowGrid] = useState(false);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
@@ -551,6 +554,11 @@ export function App() {
         setDocumentState(importedDoc);
         setActivePageId(importedDoc.pageOrder[0]!);
         setMessage(`Imported file: ${file.name}`);
+        if (res && typeof res === 'object' && 'report' in res) {
+          setImportReport((res as { report: ImportReport }).report);
+        }
+      } else {
+        setMessage(`Import produced no document: ${file.name}`);
       }
     } catch (err) {
       setMessage(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -2748,7 +2756,16 @@ export function App() {
           onSaveAsDocument={() => void handleSaveAsNative()}
           onExportPdf={handleBrowserPrint}
           onExportVectorPdf={handleExportVectorPdf}
+          onImportDocxFile={(file) => void handleOpenImportFile(file)}
           onPrint={triggerNativePrintDialog}
+        />
+
+        {/* Import report (shown after a .docx import) */}
+        <ImportReportDialog
+          isOpen={importReport !== null}
+          onClose={() => setImportReport(null)}
+          report={importReport}
+          lang={lang}
         />
 
         {/* Advanced Font Dialog Modal */}

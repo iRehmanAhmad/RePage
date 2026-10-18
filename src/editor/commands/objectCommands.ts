@@ -1,3 +1,4 @@
+import type { RichTextDocument } from '../../domain/rich-text/types';
 import type { CropBounds, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextWrapMode, AssetReference } from '../../domain/document/types';
 import { createId } from '../../domain/document/ids';
 import { paragraph } from '../../domain/rich-text/types';
@@ -436,4 +437,89 @@ export function addOcrResultCommand(
     },
     assets: nextAssets,
   };
+}
+
+export interface ImportedTableCellData {
+  content: RichTextDocument;
+  colSpan: number;
+  rowSpan: number;
+  backgroundColor?: string | undefined;
+}
+
+export interface ImportedTableData {
+  rows: ImportedTableCellData[][];
+}
+
+export interface ImportedTableGeometry {
+  x?: number | undefined;
+  y?: number | undefined;
+  width?: number | undefined;
+  name?: string | undefined;
+}
+
+/**
+ * Adds a table object whose cells carry real imported rich-text content
+ * (as opposed to addTableObject's placeholder cells). Used by importers.
+ */
+export function addImportedTable(
+  doc: RePageDocument,
+  pageId: PageId,
+  data: ImportedTableData,
+  geometry: ImportedTableGeometry = {},
+): { document: RePageDocument; objectId: string } {
+  const page = doc.pages[pageId];
+  if (!page) {
+    throw new Error(`Page ${pageId} does not exist.`);
+  }
+
+  const tableId = createId('table');
+  const rows: TableRow[] = data.rows.map((rowCells) => ({
+    id: createId('row'),
+    cells: rowCells.map((cell) => ({
+      id: createId('cell'),
+      content: cell.content,
+      colSpan: cell.colSpan > 1 ? cell.colSpan : undefined,
+      rowSpan: cell.rowSpan > 1 ? cell.rowSpan : undefined,
+      backgroundColor: cell.backgroundColor ?? '#ffffff',
+    })),
+  }));
+
+  const rowCount = Math.max(1, rows.length);
+  const width = geometry.width ?? page.width - page.margins.left - page.margins.right;
+  const tableObj: TableObject = {
+    id: tableId,
+    pageId,
+    name: geometry.name ?? `Imported table`,
+    type: 'table',
+    frame: {
+      x: geometry.x ?? page.margins.left,
+      y: geometry.y ?? page.margins.top,
+      width: Math.max(10, width),
+      height: rowCount * 30,
+      rotation: 0,
+    },
+    locked: false,
+    hidden: false,
+    opacity: 1,
+    rows,
+    cellPadding: { top: 6, right: 8, bottom: 6, left: 8 },
+    borderColor: '#cbd5e1',
+    borderWidth: 1,
+  };
+
+  const document = {
+    ...doc,
+    pages: {
+      ...doc.pages,
+      [pageId]: {
+        ...page,
+        objectOrder: [...page.objectOrder, tableId],
+      },
+    },
+    objects: {
+      ...doc.objects,
+      [tableId]: tableObj,
+    },
+  };
+  return { document, objectId: tableId };
 }

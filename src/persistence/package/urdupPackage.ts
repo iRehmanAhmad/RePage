@@ -33,6 +33,20 @@ export async function computeSha256(data: Uint8Array): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Decodes a data: URL back to bytes. Returns undefined for non-data URLs
+ * (e.g. blob: object URLs, which cannot be decoded synchronously).
+ */
+function dataUrlToBytes(dataUrl: string): Uint8Array | undefined {
+  const m = /^data:([^;,]+)?;base64,(.*)$/s.exec(dataUrl);
+  if (!m) return undefined;
+  const b64 = m[2] ?? '';
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 export async function createUrdupPackage(
   document: UrduPageDocument,
   assetsData?: Map<string, Uint8Array> | Record<string, Uint8Array>,
@@ -48,8 +62,23 @@ export async function createUrdupPackage(
 
   const assetDataMap = new Map(assetEntries);
 
+  // Runtime dataUrls (stripped from the validated document) are a last-resort
+  // byte source so in-memory images (UI-added or imported) survive saving.
+  const runtimeDataUrls = new Map<string, Uint8Array>();
+  for (const [assetId, assetRef] of Object.entries(document.assets)) {
+    if (assetDataMap.has(assetId)) continue;
+    const dataUrl = (assetRef as { dataUrl?: string }).dataUrl;
+    if (dataUrl) {
+      const bytes = dataUrlToBytes(dataUrl);
+      if (bytes) runtimeDataUrls.set(assetId, bytes);
+    }
+  }
+
   for (const [assetId, assetRef] of Object.entries(validDocument.assets)) {
-    const rawData = assetDataMap.get(assetId) ?? assetDataMap.get(assetRef.packageEntry);
+    const rawData =
+      assetDataMap.get(assetId) ??
+      assetDataMap.get(assetRef.packageEntry) ??
+      runtimeDataUrls.get(assetId);
     if (rawData) {
       if (rawData.byteLength > MAX_SINGLE_ASSET_BYTES) {
         throw new Error(`Asset ${assetRef.originalName} exceeds max asset size of 50MB.`);
