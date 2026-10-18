@@ -66,6 +66,7 @@ import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
 import { FontDialogModal } from '../ui/dialogs/FontDialogModal';
 import { ParagraphDialogModal } from '../ui/dialogs/ParagraphDialogModal';
 import { triggerNativePrintDialog } from '../platform/printService';
+import { exportDocumentToPdf } from '../export/pdfPrintExporter';
 import { getActivePlatform } from '../platform/platformServices';
 import {
   importExternalFileWorkflow,
@@ -490,6 +491,23 @@ export function App() {
     setMessage(lang === 'ur' ? 'براؤزر پرنٹ ڈائیلاگ کھولا گیا' : 'Opened browser print dialog');
   }, [lang]);
 
+  const handleExportVectorPdf = React.useCallback(() => {
+    const result = exportDocumentToPdf(document);
+    if (result.ok) {
+      setMessage(
+        lang === 'ur'
+          ? `پرنٹ ڈائیلاگ کھولا گیا — PDF محفوظ کرنے کے لیے "Save as PDF" منتخب کریں`
+          : `Print dialog opened — choose "Save as PDF" to save ${result.fileName}`,
+      );
+    } else {
+      setMessage(
+        lang === 'ur'
+          ? `پی ڈی ایف ایکسپورٹ ناکام: ${result.reason}`
+          : `PDF export failed: ${result.reason}`,
+      );
+    }
+  }, [document, lang]);
+
   const handleExportEpub = React.useCallback(async () => {
     const epubBytes = await exportDocumentToEpub(document);
     const blob = new Blob([new Uint8Array(epubBytes)], { type: 'application/epub+zip' });
@@ -859,7 +877,8 @@ export function App() {
     commandRegistry.setHandler('edit.copy', handleCopy);
     commandRegistry.setHandler('edit.paste', () => void handlePaste('all'));
     commandRegistry.setHandler('edit.pasteUnformatted', () => void handlePaste('text-only'));
-  }, [handleCut, handleCopy, handlePaste]);
+    commandRegistry.setHandler('file.exportPdf', () => handleExportVectorPdf());
+  }, [handleCut, handleCopy, handlePaste, handleExportVectorPdf]);
 
   const handleFormatPainter = React.useCallback(() => {
     if (isFormatPainterActive) {
@@ -2357,6 +2376,8 @@ export function App() {
           onConfirmExport={(exportOptions: ExportOptions) => {
             if (exportOptions.format === 'browser-print') {
               handleBrowserPrint();
+            } else if (exportOptions.format === 'vector-pdf') {
+              handleExportVectorPdf();
             } else if (exportOptions.format === 'epub') {
               void handleExportEpub();
             } else {

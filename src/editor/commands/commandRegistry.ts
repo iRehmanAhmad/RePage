@@ -73,6 +73,8 @@ commandRegistry.register({
   execute: () => {},
 });
 
+// Default Registration of Page Layout & View Commands
+
 commandRegistry.register({
   id: 'edit.copy',
   label: 'Copy Selection',
@@ -100,6 +102,16 @@ commandRegistry.register({
   shortcut: 'Ctrl+Shift+V',
   icon: '📄',
   isUndoable: true,
+  execute: () => {},
+});
+
+// Default Registration of File Export Commands
+commandRegistry.register({
+  id: 'file.exportPdf',
+  label: 'Export Vector PDF',
+  category: 'file',
+  icon: '📕',
+  isUndoable: false,
   execute: () => {},
 });
 

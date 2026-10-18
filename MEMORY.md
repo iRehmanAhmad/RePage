@@ -16,7 +16,7 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Collaboration is optional and comes after reliable local publishing.
 - **Current Milestone**: Phase 1 — Stable Core (Windows Desktop & Zero Data-Loss Publishing Core).
   - **Tauri v2 Shell**: `@tauri-apps/cli@^2`, `@tauri-apps/api@^2`, `@tauri-apps/plugin-dialog@^2`, `@tauri-apps/plugin-fs@^2`, capabilities least-privilege scoping, and verified `cargo check` and compilation.
-  - **Vector Print-to-PDF**: dedicated `@media print` rules in `global.css` suppressing application chrome and producing clean vector pages with selectable Urdu typography.
+  - **Vector Print-to-PDF**: dedicated `@media print` rules in `global.css` suppressing application chrome and producing clean vector pages with selectable Urdu typography; plus `src/export/pdfPrintExporter.ts` (`vector-pdf` format, `file.exportPdf` command) rendering editor-independent static print pages with per-document `@page` sizing and a suggested file name.
   - **Zero Data-Loss Persistence**: atomic file save (`.tmp` -> atomic rename), safety backup on corrupted package (`.corrupt`), in-memory IndexedDB fallback, 2.5s debounced autosave, and startup crash recovery modal.
   - **CI & Test Suite**: 100% green local checks (`npm run check:utf8`, `npm run lint`, `npm run test`, `npm run build`).
   - **Prior Page Layout & Section Model Architecture**: ADR-0008 physical page geometry, section engine, page setup modal, RTL multi-column layout, localized Urdu page numbering, and preflight print safety.

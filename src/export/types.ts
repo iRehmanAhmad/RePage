@@ -1,6 +1,6 @@
 import type { PageId } from '../domain/document/types';
 
-export type ExportFormat = 'browser-print' | 'epub' | 'svg' | 'png' | 'jpeg' | 'raster-pdf';
+export type ExportFormat = 'browser-print' | 'vector-pdf' | 'epub' | 'svg' | 'png' | 'jpeg' | 'raster-pdf';
 
 export type ExportPageRange =
   | { kind: 'all' }
@@ -42,6 +42,18 @@ export const FORMAT_CAPABILITIES: Record<ExportFormat, FormatCapability> = {
     supportsBleed: false,
     supportsCropMarks: false,
     supportsBackground: false,
+  },
+  'vector-pdf': {
+    format: 'vector-pdf',
+    labelEn: 'Vector PDF (Print to PDF)',
+    labelUr: 'ویکٹر پی ڈی ایف (پرنٹ سے)',
+    descriptionEn: 'Renders pages as real vector text and opens the system print dialog — choose "Save as PDF" for a genuine PDF file.',
+    descriptionUr: 'صفحات کو اصل ویکٹر ٹیکسٹ کے طور پر رینڈر کر کے سسٹم پرنٹ ڈائیلاگ کھولتا ہے — "Save as PDF" منتخب کریں۔',
+    isImplemented: true,
+    supportsDpi: false,
+    supportsBleed: false,
+    supportsCropMarks: false,
+    supportsBackground: true,
   },
   epub: {
     format: 'epub',

@@ -2,7 +2,7 @@
 
 RePage is a modern, offline-first, cross-platform Urdu desktop-publishing application. Its purpose is to offer a simpler and more dependable alternative to legacy Urdu publishing tools while preserving professional page-layout capabilities.
 
-The repository contains a clean, strict TypeScript implementation featuring a canonical schema version 1 document engine, Fabric canvas adapter, DOM rich-text editor, master pages, linked text frames, preflight diagnostics panel, vector SVG and EPUB export, and a local Yjs CRDT collaboration core. The following are on the roadmap but not yet complete: Tauri 2 desktop shell (desktop shell stub only — not yet buildable), PDF export (SVG and EPUB export work today; PDF export planned), signed update manager (planned), and WebRTC networking for multi-user collaboration (local Yjs collaboration core only — no network transport yet).
+The repository contains a clean, strict TypeScript implementation featuring a canonical schema version 1 document engine, Fabric canvas adapter, DOM rich-text editor, master pages, linked text frames, preflight diagnostics panel, vector SVG and EPUB export, and a local Yjs CRDT collaboration core. The following are on the roadmap but not yet complete: Tauri 2 desktop shell (desktop shell stub only — not yet buildable), PDF export via the OS print pipeline (File → Vector PDF, then "Save as PDF" — real vector text with correct Nastaliq; press-grade prepress PDF still planned), signed update manager (planned), and WebRTC networking for multi-user collaboration (local Yjs collaboration core only — no network transport yet).
 
 ## Product priorities
 
