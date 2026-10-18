@@ -17,8 +17,9 @@ export interface CheckUpdateResult {
   error?: string | undefined;
 }
 
-export const STABLE_UPDATE_ENDPOINT = 'https://releases.repage.org/stable/update.json';
-export const BETA_UPDATE_ENDPOINT = 'https://releases.repage.org/beta/update.json';
+// NOTE: update server endpoints are intentionally NOT configured. There is no
+// update server (releases.repage.org does not exist). Do not add endpoint URLs
+// here until real minisign/ed25519 verification and a real release server exist.
 
 /**
  * Validates a signed update manifest.

@@ -6,12 +6,11 @@ import { atomicSavePackage } from '../persistence/package/fileWorkflowEngine';
 import { browserPlatform } from './browser/browserPlatform';
 import { formatWindowTitle } from './tauri/windowIntegration';
 import {
-  BETA_UPDATE_ENDPOINT,
-  STABLE_UPDATE_ENDPOINT,
   validateSignedUpdateManifest,
   verifyNoInvisibleDocumentMigrationPolicy,
   type UpdateManifest,
 } from './tauri/updateManager';
+import * as updateManagerModule from './tauri/updateManager';
 
 describe('M4 Release Exit Gate Verification Suite', () => {
   it('refuses every update manifest until real signature verification exists (fail closed)', () => {
@@ -20,7 +19,7 @@ describe('M4 Release Exit Gate Verification Suite', () => {
       notes: 'Initial beta release candidate',
       pubDate: '2026-07-25T12:00:00Z',
       signature: 'dGhpcyBpcyBhIHZhbGlkIGVkMjU1MTkgc2lnbmF0dXJlIGtleQ==',
-      url: BETA_UPDATE_ENDPOINT,
+      url: 'https://example.invalid/beta/update.json',
       channel: 'beta',
     };
 
@@ -29,9 +28,9 @@ describe('M4 Release Exit Gate Verification Suite', () => {
     expect(validateSignedUpdateManifest({ version: '0.1.0' })).toBe(false);
   });
 
-  it('enforces release channels stable and beta endpoints', () => {
-    expect(STABLE_UPDATE_ENDPOINT).toContain('/stable/');
-    expect(BETA_UPDATE_ENDPOINT).toContain('/beta/');
+  it('exposes no update server endpoints while signature verification is unimplemented', () => {
+    expect('STABLE_UPDATE_ENDPOINT' in updateManagerModule).toBe(false);
+    expect('BETA_UPDATE_ENDPOINT' in updateManagerModule).toBe(false);
   });
 
   it('verifies explicit document migration invariant (no invisible migrations)', () => {
