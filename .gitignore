@@ -7,10 +7,11 @@ coverage/
 .DS_Store
 Thumbs.db
 src-tauri/target/
+src-tauri/.cargo/
+src-tauri/gen/
 *.urdup
 !tests/fixtures/**/*.urdup
 graphify-out/
-
 # Secrets & credentials — never commit these
 .env
 .env.*

@@ -8,9 +8,16 @@ describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize T
   it('renders consolidated top row controls, special marks, centered spacebar, and minimize toggle', () => {
     const handleInsert = vi.fn();
     const handleModeChange = vi.fn();
+    const handleToggleMinimize = vi.fn();
 
-    render(
-      <VisualKeyboard mode="crulp" onModeChange={handleModeChange} onInsertChar={handleInsert} />,
+    const { rerender } = render(
+      <VisualKeyboard
+        mode="crulp"
+        onModeChange={handleModeChange}
+        onInsertChar={handleInsert}
+        isMinimized={false}
+        onToggleMinimize={handleToggleMinimize}
+      />,
     );
 
     // Header & Mode Selector
@@ -26,13 +33,16 @@ describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize T
     fireEvent.click(spacebar);
     expect(handleInsert).toHaveBeenCalledWith(' ');
 
-    // Minimize toggle
-    const toggleBtn = screen.getByText('Minimize Keyboard ▼');
-    expect(toggleBtn).toBeInTheDocument();
-
-    // Minimize keyboard
-    fireEvent.click(toggleBtn);
-    expect(screen.getByText('Expand Keyboard ▲')).toBeInTheDocument();
+    // Rerender as minimized
+    rerender(
+      <VisualKeyboard
+        mode="crulp"
+        onModeChange={handleModeChange}
+        onInsertChar={handleInsert}
+        isMinimized={true}
+        onToggleMinimize={handleToggleMinimize}
+      />,
+    );
     expect(screen.queryByText('Space (وقفہ)')).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,6 @@
 import type { RePageDocument } from '../domain/document/types';
+import { browserPlatform } from './browser/browserPlatform';
+import { isTauriEnvironment, tauriPlatform } from './tauri/tauriPlatform';
 
 export interface FileFilter {
   name: string;
@@ -22,4 +24,8 @@ export interface PlatformServices {
   getSystemFonts(): Promise<string[]>;
   readPackage(pathOrBuffer: string | ArrayBuffer): Promise<RePageDocument>;
   writePackage(doc: RePageDocument, path?: string): Promise<Uint8Array>;
+}
+
+export function getActivePlatform(): PlatformServices {
+  return isTauriEnvironment() ? tauriPlatform : browserPlatform;
 }

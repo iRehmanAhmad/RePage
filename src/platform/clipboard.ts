@@ -1,6 +1,16 @@
-export async function copyToClipboard(text: string): Promise<boolean> {
+export async function copyToClipboard(text: string, html?: string): Promise<boolean> {
   if (typeof navigator !== 'undefined' && navigator.clipboard) {
     try {
+      if (html && typeof ClipboardItem !== 'undefined') {
+        const textBlob = new Blob([text], { type: 'text/plain' });
+        const htmlBlob = new Blob([html], { type: 'text/html' });
+        const item = new ClipboardItem({
+          'text/plain': textBlob,
+          'text/html': htmlBlob,
+        });
+        await navigator.clipboard.write([item]);
+        return true;
+      }
       await navigator.clipboard.writeText(text);
       return true;
     } catch {

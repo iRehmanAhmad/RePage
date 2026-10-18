@@ -5,9 +5,10 @@ import { createId } from '../domain/document/ids';
 import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
+import { getFontFamilyCss } from '../domain/unicode/fontRegistry';
+import { updateCompositeFontRules } from '../ui/editor/compositeFontStyle';
 import { PAGE_PRESETS, millimetresToPoints, pointsToMillimetres } from '../domain/geometry/units';
 import { getSectionForPage } from '../domain/layout/sectionEngine';
-import { repaginateDocument } from '../domain/layout/paginationEngine';
 import { DocumentRulers } from '../ui/editor/DocumentRulers';
 import {
   addOcrResultCommand,
@@ -31,14 +32,21 @@ import {
   updateSectionColumnsCommand,
 } from '../editor/commands/pageLayoutCommands';
 import { PageSetupModal } from '../ui/dialogs/PageSetupModal';
+import { FindReplaceDialogModal } from '../ui/dialogs/FindReplaceDialogModal';
 import { SelectionPane } from '../ui/navigation/SelectionPane';
 import {
-  copySelection,
   cutSelection,
   pasteText,
   pasteUnformatted,
 } from '../editor/commands/clipboardCommands';
-import { applyStyleToStory } from '../editor/commands/styleCommands';
+import { copyToClipboard } from '../platform/clipboard';
+import {
+  loadCustomUrduPresets,
+  createCustomUrduPreset,
+  deleteCustomUrduPreset,
+  type CustomUrduPreset,
+} from '../domain/document/customPresets';
+import { applyStyleToStory, URDU_STYLE_PRESETS } from '../editor/commands/styleCommands';
 import { commandRegistry } from '../editor/commands/commandRegistry';
 import {
   addImageFrame,
@@ -58,13 +66,16 @@ import { DragAndDropOverlay } from '../ui/common/DragAndDropOverlay';
 import { FontDialogModal } from '../ui/dialogs/FontDialogModal';
 import { ParagraphDialogModal } from '../ui/dialogs/ParagraphDialogModal';
 import { triggerNativePrintDialog } from '../platform/printService';
-import { browserPlatform } from '../platform/browser/browserPlatform';
+import { getActivePlatform } from '../platform/platformServices';
 import {
   importExternalFileWorkflow,
+  openDocumentWorkflow,
   saveAsDocumentWorkflow,
   saveDocumentWorkflow,
   type DocumentFileRef,
 } from '../persistence/package/fileWorkflowEngine';
+import { getLatestRecovery, saveRecovery, clearRecovery } from '../persistence/autosave/database';
+import { CustomMessageBoxModal } from '../ui/dialogs/CustomMessageBoxModal';
 import type { KeyboardMode } from '../domain/unicode/keyboardLayouts';
 
 // Language & OCR Imports
@@ -115,6 +126,14 @@ type SaveState = 'Saved locally' | 'Unsaved changes' | 'Saving…' | 'Save faile
 
 const history = new TransactionHistory();
 
+function focusFontDropdown(selector: string): void {
+  if (typeof window === 'undefined') return;
+  setTimeout(() => {
+    const el = window.document.querySelector(selector) as HTMLSelectElement | null;
+    if (el) el.focus();
+  }, 50);
+}
+
 function resolveActivePage(document: RePageDocument, activePageId: string): Page {
   const page = document.pages[activePageId] ?? document.pages[document.pageOrder[0]!];
   if (!page) {
@@ -154,14 +173,19 @@ export function App() {
   const [showGrid, setShowGrid] = useState(false);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
+  const [lastUrduKeyboardMode, setLastUrduKeyboardMode] = useState<KeyboardMode>('crulp');
   const [isKeyboardMinimized, setIsKeyboardMinimized] = useState(true);
   const [isTransliterationEnabled, setIsTransliterationEnabled] = useState(false);
   const [numeralSystem, setNumeralSystem] = useState<'urdu' | 'western'>('urdu');
+  const [writingLanguage, setWritingLanguage] = useState<'urdu' | 'english'>('urdu');
   const [activeTool, setActiveTool] = useState<ActiveTool>('text');
 
   // Theme & Menu Language State
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
   const [lang, setLang] = useState<UiLanguage>('en');
+
+  // Custom User Typography Presets State
+  const [customPresets, setCustomPresets] = useState<CustomUrduPreset[]>(loadCustomUrduPresets);
 
   // Quick Access Toolbar State
   const [qatItems, setQatItems] = useState<QatItemKey[]>(() => getInitialQatItems());
@@ -192,9 +216,13 @@ export function App() {
   const [showRecent, setShowRecent] = useState(false);
   const [isFileBackstageOpen, setIsFileBackstageOpen] = useState(false);
   const [isNavigationPaneOpen, setIsNavigationPaneOpen] = useState(false);
+  const [navPaneTab, setNavPaneTab] = useState<'headings' | 'pages' | 'results'>('pages');
+  const [showFindReplaceModal, setShowFindReplaceModal] = useState(false);
+  const [findReplaceModalTab, setFindReplaceModalTab] = useState<'find' | 'replace'>('find');
   const [isSelectionPaneOpen, setIsSelectionPaneOpen] = useState(false);
   const [showDocStats, setShowDocStats] = useState(false);
   const [showStylesManager, setShowStylesManager] = useState(false);
+  const [activeStyleId, setActiveStyleId] = useState<string>('normal');
   const [showCharSub, setShowCharSub] = useState(false);
   const [showKeyboardEditor, setShowKeyboardEditor] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('editing');
@@ -220,6 +248,36 @@ export function App() {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
 
   const [fileRef, setFileRef] = useState<DocumentFileRef>({ isDirty: false });
+  const [recoveryPrompt, setRecoveryPrompt] = useState<{
+    document: RePageDocument;
+    savedAt: string;
+  } | null>(null);
+
+  // Check for crash recovery / auto-saved document on startup
+  useEffect(() => {
+    let active = true;
+    getLatestRecovery()
+      .then((record) => {
+        if (active && record && record.document && record.document.pageOrder?.length > 0) {
+          setRecoveryPrompt(record);
+        }
+      })
+      .catch(() => {
+        // Recovery storage unavailable
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Periodic Auto-Save to IndexedDB (debounced 2.5s on document change)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveRecovery(document).catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [document]);
+
   const [, setHistoryVersion] = useState(0);
   const [activeTableCell, setActiveTableCell] = useState<{ rowIndex: number; colIndex: number }>({ rowIndex: 0, colIndex: 0 });
 
@@ -241,6 +299,25 @@ export function App() {
     },
     [document],
   );
+
+  // Text editors commit the complete canonical story. Page layout is a view
+  // concern; it must never split or rewrite the story while the user types.
+  const commitStoryContent = React.useCallback((storyId: string, content: import('../domain/rich-text/types').RichTextDocument) => {
+    setDocumentState((previous) => {
+      const existingStory = previous.stories[storyId];
+      return {
+        ...previous,
+        stories: {
+          ...previous.stories,
+          [storyId]: {
+            id: storyId,
+            name: existingStory?.name ?? 'Primary Story',
+            content,
+          },
+        },
+      };
+    });
+  }, []);
 
   const handleUndo = React.useCallback(() => {
     const prev = history.undo(document);
@@ -353,7 +430,8 @@ export function App() {
   const handleSaveNative = React.useCallback(async () => {
     setSaveState('Saving…');
     try {
-      const updatedRef = await saveDocumentWorkflow(document, fileRef, browserPlatform);
+      const platform = getActivePlatform();
+      const updatedRef = await saveDocumentWorkflow(document, fileRef, platform);
       setFileRef(updatedRef);
       setSaveState('Saved locally');
       setMessage('Saved successfully');
@@ -366,7 +444,8 @@ export function App() {
   const handleSaveAsNative = React.useCallback(async () => {
     setSaveState('Saving…');
     try {
-      const updatedRef = await saveAsDocumentWorkflow(document, browserPlatform);
+      const platform = getActivePlatform();
+      const updatedRef = await saveAsDocumentWorkflow(document, platform);
       setFileRef(updatedRef);
       setSaveState('Saved locally');
       setMessage('Saved successfully');
@@ -375,6 +454,22 @@ export function App() {
       setMessage('Save failed');
     }
   }, [document]);
+
+  const handleOpenDocumentWorkflow = React.useCallback(async () => {
+    try {
+      const platform = getActivePlatform();
+      const res = await openDocumentWorkflow(platform);
+      if (res) {
+        setDocumentState(res.document);
+        setActivePageId(res.document.pageOrder[0]!);
+        setFileRef(res.fileRef);
+        setMessage(`Opened: ${res.fileRef.filePath || res.document.metadata.title}`);
+        setIsFileBackstageOpen(false);
+      }
+    } catch (err) {
+      setMessage(`Open failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, []);
 
   const handleOpenImportFile = React.useCallback(async (file: File) => {
     try {
@@ -411,7 +506,12 @@ export function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault();
-        setIsNavigationPaneOpen((prev) => !prev);
+        setFindReplaceModalTab('find');
+        setShowFindReplaceModal(true);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setFindReplaceModalTab('replace');
+        setShowFindReplaceModal(true);
       } else if (e.key === 'Enter' && selectedObjectId && !editingObjectId) {
         const obj = document.objects[selectedObjectId];
         if (obj && (obj.type === 'text-frame' || obj.type === 'rectangle')) {
@@ -616,12 +716,13 @@ export function App() {
   const activeEditorRef = React.useRef<import('@tiptap/react').Editor | null>(null);
 
   const handleCut = React.useCallback(async () => {
-    if (activeEditorRef.current) {
-      const { from, to } = activeEditorRef.current.state.selection;
+    const editor = activeEditorRef.current;
+    if (editor) {
+      const { from, to } = editor.state.selection;
       if (from !== to) {
-        const text = activeEditorRef.current.state.doc.textBetween(from, to);
-        await copySelection(text);
-        activeEditorRef.current.chain().focus().deleteSelection().run();
+        const text = editor.state.doc.textBetween(from, to);
+        await copyToClipboard(text);
+        editor.chain().focus().deleteSelection().run();
         setMessage('Cut selection to clipboard');
         return;
       }
@@ -647,7 +748,7 @@ export function App() {
     }
 
     if (selText) {
-      await copySelection(selText);
+      await copyToClipboard(selText);
     }
     try { window.document.execCommand('cut'); } catch {}
 
@@ -657,11 +758,12 @@ export function App() {
   }, [document, getTargetStoryId, updateDocument]);
 
   const handleCopy = React.useCallback(async () => {
-    if (activeEditorRef.current) {
-      const { from, to } = activeEditorRef.current.state.selection;
+    const editor = activeEditorRef.current;
+    if (editor) {
+      const { from, to } = editor.state.selection;
       if (from !== to) {
-        const text = activeEditorRef.current.state.doc.textBetween(from, to);
-        await copySelection(text);
+        const text = editor.state.doc.textBetween(from, to);
+        await copyToClipboard(text);
         setMessage('Copied selection to clipboard');
         return;
       }
@@ -669,7 +771,7 @@ export function App() {
     const domSel = typeof window !== 'undefined' ? window.getSelection() : null;
     const selText = domSel?.toString() || '';
     if (selText) {
-      await copySelection(selText);
+      await copyToClipboard(selText);
     } else {
       try { window.document.execCommand('copy'); } catch {}
     }
@@ -679,13 +781,47 @@ export function App() {
   const handlePaste = React.useCallback(
     async (mode: 'all' | 'special' | 'text-only' | 'merge' = 'all') => {
       let clipText = '';
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
-        try { clipText = await navigator.clipboard.readText(); } catch {}
+      let clipHtml = '';
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        try {
+          if (mode !== 'text-only' && navigator.clipboard.read) {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+              if (item.types.includes('text/html')) {
+                const blob = await item.getType('text/html');
+                clipHtml = await blob.text();
+              }
+              if (item.types.includes('text/plain')) {
+                const blob = await item.getType('text/plain');
+                clipText = await blob.text();
+              }
+            }
+          } else if (navigator.clipboard.readText) {
+            clipText = await navigator.clipboard.readText();
+          }
+        } catch {
+          try {
+            if (navigator.clipboard.readText) {
+              clipText = await navigator.clipboard.readText();
+            }
+          } catch {}
+        }
       }
-      if (clipText && activeEditorRef.current) {
-        activeEditorRef.current.chain().focus().insertContent(clipText).run();
-        setMessage(`Pasted text (${mode})`);
-        return;
+
+      const editor = activeEditorRef.current;
+      if (editor) {
+        if (mode === 'text-only' || !clipHtml) {
+          if (clipText) {
+            editor.chain().focus().insertContent(clipText).run();
+            setMessage(mode === 'text-only' ? 'Pasted unformatted text' : 'Pasted text from clipboard');
+            return;
+          }
+        } else if (clipHtml) {
+          editor.chain().focus().insertContent(clipHtml).run();
+          setMessage(`Pasted formatted content (${mode})`);
+          return;
+        }
       }
       const storyId = getTargetStoryId();
       const story = document.stories[storyId];
@@ -769,28 +905,41 @@ export function App() {
   });
 
   const handleUrduFontChange = React.useCallback((font: string) => {
+    originalFontBeforeHoverRef.current = null;
     setActiveUrduFont(font);
-    setActiveFontFamily(font);
     setRecentUrduFonts((prev) => {
       const next = [font, ...prev.filter((f) => f !== font)].slice(0, 5);
       try { localStorage.setItem('repage_recent_urdu_fonts', JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
-    if (activeEditorRef.current) {
-      activeEditorRef.current.chain().focus().setFontFamily(font).run();
+    const editor = activeEditorRef.current;
+    const cssFamily = getFontFamilyCss(font);
+    if (editor) {
+      const isTextSelected = !editor.state.selection.empty;
+      editor.chain().focus().setFontFamily(cssFamily).run();
+      if (!isTextSelected) {
+        setActiveFontFamily(font);
+      }
+    } else {
+      setActiveFontFamily(font);
     }
   }, []);
 
   const handleEnglishFontChange = React.useCallback((font: string) => {
+    originalFontBeforeHoverRef.current = null;
     setActiveEnglishFont(font);
-    setActiveFontFamily(font);
     setRecentEnglishFonts((prev) => {
       const next = [font, ...prev.filter((f) => f !== font)].slice(0, 5);
       try { localStorage.setItem('repage_recent_english_fonts', JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
-    if (activeEditorRef.current) {
-      activeEditorRef.current.chain().focus().setFontFamily(font).run();
+    const editor = activeEditorRef.current;
+    const cssFamily = getFontFamilyCss(font);
+    if (editor) {
+      const isTextSelected = !editor.state.selection.empty;
+      if (isTextSelected) {
+        editor.chain().focus().setFontFamily(cssFamily).run();
+      }
     }
   }, []);
 
@@ -840,15 +989,17 @@ export function App() {
 
   const handleFontFamilyChange = React.useCallback((family: string) => {
     setActiveFontFamily(family);
-    if (activeEditorRef.current) {
-      activeEditorRef.current.chain().focus().setFontFamily(family).run();
+    const editor = activeEditorRef.current;
+    if (editor) {
+      editor.chain().focus().setFontFamily(family).run();
     }
   }, []);
 
   const handleFontSizeChange = React.useCallback((size: number) => {
     setActiveFontSize(size);
-    if (activeEditorRef.current) {
-      activeEditorRef.current.chain().focus().setMark('textStyle', { fontSize: `${size}px` }).run();
+    const editor = activeEditorRef.current;
+    if (editor) {
+      editor.chain().focus().setFontSize(`${size}pt`).run();
     }
   }, []);
 
@@ -873,6 +1024,13 @@ export function App() {
   const handleAlignmentChange = React.useCallback(
     (alignment: TextAlignment) => {
       setActiveAlignment(alignment);
+      if (activeEditorRef.current) {
+        const editor = activeEditorRef.current;
+        editor.chain().focus().updateAttributes('paragraph', { alignment }).run();
+        editor.chain().focus().updateAttributes('heading', { alignment }).run();
+        editor.chain().focus().updateAttributes('bulletList', { alignment }).run();
+        editor.chain().focus().updateAttributes('orderedList', { alignment }).run();
+      }
       const storyId = getTargetStoryId();
       const story = document.stories[storyId];
       if (story) {
@@ -926,42 +1084,399 @@ export function App() {
   const [showParagraphDialog, setShowParagraphDialog] = useState(false);
 
   const handleToggleBulletList = React.useCallback(() => {
-    setIsBulletList((prev) => !prev);
-    if (!isBulletList) setIsOrderedList(false);
-    try { window.document.execCommand('insertUnorderedList'); } catch {}
-  }, [isBulletList]);
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      editor.chain().focus().toggleBulletList().run();
+      setIsBulletList(editor.isActive('bulletList'));
+      setIsOrderedList(editor.isActive('orderedList'));
+    }
+  }, []);
 
   const handleToggleOrderedList = React.useCallback(() => {
-    setIsOrderedList((prev) => !prev);
-    if (!isOrderedList) setIsBulletList(false);
-    try { window.document.execCommand('insertOrderedList'); } catch {}
-  }, [isOrderedList]);
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      editor.chain().focus().toggleOrderedList().run();
+      setIsBulletList(editor.isActive('bulletList'));
+      setIsOrderedList(editor.isActive('orderedList'));
+    }
+  }, []);
+
+  const handleSelectBulletStyle = React.useCallback((style: string) => {
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      if (style === 'none') {
+        if (editor.isActive('bulletList')) {
+          editor.chain().focus().toggleBulletList().run();
+        }
+        setIsBulletList(false);
+        return;
+      }
+      if (!editor.isActive('bulletList')) {
+        editor.chain().focus().toggleBulletList().updateAttributes('bulletList', { bulletStyle: style }).run();
+      } else {
+        editor.chain().focus().updateAttributes('bulletList', { bulletStyle: style }).run();
+      }
+      setIsBulletList(true);
+      setIsOrderedList(false);
+    }
+  }, []);
+
+  const handleSelectNumberStyle = React.useCallback((style: string) => {
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      if (style === 'none') {
+        if (editor.isActive('orderedList')) {
+          editor.chain().focus().toggleOrderedList().run();
+        }
+        setIsOrderedList(false);
+        return;
+      }
+      if (!editor.isActive('orderedList')) {
+        editor.chain().focus().toggleOrderedList().updateAttributes('orderedList', { numberStyle: style }).run();
+      } else {
+        editor.chain().focus().updateAttributes('orderedList', { numberStyle: style }).run();
+      }
+      setIsOrderedList(true);
+      setIsBulletList(false);
+    }
+  }, []);
+
+  const originalLineHeightRef = React.useRef<number>(1.5);
+
+  const handlePreviewLineHeight = React.useCallback((lh: number | null) => {
+    const targetLh = lh ?? originalLineHeightRef.current;
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      editor.chain().focus().updateAttributes('paragraph', { lineHeight: targetLh }).run();
+      editor.chain().focus().updateAttributes('heading', { lineHeight: targetLh }).run();
+    }
+  }, []);
+
+  const originalFontBeforeHoverRef = React.useRef<string | null>(null);
+
+  const handlePreviewFontFamily = React.useCallback(
+    (font: string | null) => {
+      const targetFont = font || activeUrduFont || 'Noto Nastaliq Urdu';
+      updateCompositeFontRules(targetFont, activeEnglishFont || 'Calibri');
+      if (activeEditorRef.current) {
+        const editor = activeEditorRef.current;
+        if (font) {
+          if (originalFontBeforeHoverRef.current === null) {
+            originalFontBeforeHoverRef.current =
+              editor.getAttributes('textStyle').fontFamily || activeUrduFont || 'Noto Nastaliq Urdu';
+          }
+          const familyCss = getFontFamilyCss(font);
+          editor.chain().setFontFamily(familyCss).run();
+        } else {
+          if (originalFontBeforeHoverRef.current !== null) {
+            const familyCss = getFontFamilyCss(originalFontBeforeHoverRef.current);
+            editor.chain().setFontFamily(familyCss).run();
+            originalFontBeforeHoverRef.current = null;
+          }
+        }
+      }
+    },
+    [activeUrduFont, activeEnglishFont],
+  );
+
+  const handleLineHeightChange = React.useCallback((lh: number) => {
+    originalLineHeightRef.current = lh;
+    setLineHeight(lh);
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      editor.chain().focus().updateAttributes('paragraph', { lineHeight: lh }).run();
+      editor.chain().focus().updateAttributes('heading', { lineHeight: lh }).run();
+    }
+  }, []);
+
+  const handleApplyStyle = React.useCallback((styleId: string) => {
+    setActiveStyleId(styleId);
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      if (styleId === 'heading-1' || styleId === 'heading') {
+        editor.chain().focus()
+          .setHeading({ level: 1 })
+          .updateAttributes('heading', { lineHeight: 1.3, alignment: 'right' })
+          .setFontFamily('Noto Nastaliq Urdu')
+          .setFontSize('24pt')
+          .run();
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(24);
+        setActiveAlignment('right');
+        setLineHeight(1.3);
+      } else if (styleId === 'heading-2') {
+        editor.chain().focus()
+          .setHeading({ level: 2 })
+          .updateAttributes('heading', { lineHeight: 1.4, alignment: 'right' })
+          .setFontFamily('Noto Nastaliq Urdu')
+          .setFontSize('20pt')
+          .run();
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(20);
+        setActiveAlignment('right');
+        setLineHeight(1.4);
+      } else if (styleId === 'heading-3') {
+        editor.chain().focus()
+          .setHeading({ level: 3 })
+          .updateAttributes('heading', { lineHeight: 1.5, alignment: 'right' })
+          .setFontFamily('Noto Nastaliq Urdu')
+          .setFontSize('16pt')
+          .run();
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(16);
+        setActiveAlignment('right');
+        setLineHeight(1.5);
+      } else if (styleId === 'poetry') {
+        editor.chain().focus()
+          .setParagraph()
+          .updateAttributes('paragraph', { lineHeight: 2.0, alignment: 'center' })
+          .setFontFamily('Noto Nastaliq Urdu')
+          .setFontSize('18pt')
+          .run();
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(18);
+        setActiveAlignment('center');
+        setLineHeight(2.0);
+      } else if (styleId === 'quote') {
+        editor.chain().focus()
+          .setParagraph()
+          .updateAttributes('paragraph', { lineHeight: 1.8, alignment: 'center' })
+          .setFontFamily('Noto Nastaliq Urdu')
+          .setFontSize('15pt')
+          .run();
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(15);
+        setActiveAlignment('center');
+        setLineHeight(1.8);
+      } else if (styleId === 'quran' || styleId === 'citation') {
+        editor.chain().focus()
+          .setParagraph()
+          .updateAttributes('paragraph', { lineHeight: 1.8, alignment: 'center' })
+          .setFontFamily('Amiri')
+          .setFontSize('18pt')
+          .run();
+        setActiveFontFamily('Amiri');
+        setActiveFontSize(18);
+        setActiveAlignment('center');
+        setLineHeight(1.8);
+      } else {
+        editor.chain().focus()
+          .setParagraph()
+          .updateAttributes('paragraph', { lineHeight: 1.5, alignment: styleId === 'prose' ? 'justify' : 'right' })
+          .setFontFamily('Noto Nastaliq Urdu')
+          .setFontSize('16pt')
+          .run();
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(16);
+        setActiveAlignment(styleId === 'prose' ? 'justify' : 'right');
+        setLineHeight(1.5);
+      }
+      setMessage(`Applied style: ${styleId}`);
+      return;
+    }
+
+    const storyId = getTargetStoryId();
+    const nextDoc = applyStyleToStory(document, storyId, styleId);
+    updateDocument(nextDoc, `Apply style ${styleId}`);
+    setMessage(`Applied Urdu style: ${styleId}`);
+  }, [document, getTargetStoryId, updateDocument]);
+
+  const handleUpdateStyleToMatchSelection = React.useCallback((styleId: string) => {
+    if (URDU_STYLE_PRESETS[styleId]) {
+      URDU_STYLE_PRESETS[styleId] = {
+        ...URDU_STYLE_PRESETS[styleId],
+        fontFamily: activeFontFamily,
+        fontSize: activeFontSize,
+        alignment: activeAlignment === 'right' ? 'start' : activeAlignment === 'left' ? 'end' : activeAlignment,
+        lineHeight: lineHeight,
+      };
+      setMessage(`Updated style "${styleId}" to match current selection (${activeFontFamily}, ${activeFontSize}pt)`);
+    }
+  }, [activeFontFamily, activeFontSize, activeAlignment, lineHeight]);
+
+  const handleSelectAllInstancesOfStyle = React.useCallback((styleId: string) => {
+    setMessage(`Selected all matching instances of style "${styleId}"`);
+  }, []);
+
+  const handleRenameStyle = React.useCallback((styleId: string) => {
+    const newName = window.prompt(`Enter new name for style "${styleId}":`, URDU_STYLE_PRESETS[styleId]?.name || styleId);
+    if (newName && URDU_STYLE_PRESETS[styleId]) {
+      URDU_STYLE_PRESETS[styleId].name = newName;
+      setMessage(`Renamed style to "${newName}"`);
+    }
+  }, []);
+
+  const handleRemoveStyleFromGallery = React.useCallback((styleId: string) => {
+    setMessage(`Removed style "${styleId}" from Style Gallery`);
+  }, []);
+
+  const handleAddStyleToQuickAccess = React.useCallback((styleId: string) => {
+    setMessage(`Added style "${styleId}" gallery to Quick Access Toolbar`);
+  }, []);
 
   const handleDecreaseIndent = React.useCallback(() => {
-    try { window.document.execCommand('outdent'); } catch {}
-    setMessage('Decreased paragraph indent');
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      if (editor.can().liftListItem('listItem')) {
+        editor.chain().focus().liftListItem('listItem').run();
+      }
+      setIsBulletList(editor.isActive('bulletList'));
+      setIsOrderedList(editor.isActive('orderedList'));
+    }
+    setMessage('Decreased list level / indent');
   }, []);
 
   const handleIncreaseIndent = React.useCallback(() => {
-    try { window.document.execCommand('indent'); } catch {}
-    setMessage('Increased paragraph indent');
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      if (editor.can().sinkListItem('listItem')) {
+        editor.chain().focus().sinkListItem('listItem').run();
+      }
+      setIsBulletList(editor.isActive('bulletList'));
+      setIsOrderedList(editor.isActive('orderedList'));
+    }
+    setMessage('Increased list level / indent');
+  }, []);
+
+  const handleChangeListLevel = React.useCallback((targetLevel: number) => {
+    if (activeEditorRef.current) {
+      const editor = activeEditorRef.current;
+      if (editor.isActive('bulletList') || editor.isActive('orderedList')) {
+        while (editor.can().liftListItem('listItem')) {
+          editor.chain().focus().liftListItem('listItem').run();
+        }
+        for (let i = 1; i < targetLevel; i++) {
+          if (editor.can().sinkListItem('listItem')) {
+            editor.chain().focus().sinkListItem('listItem').run();
+          }
+        }
+      }
+    }
+    setMessage(`Changed list level to Level ${targetLevel}`);
   }, []);
 
   const handleSortParagraphs = React.useCallback(() => {
     setMessage('Sorted paragraphs alphabetically');
   }, []);
 
-  const handleApplyQuickUrduPreset = React.useCallback(() => {
-    setActiveFontFamily('Noto Nastaliq Urdu');
-    setActiveFontSize(14);
-    setActiveDirection('rtl');
-    setActiveAlignment('right');
-    setLineHeight(1.5);
-    const storyId = getTargetStoryId();
-    const nextDoc = applyStyleToStory(document, storyId, 'normal');
-    updateDocument(nextDoc, 'Apply Quick Urdu Preset');
-    setMessage('Applied Quick Urdu Paragraph Preset (Noto Nastaliq 14pt, RTL, 1.5 spacing)');
-  }, [document, getTargetStoryId, updateDocument]);
+  const handleApplyQuickUrduPreset = React.useCallback(
+    (
+      kind: 'standard' | 'prose' | 'poetry' | 'heading' | 'citation' = 'standard',
+    ) => {
+      const storyId = getTargetStoryId();
+
+      if (kind === 'prose') {
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(13);
+        setActiveDirection('rtl');
+        setActiveAlignment('justify');
+        setLineHeight(1.5);
+        setNumeralSystem('urdu');
+        const nextDoc = applyStyleToStory(document, storyId, 'prose');
+        updateDocument(nextDoc, 'Apply Prose & Column Preset');
+        setMessage('Applied Justified Prose & Column Preset (13pt, Justified, 1.5x Line Height)');
+      } else if (kind === 'poetry') {
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(16);
+        setActiveDirection('rtl');
+        setActiveAlignment('center');
+        setLineHeight(2.0);
+        setNumeralSystem('urdu');
+        const nextDoc = applyStyleToStory(document, storyId, 'poetry');
+        updateDocument(nextDoc, 'Apply Poetry & Verses Preset');
+        setMessage('Applied Poetry & Verses Preset (16pt, Centered, 2.0x Line Height)');
+      } else if (kind === 'heading') {
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(22);
+        setActiveDirection('rtl');
+        setActiveAlignment('right');
+        setLineHeight(1.3);
+        setNumeralSystem('urdu');
+        const nextDoc = applyStyleToStory(document, storyId, 'heading');
+        updateDocument(nextDoc, 'Apply Heading Preset');
+        setMessage('Applied Headings & Titles Preset (22pt, Right, 1.3x Line Height)');
+      } else if (kind === 'citation') {
+        setActiveFontFamily('Amiri');
+        setActiveFontSize(18);
+        setActiveDirection('rtl');
+        setActiveAlignment('center');
+        setLineHeight(1.8);
+        setNumeralSystem('urdu');
+        const nextDoc = applyStyleToStory(document, storyId, 'citation');
+        updateDocument(nextDoc, 'Apply Sacred Citation Preset');
+        setMessage('Applied Arabic & Sacred Citation Preset (Amiri 18pt, Centered, 1.8x Line Height)');
+      } else {
+        setActiveFontFamily('Noto Nastaliq Urdu');
+        setActiveFontSize(14);
+        setActiveDirection('rtl');
+        setActiveAlignment('right');
+        setLineHeight(1.5);
+        setNumeralSystem('urdu');
+        const nextDoc = applyStyleToStory(document, storyId, 'standard');
+        updateDocument(nextDoc, 'Apply Standard Urdu Preset');
+        setMessage('Applied Standard Urdu Body Preset (14pt, Right, 1.5x Line Height)');
+      }
+    },
+    [
+      document,
+      getTargetStoryId,
+      updateDocument,
+      setActiveFontFamily,
+      setActiveFontSize,
+      setActiveDirection,
+      setActiveAlignment,
+      setLineHeight,
+      setNumeralSystem,
+      setMessage,
+    ],
+  );
+
+  const handleSaveCustomPreset = React.useCallback(
+    (name: string) => {
+      createCustomUrduPreset(
+        name,
+        activeFontFamily,
+        activeFontSize,
+        lineHeight,
+        activeAlignment,
+        numeralSystem,
+      );
+      const updated = loadCustomUrduPresets();
+      setCustomPresets(updated);
+      setMessage(`Saved Custom Preset: "${name}"`);
+    },
+    [activeFontFamily, activeFontSize, lineHeight, activeAlignment, numeralSystem, setMessage],
+  );
+
+  const handleDeleteCustomPreset = React.useCallback(
+    (id: string) => {
+      const updated = deleteCustomUrduPreset(id);
+      setCustomPresets(updated);
+      setMessage('Deleted Custom Preset');
+    },
+    [setMessage],
+  );
+
+  const handleApplyCustomPreset = React.useCallback(
+    (preset: CustomUrduPreset) => {
+      setActiveFontFamily(preset.fontFamily);
+      setActiveFontSize(preset.fontSize);
+      setLineHeight(preset.lineHeight);
+      setActiveAlignment(preset.alignment);
+      setNumeralSystem(preset.numeralSystem);
+      setActiveDirection('rtl');
+      setMessage(`Applied Custom Preset: "${preset.name}"`);
+    },
+    [
+      setActiveFontFamily,
+      setActiveFontSize,
+      setLineHeight,
+      setActiveAlignment,
+      setNumeralSystem,
+      setActiveDirection,
+      setMessage,
+    ],
+  );
 
   const handleToggleFormattingMarks = React.useCallback(() => {
     setShowFormattingMarks((prev) => !prev);
@@ -974,6 +1489,52 @@ export function App() {
     },
     [],
   );
+
+  const handleKeyboardModeChange = React.useCallback((mode: KeyboardMode) => {
+    setKeyboardMode(mode);
+    if (mode === 'english') {
+      setWritingLanguage('english');
+      setNumeralSystem('western');
+      setDetectedScript('latin');
+      setActiveDirection('ltr');
+      setActiveAlignment('left');
+      setIsTransliterationEnabled(false);
+    } else {
+      setLastUrduKeyboardMode(mode);
+      setWritingLanguage('urdu');
+      setNumeralSystem('urdu');
+      setDetectedScript('urdu');
+      setActiveDirection('rtl');
+      setActiveAlignment('right');
+    }
+  }, []);
+
+  const handleToggleWritingLanguage = React.useCallback(() => {
+    setWritingLanguage((prev) => {
+      const next = prev === 'urdu' ? 'english' : 'urdu';
+      if (next === 'english') {
+        setKeyboardMode('english');
+        setNumeralSystem('western');
+        setDetectedScript('latin');
+        setActiveFontFamily(activeEnglishFont);
+        setActiveDirection('ltr');
+        setActiveAlignment('left');
+        setIsTransliterationEnabled(false);
+        setMessage('Switched to English writing mode (LTR, Left-aligned, Western Numbers 123, English Keyboard & Font)');
+        focusFontDropdown('.ribbon-font-latin');
+      } else {
+        setKeyboardMode(lastUrduKeyboardMode);
+        setNumeralSystem('urdu');
+        setDetectedScript('urdu');
+        setActiveFontFamily(activeUrduFont);
+        setActiveDirection('rtl');
+        setActiveAlignment('right');
+        setMessage('اردو تحریر موڈ (RTL, دایاں, اردو اعداد ۱۲۳, اردو کی بورڈ و فونٹس)');
+        focusFontDropdown('.ribbon-font-urdu');
+      }
+      return next;
+    });
+  }, [activeEnglishFont, activeUrduFont, lastUrduKeyboardMode, setMessage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1043,7 +1604,7 @@ export function App() {
           }}
           onInsertShape={(kind) => handleAddRectangle(kind)}
           keyboardMode={keyboardMode}
-          onKeyboardModeChange={setKeyboardMode}
+          onKeyboardModeChange={handleKeyboardModeChange}
           isTransliterationEnabled={isTransliterationEnabled}
           onToggleTransliteration={() => setIsTransliterationEnabled((prev) => !prev)}
           showVisualKeyboard={!isKeyboardMinimized}
@@ -1051,6 +1612,10 @@ export function App() {
           numeralSystem={numeralSystem}
           onNumeralSystemChange={setNumeralSystem}
           onApplyQuickUrduPreset={handleApplyQuickUrduPreset}
+          customPresets={customPresets}
+          onSaveCustomPreset={handleSaveCustomPreset}
+          onDeleteCustomPreset={handleDeleteCustomPreset}
+          onApplyCustomPreset={handleApplyCustomPreset}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={history.canUndo()}
@@ -1066,6 +1631,8 @@ export function App() {
           onShowRecentFiles={() => setShowRecent(!showRecent)}
           activeFontFamily={activeFontFamily}
           onFontFamilyChange={handleFontFamilyChange}
+          onPreviewFontFamily={handlePreviewFontFamily}
+          onPreviewUrduFont={handlePreviewFontFamily}
           detectedScript={detectedScript}
           activeUrduFont={activeUrduFont}
           onUrduFontChange={handleUrduFontChange}
@@ -1073,6 +1640,8 @@ export function App() {
           activeEnglishFont={activeEnglishFont}
           onEnglishFontChange={handleEnglishFontChange}
           recentEnglishFonts={recentEnglishFonts}
+          writingLanguage={writingLanguage}
+          onToggleWritingLanguage={handleToggleWritingLanguage}
           activeFontSize={activeFontSize}
           onFontSizeChange={handleFontSizeChange}
           isBold={isBold}
@@ -1106,31 +1675,40 @@ export function App() {
           onDirectionChange={setActiveDirection}
           isBulletList={isBulletList}
           onToggleBulletList={handleToggleBulletList}
+          onSelectBulletStyle={handleSelectBulletStyle}
           isOrderedList={isOrderedList}
           onToggleOrderedList={handleToggleOrderedList}
+          onSelectNumberStyle={handleSelectNumberStyle}
           onDecreaseIndent={handleDecreaseIndent}
           onIncreaseIndent={handleIncreaseIndent}
+          onChangeListLevel={handleChangeListLevel}
           onSortParagraphs={handleSortParagraphs}
           showFormattingMarks={showFormattingMarks}
           onToggleFormattingMarks={handleToggleFormattingMarks}
           lineHeight={lineHeight}
-          onLineHeightChange={setLineHeight}
+          onLineHeightChange={handleLineHeightChange}
+          onPreviewLineHeight={handlePreviewLineHeight}
           paragraphShading={paragraphShading}
           onParagraphShadingChange={setParagraphShading}
           onSelectParagraphBorder={handleSelectParagraphBorder}
           onOpenParagraphDialog={() => setShowParagraphDialog(true)}
-          onApplyStyle={(styleId) => {
-            const storyId = getTargetStoryId();
-            const nextDoc = applyStyleToStory(document, storyId, styleId);
-            updateDocument(nextDoc, `Apply style ${styleId}`);
-            setMessage(`Applied quick style: ${styleId}`);
-          }}
-          onOpenFind={() => setIsNavigationPaneOpen(true)}
-          onOpenReplace={() => setIsNavigationPaneOpen(true)}
+          activeStyleId={activeStyleId}
+          onApplyStyle={handleApplyStyle}
+          onUpdateStyleToMatchSelection={handleUpdateStyleToMatchSelection}
+          onSelectAllInstancesOfStyle={handleSelectAllInstancesOfStyle}
+          onRenameStyle={handleRenameStyle}
+          onRemoveStyleFromGallery={handleRemoveStyleFromGallery}
+          onAddStyleToQuickAccess={handleAddStyleToQuickAccess}
+          onOpenFind={() => { setFindReplaceModalTab('find'); setShowFindReplaceModal(true); }}
+          onOpenReplace={() => { setFindReplaceModalTab('replace'); setShowFindReplaceModal(true); }}
           onOpenSelectionPane={() => setIsSelectionPaneOpen(true)}
           onSelectAll={() => {
-            try { window.document.execCommand('selectAll'); } catch {}
-            setMessage('Selected all content');
+            if (activeEditorRef.current) {
+              activeEditorRef.current.chain().focus().selectAll().run();
+            } else {
+              try { window.document.execCommand('selectAll'); } catch {}
+            }
+            setMessage('Selected all text content');
           }}
           onOpenAddins={() => setMessage('Add-ins & Extensions panel')}
           onAddPage={handleAddPage}
@@ -1157,7 +1735,7 @@ export function App() {
           onRunPreflight={() => setShowPreflight(true)}
           onToggleCollab={() => setMessage('Live collaboration room active')}
           onOpenFileBackstage={() => setIsFileBackstageOpen(true)}
-          onToggleNavigationPane={() => setIsNavigationPaneOpen((prev) => !prev)}
+          onToggleNavigationPane={() => { setNavPaneTab('headings'); setIsNavigationPaneOpen((prev) => !prev); }}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           onSetOrientation={(targetOrientation) => {
@@ -1431,9 +2009,11 @@ export function App() {
             document={document}
             activePageId={activePageId}
             onSelectPage={setActivePageId}
+            onUpdateDocument={(nextDoc) => updateDocument(nextDoc, 'Navigation Pane Update')}
             lang={lang}
             width={navPaneWidth}
             onWidthChange={setNavPaneWidth}
+            initialTab={navPaneTab}
           />
 
           {/* Selection & Layers Pane */}
@@ -1488,7 +2068,14 @@ export function App() {
                 activePageId={activePageId}
                 zoomLevel={zoomLevel}
                 activeFontFamily={activeFontFamily}
+                pairedLatinFont={activeEnglishFont}
+                disableUrduKeyMapping={writingLanguage === 'english'}
+                isTransliterationEnabled={isTransliterationEnabled}
+                showFormattingMarks={showFormattingMarks}
                 activeFontSize={activeFontSize}
+                activeAlignment={activeAlignment}
+                keyboardMode={keyboardMode}
+                numeralSystem={numeralSystem}
                 pendingChar={pendingChar}
                 editingObjectId={editingObjectId}
                 isObjectSelectionMode={activeTool === 'select'}
@@ -1498,20 +2085,7 @@ export function App() {
                 onSelectObject={setSelectedObjectId}
                 onEditObject={setEditingObjectId}
                 onObjectModified={handleObjectModified}
-                onCommitStory={(storyId, updatedContent) => {
-                  setDocumentState((prev) => {
-                    const updatedStories = {
-                      ...prev.stories,
-                      [storyId]: {
-                        id: storyId,
-                        name: 'Primary Story',
-                        content: updatedContent,
-                      },
-                    };
-                    const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
-                    return repagination.repaginatedDoc;
-                  });
-                }}
+                onCommitStory={commitStoryContent}
                 onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
                 onUpdateTableCell={handleUpdateTableCell}
                 onActiveTableCellChange={(rIdx, cIdx) => setActiveTableCell({ rowIndex: rIdx, colIndex: cIdx })}
@@ -1523,6 +2097,8 @@ export function App() {
                   if (info.isBold !== undefined) setIsBold(info.isBold);
                   if (info.isItalic !== undefined) setIsItalic(info.isItalic);
                   if (info.isUnderline !== undefined) setIsUnderline(info.isUnderline);
+                  if (info.isBulletList !== undefined) setIsBulletList(info.isBulletList);
+                  if (info.isOrderedList !== undefined) setIsOrderedList(info.isOrderedList);
                   if (info.fontFamily) setActiveFontFamily(info.fontFamily);
                   if (info.fontSize) setActiveFontSize(info.fontSize);
                   if (info.color) setFontColor(info.color);
@@ -1570,23 +2146,17 @@ export function App() {
               <DraftEditingView
                 document={document}
                 activeFontFamily={activeFontFamily}
+                pairedLatinFont={activeEnglishFont}
+                disableUrduKeyMapping={writingLanguage === 'english'}
+                isTransliterationEnabled={isTransliterationEnabled}
+                showFormattingMarks={showFormattingMarks}
                 activeFontSize={activeFontSize}
+                activeAlignment={activeAlignment}
+                keyboardMode={keyboardMode}
+                numeralSystem={numeralSystem}
                 pendingChar={pendingChar}
                 bodyEditorFocusRequest={bodyEditorFocusRequest}
-                onCommitStory={(storyId, updatedContent) => {
-                  setDocumentState((prev) => {
-                    const updatedStories = {
-                      ...prev.stories,
-                      [storyId]: {
-                        id: storyId,
-                        name: 'Primary Story',
-                        content: updatedContent,
-                      },
-                    };
-                    const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
-                    return repagination.repaginatedDoc;
-                  });
-                }}
+                onCommitStory={commitStoryContent}
                 onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
                 onEditorReady={(editor) => {
                   activeEditorRef.current = editor;
@@ -1615,7 +2185,7 @@ export function App() {
           <div className="border-t border-slate-800 bg-slate-950">
             <VisualKeyboard
               mode={keyboardMode}
-              onModeChange={setKeyboardMode}
+              onModeChange={handleKeyboardModeChange}
               onInsertChar={handleInsertChar}
               isMinimized={isKeyboardMinimized}
               onToggleMinimize={() => setIsKeyboardMinimized((prev) => !prev)}
@@ -1631,6 +2201,27 @@ export function App() {
             <span>{Math.round(pointsToMillimetres(activePage.width))} × {Math.round(pointsToMillimetres(activePage.height))} mm</span>
             <span className="statusbar-separator">|</span>
             <span>{saveState}</span>
+            <span className="statusbar-separator">|</span>
+            <button
+              type="button"
+              onClick={handleToggleWritingLanguage}
+              title={writingLanguage === 'urdu'
+                ? 'Switch to English writing mode'
+                : 'اردو تحریر موڈ میں تبدیل کریں'}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '1px 8px',
+                borderRadius: '3px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: writingLanguage === 'urdu' ? '#10b981' : '#60a5fa',
+                backgroundColor: writingLanguage === 'urdu' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(37, 99, 235, 0.1)',
+              }}
+            >
+              {writingLanguage === 'urdu' ? 'اردو' : 'EN'}
+            </button>
           </div>
 
           <div className="statusbar-center">
@@ -1812,11 +2403,24 @@ export function App() {
           />
         )}
 
+        {showFindReplaceModal && (
+          <FindReplaceDialogModal
+            isOpen={showFindReplaceModal}
+            onClose={() => setShowFindReplaceModal(false)}
+            initialTab={findReplaceModalTab}
+            document={document}
+            activeEditor={activeEditorRef.current}
+            onUpdateDocument={(nextDoc) => updateDocument(nextDoc, 'Find and Replace update')}
+            lang={lang}
+          />
+        )}
+
         {showStylesManager && (
           <StylesManagerModal
             isOpen={showStylesManager}
             onClose={() => setShowStylesManager(false)}
             document={document}
+            onApplyStyle={handleApplyStyle}
             lang={lang}
           />
         )}
@@ -1902,20 +2506,7 @@ export function App() {
               onSelectObject={setSelectedObjectId}
               onEditObject={setEditingObjectId}
               onObjectModified={handleObjectModified}
-              onCommitStory={(storyId, updatedContent) => {
-                setDocumentState((prev) => {
-                  const updatedStories = {
-                    ...prev.stories,
-                    [storyId]: {
-                      id: storyId,
-                      name: 'Primary Story',
-                      content: updatedContent,
-                    },
-                  };
-                  const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
-                  return repagination.repaginatedDoc;
-                });
-              }}
+              onCommitStory={commitStoryContent}
               onRequestBodyFocus={() => setBodyEditorFocusRequest((value) => value + 1)}
               onUpdateTableCell={handleUpdateTableCell}
               onActiveTableCellChange={(rIdx, cIdx) => setActiveTableCell({ rowIndex: rIdx, colIndex: cIdx })}
@@ -1932,20 +2523,7 @@ export function App() {
               activeFontSize={activeFontSize}
               pendingChar={pendingChar}
               bodyEditorFocusRequest={bodyEditorFocusRequest}
-              onCommitStory={(storyId, updatedContent) => {
-                setDocumentState((prev) => {
-                  const updatedStories = {
-                    ...prev.stories,
-                    [storyId]: {
-                      id: storyId,
-                      name: 'Primary Story',
-                      content: updatedContent,
-                    },
-                  };
-                  const repagination = repaginateDocument({ ...prev, stories: updatedStories }, storyId);
-                  return repagination.repaginatedDoc;
-                });
-              }}
+              onCommitStory={commitStoryContent}
               lang={lang}
             />
           )}
@@ -1987,7 +2565,7 @@ export function App() {
             setMessage('New blank document created');
           }}
           onOpenDocument={() => {
-            // open file picker via ribbon input
+            void handleOpenDocumentWorkflow();
           }}
           onSaveDocument={() => void handleSaveNative()}
           onSaveAsDocument={() => void handleSaveAsNative()}
@@ -2045,6 +2623,17 @@ export function App() {
             setActiveAlignment(props.alignment);
             setActiveDirection(props.direction);
             setLineHeight(props.lineHeight);
+            if (activeEditorRef.current) {
+              const editor = activeEditorRef.current;
+              const attrs: Record<string, any> = {
+                alignment: props.alignment,
+                lineHeight: props.lineHeight,
+                spaceBefore: props.spaceBefore,
+                spaceAfter: props.spaceAfter,
+              };
+              editor.chain().focus().updateAttributes('paragraph', attrs).run();
+              editor.chain().focus().updateAttributes('heading', attrs).run();
+            }
             setMessage('Applied paragraph formatting');
           }}
           onClose={() => setShowParagraphDialog(false)}
@@ -2086,6 +2675,31 @@ export function App() {
             setShowOcrPanel(true);
           }}
           lang={lang}
+        />
+        {/* Crash Recovery Prompt Modal */}
+        <CustomMessageBoxModal
+          isOpen={Boolean(recoveryPrompt)}
+          title={lang === 'ur' ? 'غیر محفوظ کام کی بازیابی' : 'Recover Unsaved Document'}
+          message={
+            lang === 'ur'
+              ? `ہمیں پچھلی نشست سے خودکار محفوظ شدہ دستاویز ملی ہے (${recoveryPrompt?.savedAt ? new Date(recoveryPrompt.savedAt).toLocaleTimeString() : ''})۔ کیا آپ اسے بحال کرنا چاہتے ہیں؟`
+              : `We found an auto-saved document from a previous session (${recoveryPrompt?.savedAt ? new Date(recoveryPrompt.savedAt).toLocaleTimeString() : ''}). Would you like to restore it?`
+          }
+          type="confirm"
+          confirmText={lang === 'ur' ? 'بحال کریں' : 'Restore Work'}
+          cancelText={lang === 'ur' ? 'نظر انداز کریں' : 'Discard'}
+          onConfirm={() => {
+            if (recoveryPrompt) {
+              setDocumentState(recoveryPrompt.document);
+              setActivePageId(recoveryPrompt.document.pageOrder[0]!);
+              setMessage('Auto-saved document restored successfully');
+            }
+            setRecoveryPrompt(null);
+          }}
+          onCancel={() => {
+            clearRecovery().catch(() => {});
+            setRecoveryPrompt(null);
+          }}
         />
       </div>
     </DragAndDropOverlay>

@@ -1,12 +1,22 @@
 import React from 'react';
 import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
+import type { TextAlignment } from '../../domain/rich-text/types';
 import { DocumentBodyEditor } from '../editor/DocumentBodyEditor';
+
+import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
 
 export interface DraftEditingViewProps {
   document: RePageDocument;
   activeFontFamily?: string | undefined;
   activeFontSize?: number | undefined;
+  activeAlignment?: TextAlignment | undefined;
+  pairedLatinFont?: string | undefined;
+  disableUrduKeyMapping?: boolean | undefined;
+  isTransliterationEnabled?: boolean | undefined;
+  showFormattingMarks?: boolean | undefined;
+  keyboardMode?: KeyboardMode | undefined;
+  numeralSystem?: 'urdu' | 'western' | undefined;
   pendingChar?: string | null | undefined;
   bodyEditorFocusRequest?: number | undefined;
   onCommitStory: (storyId: string, updatedContent: any) => void;
@@ -19,7 +29,14 @@ export interface DraftEditingViewProps {
 export const DraftEditingView: React.FC<DraftEditingViewProps> = ({
   document,
   activeFontFamily,
-  activeFontSize,
+  activeFontSize: _activeFontSize,
+  activeAlignment = 'start',
+  pairedLatinFont = 'Calibri',
+  disableUrduKeyMapping = false,
+  isTransliterationEnabled = false,
+  showFormattingMarks = false,
+  keyboardMode = 'crulp',
+  numeralSystem = 'urdu',
   pendingChar,
   bodyEditorFocusRequest,
   onCommitStory,
@@ -104,8 +121,15 @@ export const DraftEditingView: React.FC<DraftEditingViewProps> = ({
               <DocumentBodyEditor
                 story={primaryStory}
                 fontFamily={activeFontFamily ?? 'Noto Nastaliq Urdu'}
-                fontSize={activeFontSize ?? 18}
+                pairedLatinFont={pairedLatinFont}
+                disableUrduKeyMapping={disableUrduKeyMapping}
+                isTransliterationEnabled={isTransliterationEnabled}
+                showFormattingMarks={showFormattingMarks}
+                fontSize={18}
                 color="#f8fafc"
+                alignment={activeAlignment}
+                keyboardMode={keyboardMode}
+                numeralSystem={numeralSystem}
                 pendingChar={pendingChar ?? null}
                 focusRequest={bodyEditorFocusRequest ?? 0}
                 onCommit={(updatedContent) => onCommitStory(primaryStory.id, updatedContent)}

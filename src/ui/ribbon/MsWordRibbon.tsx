@@ -2,8 +2,10 @@ import React, { useState, useRef } from 'react';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
 import type { ShapeKind, TextWrapMode, ViewMode } from '../../domain/document/types';
 import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
-import { BUNDLED_URDU_FONTS, UNAVAILABLE_INPAGE_FONTS, URDU_FONTS_LIST, WINDOWS_STANDARD_FONTS } from '../../domain/unicode/fontRegistry';
+import { BUNDLED_URDU_FONTS, URDU_FONTS_LIST, WINDOWS_STANDARD_FONTS } from '../../domain/unicode/fontRegistry';
+import { CustomFontDropdown } from './CustomFontDropdown';
 import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
+import type { CustomUrduPreset } from '../../domain/document/customPresets';
 import { FontColorPalette } from './FontColorPalette';
 import { AppIcon } from '../icons/AppIcon';
 import { HighlightColorPalette } from './HighlightColorPalette';
@@ -17,9 +19,16 @@ export type RibbonTab =
   | 'layout'
   | 'collab'
   | 'export'
+  | 'view'
+  | 'review'
+  | 'references'
+  | 'developer'
+  | 'table-design'
+  | 'table-layout'
   | 'shape-format'
   | 'picture-format'
-  | 'table-format';
+  | 'table-format'
+  | 'help';
 
 export interface MsWordRibbonProps {
   t: Translations;
@@ -37,6 +46,8 @@ export interface MsWordRibbonProps {
   onShowRecentFiles: () => void;
   activeFontFamily: string;
   onFontFamilyChange: (font: string) => void;
+  onPreviewFontFamily?: (font: string | null) => void;
+  onPreviewUrduFont?: (font: string | null) => void;
   activeFontSize: number;
   onFontSizeChange: (size: number) => void;
   isKashidaEnabled: boolean;
@@ -136,21 +147,30 @@ export interface MsWordRibbonProps {
   onDirectionChange?: (dir: TextDirection) => void;
   isBulletList?: boolean;
   onToggleBulletList?: () => void;
+  onSelectBulletStyle?: (style: string) => void;
   isOrderedList?: boolean;
   onToggleOrderedList?: () => void;
+  onSelectNumberStyle?: (style: string) => void;
   onDecreaseIndent?: () => void;
   onIncreaseIndent?: () => void;
+  onChangeListLevel?: (level: number) => void;
   onSortParagraphs?: () => void;
   showFormattingMarks?: boolean;
   onToggleFormattingMarks?: () => void;
   lineHeight?: number;
   onLineHeightChange?: (height: number) => void;
+  onPreviewLineHeight?: (height: number | null) => void;
   paragraphShading?: string | null;
   onParagraphShadingChange?: (color: string | null) => void;
   onSelectParagraphBorder?: (side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all' | 'none') => void;
   onOpenParagraphDialog?: () => void;
   activeStyleId?: string;
   onApplyStyle?: (styleId: string) => void;
+  onUpdateStyleToMatchSelection?: (styleId: string) => void;
+  onSelectAllInstancesOfStyle?: (styleId: string) => void;
+  onRenameStyle?: (styleId: string) => void;
+  onRemoveStyleFromGallery?: (styleId: string) => void;
+  onAddStyleToQuickAccess?: (styleId: string) => void;
   onOpenFind?: () => void;
   onOpenReplace?: () => void;
   onSelectAll?: () => void;
@@ -163,7 +183,13 @@ export interface MsWordRibbonProps {
   onToggleVisualKeyboard?: () => void;
   numeralSystem?: 'urdu' | 'western';
   onNumeralSystemChange?: (sys: 'urdu' | 'western') => void;
-  onApplyQuickUrduPreset?: () => void;
+  onApplyQuickUrduPreset?: (
+    kind?: 'standard' | 'prose' | 'poetry' | 'heading' | 'citation',
+  ) => void;
+  customPresets?: CustomUrduPreset[];
+  onSaveCustomPreset?: (name: string) => void;
+  onDeleteCustomPreset?: (id: string) => void;
+  onApplyCustomPreset?: (preset: CustomUrduPreset) => void;
   onOpenSelectionPane?: () => void;
   detectedScript?: 'urdu' | 'latin';
   activeUrduFont?: string;
@@ -172,6 +198,8 @@ export interface MsWordRibbonProps {
   activeEnglishFont?: string;
   onEnglishFontChange?: (font: string) => void;
   recentEnglishFonts?: string[];
+  writingLanguage?: 'urdu' | 'english';
+  onToggleWritingLanguage?: () => void;
 }
 
 export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab; onTabChange?: (tab: RibbonTab) => void }> = ({
@@ -191,6 +219,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onShowRecentFiles,
   activeFontFamily: _activeFontFamily,
   onFontFamilyChange,
+  onPreviewFontFamily,
+  onPreviewUrduFont,
   activeFontSize,
   onFontSizeChange,
   isKashidaEnabled,
@@ -291,21 +321,30 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onDirectionChange,
   isBulletList = false,
   onToggleBulletList,
+  onSelectBulletStyle,
   isOrderedList = false,
   onToggleOrderedList,
+  onSelectNumberStyle,
   onDecreaseIndent,
   onIncreaseIndent,
+  onChangeListLevel,
   onSortParagraphs: _onSortParagraphs,
   showFormattingMarks = false,
   onToggleFormattingMarks,
   lineHeight = 1.5,
   onLineHeightChange,
+  onPreviewLineHeight,
   paragraphShading: _paragraphShading = null,
   onParagraphShadingChange: _onParagraphShadingChange,
   onSelectParagraphBorder: _onSelectParagraphBorder,
   onOpenParagraphDialog,
   activeStyleId = 'normal',
   onApplyStyle,
+  onUpdateStyleToMatchSelection,
+  onSelectAllInstancesOfStyle,
+  onRenameStyle,
+  onRemoveStyleFromGallery,
+  onAddStyleToQuickAccess,
   onOpenFind,
   onOpenReplace,
   onSelectAll,
@@ -319,6 +358,10 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   numeralSystem = 'urdu',
   onNumeralSystemChange,
   onApplyQuickUrduPreset,
+  customPresets = [],
+  onSaveCustomPreset,
+  onDeleteCustomPreset,
+  onApplyCustomPreset,
   onOpenSelectionPane,
   detectedScript = 'urdu',
   activeUrduFont = 'Noto Nastaliq Urdu',
@@ -327,6 +370,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   activeEnglishFont = 'Calibri',
   onEnglishFontChange,
   recentEnglishFonts = ['Calibri', 'Aptos', 'Arial'],
+  writingLanguage = 'urdu',
+  onToggleWritingLanguage,
 }) => {
   const [activeTab, setActiveTab] = useState<RibbonTab>(controlledActiveTab || 'home');
 
@@ -340,14 +385,23 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   const [showPasteMenu, setShowPasteMenu] = useState(false);
   const [showFontColorPalette, setShowFontColorPalette] = useState(false);
   const [showHighlightPalette, setShowHighlightPalette] = useState(false);
+  const [showBulletMenu, setShowBulletMenu] = useState(false);
+  const [showNumberingMenu, setShowNumberingMenu] = useState(false);
   const [showJustifyMenu, setShowJustifyMenu] = useState(false);
   const [showLineSpacingMenu, setShowLineSpacingMenu] = useState(false);
+  const [showPresetMenu, setShowPresetMenu] = useState(false);
+  const [isSavingPreset, setIsSavingPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const [showTableGridPicker, setShowTableGridPicker] = useState(false);
   const [tableHoverRows, setTableHoverRows] = useState(3);
   const [tableHoverCols, setTableHoverCols] = useState(3);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pasteMenuRef = useRef<HTMLDivElement | null>(null);
+  const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
+  const [fontSizeInputText, setFontSizeInputText] = useState<string | null>(null);
+  const fontSizeMenuRef = useRef<HTMLDivElement | null>(null);
+  const [styleContextMenu, setStyleContextMenu] = useState<{ x: number; y: number; styleId: string; styleName: string } | null>(null);
 
   React.useEffect(() => {
     if (!showPasteMenu) return;
@@ -359,6 +413,17 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
     window.addEventListener('mousedown', handleClickOutside);
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, [showPasteMenu]);
+
+  React.useEffect(() => {
+    if (!showFontSizeMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (fontSizeMenuRef.current && !fontSizeMenuRef.current.contains(e.target as Node)) {
+        setShowFontSizeMenu(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [showFontSizeMenu]);
 
   React.useEffect(() => {
     if (selectedObjectType === 'rectangle' || selectedObjectType === 'text-frame') {
@@ -555,6 +620,48 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
         {/* Tab 1: HOME */}
         {activeTab === 'home' && (
           <div className="ribbon-group-row" style={{ direction: lang === 'ur' ? 'rtl' : 'ltr' }}>
+            {/* Writing Language Toggle */}
+            <div className="ribbon-group-box" style={{ justifyContent: 'center', minWidth: '64px', padding: '2px 6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                <button
+                  onClick={onToggleWritingLanguage}
+                  className="ribbon-action-btn"
+                  title={writingLanguage === 'urdu'
+                    ? 'Switch to English writing mode (LTR, Left-aligned, English keyboard)'
+                    : 'اردو تحریر موڈ میں تبدیل کریں (RTL, دایاں، اردو کی بورڈ)'}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    minWidth: '56px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    backgroundColor: writingLanguage === 'urdu' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(37, 99, 235, 0.15)',
+                    border: writingLanguage === 'urdu' ? '2px solid #10b981' : '2px solid #2563eb',
+                    color: writingLanguage === 'urdu' ? '#10b981' : '#60a5fa',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {writingLanguage === 'urdu' ? (
+                    <><span style={{ fontSize: '15px' }}>اردو</span></>
+                  ) : (
+                    <><span style={{ fontSize: '14px', fontFamily: 'Calibri, Segoe UI, sans-serif' }}>EN</span></>
+                  )}
+                </button>
+                <div className="ribbon-group-caption" style={{ fontSize: '9px' }}>
+                  {writingLanguage === 'urdu'
+                    ? (lang === 'ur' ? 'اردو موڈ' : 'Urdu Mode')
+                    : (lang === 'ur' ? 'انگلش موڈ' : 'English Mode')}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ width: '1px', height: '48px', backgroundColor: 'var(--panel-border)', margin: '0 2px', flexShrink: 0 }} />
+
             {/* Group 1: Urdu Input */}
             <div className="ribbon-group-box ribbon-urdu-input-group" style={{ justifyContent: 'center' }}>
               <div className="ribbon-urdu-input-stack">
@@ -564,54 +671,242 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onChange={(e) => onKeyboardModeChange?.(e.target.value as KeyboardMode)}
                     className="ribbon-select ribbon-input-mode-select"
                     title={lang === 'ur' ? 'اردو کی بورڈ کا انتخاب' : 'Urdu Keyboard Mode'}
-                    style={{}}
+                    style={{ width: '74px', minWidth: '74px' }}
                   >
                     <option value="crulp">CRULP</option>
                     <option value="navees">Navees</option>
-                    <option value="native">Native (OS)</option>
+                    <option value="native">Native</option>
                     <option value="english">English</option>
                   </select>
 
                   <button
                     onClick={onToggleTransliteration}
                     className={`ribbon-action-btn ribbon-input-transliteration ${isTransliterationEnabled ? 'active' : ''}`}
-                    title={lang === 'ur' ? 'رومن اردو سے ترجمہ' : 'Roman Urdu Transliteration'}
-                    style={{}}
+                    title={lang === 'ur' ? 'رومن اردو سے ترجمہ (Transliteration)' : 'Roman Urdu Transliteration'}
+                    style={{ width: '26px', minWidth: '26px', padding: '0', justifyContent: 'center' }}
                   >
-                    <AppIcon name="language" size={14} />
-                    <span>{lang === 'ur' ? 'رومن' : 'Roman'}</span>
+                    <AppIcon name="language" size={15} />
                   </button>
                 </div>
 
-                <div className="ribbon-input-tools-row">
+                <div className="ribbon-input-tools-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '3px' }}>
                   <button
                     onClick={onToggleVisualKeyboard}
                     className={`ribbon-action-btn ribbon-input-tool ${showVisualKeyboard ? 'active' : ''}`}
-                    title={lang === 'ur' ? 'آن اسکرین کی بورڈ' : 'Visual Keyboard'}
-                    style={{}}
+                    title={lang === 'ur' ? 'آن اسکرین کی بورڈ (Visual Keyboard)' : 'Visual Keyboard'}
+                    style={{ width: '32px', minWidth: '32px', padding: '0', justifyContent: 'center' }}
                   >
                     <AppIcon name="keyboard" size={16} />
-                    <span>{lang === 'ur' ? 'کی بورڈ' : 'Keyboard'}</span>
                   </button>
 
                   <button
                     onClick={() => onNumeralSystemChange?.(numeralSystem === 'urdu' ? 'western' : 'urdu')}
                     className="ribbon-action-btn ribbon-input-tool"
-                    title={lang === 'ur' ? 'اعدادی نظام (اردو/مغربی)' : 'Urdu vs Western Numerals'}
-                    style={{}}
+                    title={lang === 'ur' ? 'اعدادی نظام: اردو / مغربی (Numerals)' : 'Urdu vs Western Numerals'}
+                    style={{ width: '32px', minWidth: '32px', padding: '0', justifyContent: 'center' }}
                   >
-                    <><span>{numeralSystem === 'urdu' ? '۱۲۳' : '123'}</span><span>{lang === 'ur' ? 'اعداد' : 'Numbers'}</span></>
+                    <span style={{ fontWeight: 700, fontSize: '12px' }}>{numeralSystem === 'urdu' ? '۱۲۳' : '123'}</span>
                   </button>
 
-                  <button
-                    onClick={onApplyQuickUrduPreset}
-                    className="ribbon-action-btn ribbon-input-tool highlight"
-                    title={lang === 'ur' ? 'اردو پیراگراف کی فوری ترتیبات' : 'Quick Urdu Paragraph Preset'}
-                    style={{}}
-                  >
-                    <AppIcon name="target" size={16} />
-                    <span>{lang === 'ur' ? 'فوری پیرا' : 'Preset'}</span>
-                  </button>
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowPresetMenu((prev) => !prev)}
+                      className="ribbon-action-btn ribbon-input-tool highlight"
+                      title={lang === 'ur' ? 'اردو پیراگراف کی فوری ترتیبات (Quick Presets)' : 'Quick Urdu Paragraph Presets'}
+                      style={{ width: '33px', minWidth: '33px', padding: '0', justifyContent: 'center' }}
+                    >
+                      <AppIcon name="target" size={16} />
+                    </button>
+
+                    {showPresetMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          color: 'var(--text-main)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5)',
+                          minWidth: '230px',
+                          padding: '4px 0',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            onApplyQuickUrduPreset?.('standard');
+                            setShowPresetMenu(false);
+                          }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700, color: 'var(--emerald-accent)' }}>📄 عام تحریر (Standard Body)</span>
+                          <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Noto Nastaliq 14pt | Right | 1.5x</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            onApplyQuickUrduPreset?.('prose');
+                            setShowPresetMenu(false);
+                          }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700, color: 'var(--emerald-accent)' }}>📖 ناول و کالم (Justified Prose & Column)</span>
+                          <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Noto Nastaliq 13pt | Justify | 1.5x</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            onApplyQuickUrduPreset?.('poetry');
+                            setShowPresetMenu(false);
+                          }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700, color: 'var(--emerald-accent)' }}>📜 شاعری و نعت (Poetry & Verses)</span>
+                          <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Noto Nastaliq 16pt | Center | 2.0x</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            onApplyQuickUrduPreset?.('heading');
+                            setShowPresetMenu(false);
+                          }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700, color: 'var(--emerald-accent)' }}>📌 سرخی و عنوان (Headings & Titles)</span>
+                          <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Noto Nastaliq 22pt | Right | 1.3x</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            onApplyQuickUrduPreset?.('citation');
+                            setShowPresetMenu(false);
+                          }}
+                          className="ribbon-menu-item"
+                          style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700, color: 'var(--emerald-accent)' }}>🕌 آیات و اقتباس (Arabic & Citation)</span>
+                          <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>Amiri Arabic 18pt | Center | 1.8x</span>
+                        </button>
+
+                        {/* Custom Presets Section */}
+                        {customPresets.length > 0 && (
+                          <>
+                            <div style={{ borderTop: '1px solid var(--panel-border)', margin: '4px 0', padding: '4px 12px 2px', fontSize: '9.5px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                              ⭐ {lang === 'ur' ? 'میرے پرسیٹس' : 'My Custom Presets'}
+                            </div>
+                            {customPresets.map((preset) => (
+                              <div
+                                key={preset.id}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 6px 2px 12px' }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onApplyCustomPreset?.(preset);
+                                    setShowPresetMenu(false);
+                                  }}
+                                  className="ribbon-menu-item"
+                                  style={{ flex: 1, padding: '4px 0', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '1px' }}
+                                >
+                                  <span style={{ fontWeight: 700, color: '#38bdf8' }}>⭐ {preset.name}</span>
+                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                                    {preset.fontFamily} {preset.fontSize}pt | {preset.alignment} | {preset.lineHeight}x
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  title="حذف کریں (Delete)"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteCustomPreset?.(preset.id);
+                                  }}
+                                  style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', fontSize: '11px' }}
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Add New Custom Preset Form / Trigger */}
+                        <div style={{ borderTop: '1px solid var(--panel-border)', marginTop: '4px', paddingTop: '4px' }}>
+                          {isSavingPreset ? (
+                            <div style={{ padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--emerald-accent)' }}>
+                                {lang === 'ur' ? 'نیا پرسیٹ کا نام درج کریں:' : 'Enter Custom Preset Name:'}
+                              </span>
+                              <input
+                                type="text"
+                                autoFocus
+                                value={newPresetName}
+                                onChange={(e) => setNewPresetName(e.target.value)}
+                                placeholder={lang === 'ur' ? 'مثال: میرا غزل اسٹائل' : 'e.g. My Ghazal Style'}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && newPresetName.trim()) {
+                                    onSaveCustomPreset?.(newPresetName.trim());
+                                    setNewPresetName('');
+                                    setIsSavingPreset(false);
+                                    setShowPresetMenu(false);
+                                  } else if (e.key === 'Escape') {
+                                    setIsSavingPreset(false);
+                                  }
+                                }}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                  borderRadius: '4px',
+                                  border: '1px solid var(--panel-border)',
+                                  backgroundColor: 'var(--input-bg)',
+                                  color: 'var(--text-main)',
+                                  outline: 'none',
+                                }}
+                              />
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsSavingPreset(false)}
+                                  style={{ padding: '3px 8px', fontSize: '10px', borderRadius: '3px', border: '1px solid var(--panel-border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+                                >
+                                  منسوخ (Cancel)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (newPresetName.trim()) {
+                                      onSaveCustomPreset?.(newPresetName.trim());
+                                      setNewPresetName('');
+                                      setIsSavingPreset(false);
+                                      setShowPresetMenu(false);
+                                    }
+                                  }}
+                                  style={{ padding: '3px 10px', fontSize: '10px', fontWeight: 700, borderRadius: '3px', border: 'none', backgroundColor: 'var(--emerald-accent)', color: '#ffffff', cursor: 'pointer' }}
+                                >
+                                  محفوظ کریں (Save)
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setIsSavingPreset(true)}
+                              className="ribbon-menu-item"
+                              style={{ width: '100%', padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--emerald-accent)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              ➕ {lang === 'ur' ? 'موجودہ اسٹائل کو پرسیٹ بنائیں...' : 'Save Current Style as Preset...'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="ribbon-group-caption">{lang === 'ur' ? 'اردو ان پٹ' : 'Urdu Input'}</div>
@@ -620,27 +915,65 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             {/* Group 2: Clipboard */}
             <div className="ribbon-group-box" style={{ justifyContent: 'center' }}>
               <div className="ribbon-chunk" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {/* Paste Button with Dropdown Chevron */}
+                {/* MS Word Split Paste Button */}
                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <button
-                    onClick={() => setShowPasteMenu((prev) => !prev)}
-                    className="ribbon-action-btn"
-                    title={t.paste}
+                  <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '2px 6px',
-                      minWidth: '44px',
-                      height: '38px',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      backgroundColor: showPasteMenu ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                      transition: 'background-color 0.15s ease',
                     }}
                   >
-                    <AppIcon name="paste" size={18} />
-                    <span style={{ fontSize: '10px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px', marginTop: '1px' }}>
-                      {t.paste} <AppIcon name="chevron-down" size={10} />
-                    </span>
-                  </button>
+                    {/* Main Paste Action Button */}
+                    <button
+                      onClick={() => onPaste?.('all')}
+                      className="ribbon-action-btn"
+                      title={`${t.paste} (Ctrl+V)`}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '3px 8px 1px 8px',
+                        minWidth: '44px',
+                        height: '28px',
+                        border: 'none',
+                        borderRadius: 0,
+                        background: 'transparent',
+                      }}
+                    >
+                      <AppIcon name="paste" size={19} style={{ color: '#f59e0b' }} />
+                      <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '1px' }}>
+                        {t.paste}
+                      </span>
+                    </button>
+                    {/* Dropdown Chevron Toggle Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPasteMenu((prev) => !prev);
+                      }}
+                      className="ribbon-action-btn"
+                      title="Paste Options (Keep Text Only, etc.)"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        height: '11px',
+                        padding: 0,
+                        border: 'none',
+                        borderRadius: 0,
+                        background: 'transparent',
+                      }}
+                    >
+                      <AppIcon name="chevron-down" size={9} />
+                    </button>
+                  </div>
 
                   {/* Clean Paste Options Dropdown Menu */}
                   {showPasteMenu && (
@@ -724,71 +1057,140 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             {/* Group 2: Font */}
             <div className="ribbon-group-box ribbon-font-group" style={{ position: 'relative', justifyContent: 'center' }}>
               <div className="ribbon-font-stack">
-                {/* Top Row: Family, Size, Grow A^, Shrink A_v, Clear Formatting A🧹 */}
-                <div className="ribbon-font-row">
+                {/* Top Row: Urdu Font Select (200px wide), Size Combobox, Grow A^, Shrink A_v, Clear Formatting A🧹 */}
+                <div className="ribbon-font-row" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                   {/* Urdu Font Selector with Recent Urdu Fonts Track */}
-                  <select
+                  <CustomFontDropdown
                     value={activeUrduFont}
-                    onChange={(e) => {
-                      if (onUrduFontChange) onUrduFontChange(e.target.value);
-                      else onFontFamilyChange(e.target.value);
+                    onChange={(font) => {
+                      if (onUrduFontChange) onUrduFontChange(font);
+                      else onFontFamilyChange(font);
                     }}
-                    className="ribbon-select ribbon-font-family"
+                    onPreview={onPreviewUrduFont || onPreviewFontFamily}
+                    width="108px"
                     title={lang === 'ur' ? 'اردو فونٹس' : 'Urdu Font Family'}
-                    style={{
-                      width: '120px',
-                      height: '22px',
-                      fontSize: '10px',
-                      border: detectedScript === 'urdu' ? '1px solid #10b981' : '1px solid var(--panel-border)',
-                      boxShadow: detectedScript === 'urdu' ? '0 0 0 2px rgba(16, 185, 129, 0.25)' : 'none',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {recentUrduFonts.length > 0 && (
-                      <optgroup label={lang === 'ur' ? 'حال ہی میں استعمال شدہ (Recent Urdu)' : 'Recent Urdu Fonts'}>
-                        {recentUrduFonts.map((font) => (
-                          <option key={`recent-ur-${font}`} value={font} style={{ fontFamily: font }}>
-                            {font}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    <optgroup label={lang === 'ur' ? 'تصدیق شدہ اردو فونٹس (Bundled OFL)' : 'Verified Bundled Fonts'}>
-                      {BUNDLED_URDU_FONTS.map((font) => (
-                        <option key={`bundled-ur-${font}`} value={font} style={{ fontFamily: font }}>
-                          {font}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label={lang === 'ur' ? 'سسٹم اور لوکل فونٹس (System Fonts)' : 'Installed System Fonts'}>
-                      {URDU_FONTS_LIST.filter((f) => !BUNDLED_URDU_FONTS.includes(f) && !UNAVAILABLE_INPAGE_FONTS.includes(f)).map((font) => (
-                        <option key={`system-ur-${font}`} value={font} style={{ fontFamily: font }}>
-                          {font}
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label={lang === 'ur' ? 'غير موجود فونٹس (Unavailable)' : 'Unavailable Proprietary Fonts'}>
-                      {UNAVAILABLE_INPAGE_FONTS.map((font) => (
-                        <option key={`unavail-ur-${font}`} value={font} style={{ fontFamily: font, color: '#dc2626' }}>
-                          {font} (Not Installed)
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-
-                  <input
-                    type="number"
-                    value={activeFontSize}
-                    onChange={(e) => onFontSizeChange(Number(e.target.value))}
-                    className="ribbon-number-input ribbon-font-size"
-                    min={8}
-                    max={144}
-                    title={t.fontSize}
-                    style={{ width: '42px', height: '22px', fontSize: '10px', textAlign: 'center' }}
+                    lang={lang}
+                    isHighlighted={detectedScript === 'urdu'}
+                    groups={[
+                      ...(recentUrduFonts.length > 0
+                        ? [
+                            {
+                              label: lang === 'ur' ? 'حال ہی میں استعمال شدہ (Recent)' : 'Recent Urdu Fonts',
+                              fonts: recentUrduFonts,
+                            },
+                          ]
+                        : []),
+                      {
+                        label: lang === 'ur' ? 'تصدیق شدہ اور خوبصورت فونٹس (Bundled & Stylish)' : 'Bundled & Stylish Fonts',
+                        fonts: BUNDLED_URDU_FONTS,
+                      },
+                      {
+                        label: lang === 'ur' ? 'سسٹم اور لوکل فونٹس (System Fonts)' : 'Installed System Fonts',
+                        fonts: URDU_FONTS_LIST.filter((f) => !BUNDLED_URDU_FONTS.includes(f)),
+                      },
+                    ]}
                   />
+
+                  {/* MS Word Font Size Combobox */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={fontSizeInputText !== null ? fontSizeInputText : activeFontSize}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        setFontSizeInputText(e.target.value);
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val >= 4 && val <= 288) {
+                          onFontSizeChange(val);
+                        }
+                      }}
+                      onBlur={() => setFontSizeInputText(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = parseInt(e.currentTarget.value, 10);
+                          if (!isNaN(val) && val >= 4 && val <= 288) {
+                            onFontSizeChange(val);
+                          }
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      className="ribbon-number-input ribbon-font-size"
+                      title={t.fontSize}
+                      style={{
+                        width: '32px',
+                        height: '22px',
+                        fontSize: '11px',
+                        textAlign: 'center',
+                        border: '1px solid var(--panel-border)',
+                        borderRight: 'none',
+                        borderRadius: '3px 0 0 3px',
+                        backgroundColor: 'var(--panel-bg)',
+                        color: 'var(--text-main)',
+                      }}
+                    />
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setShowFontSizeMenu((prev) => !prev)}
+                      className="ribbon-action-btn"
+                      title="Select Font Size"
+                      style={{
+                        width: '14px',
+                        height: '22px',
+                        padding: 0,
+                        border: '1px solid var(--panel-border)',
+                        borderRadius: '0 3px 3px 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: showFontSizeMenu ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                      }}
+                    >
+                      <AppIcon name="chevron-down" size={9} />
+                    </button>
+                    {showFontSizeMenu && (
+                      <div
+                        ref={fontSizeMenuRef}
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 2px)',
+                          left: 0,
+                          zIndex: 9999,
+                          maxHeight: '180px',
+                          overflowY: 'auto',
+                          backgroundColor: 'var(--panel-bg)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '4px',
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+                          width: '46px',
+                        }}
+                      >
+                        {[8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 96, 144].map((size) => (
+                          <div
+                            key={`fs-${size}`}
+                            onClick={() => {
+                              onFontSizeChange(size);
+                              setFontSizeInputText(null);
+                              setShowFontSizeMenu(false);
+                            }}
+                            style={{
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                              backgroundColor: size === activeFontSize ? 'var(--accent-primary, #10b981)' : 'transparent',
+                              color: size === activeFontSize ? '#ffffff' : 'var(--text-main)',
+                            }}
+                          >
+                            {size}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Increase Font Size A^ */}
                   <button
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
                       const next = steps.find((s) => s > activeFontSize) ?? Math.min(activeFontSize + 10, 144);
@@ -803,6 +1205,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
 
                   {/* Decrease Font Size A_v */}
                   <button
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       const steps = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36, 48, 72, 144];
                       const prev = [...steps].reverse().find((s) => s < activeFontSize) ?? Math.max(activeFontSize - 2, 8);
@@ -828,76 +1231,103 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                   </button>
                 </div>
 
-                {/* Bottom Row: B, I, U, 🖊️▼ (Highlight), A▼ (Color) */}
-                <div className="ribbon-font-row ribbon-font-format-row">
-                  <select
+                {/* Bottom Row: English Font, B, I, U, ab, x₂, x², 🖊️▼ (Highlight), A▼ (Color) */}
+                <div className="ribbon-font-row ribbon-font-format-row" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <CustomFontDropdown
                     value={activeEnglishFont}
-                    onChange={(e) => {
-                      if (onEnglishFontChange) onEnglishFontChange(e.target.value);
-                      else onFontFamilyChange(e.target.value);
+                    onChange={(font) => {
+                      onEnglishFontChange?.(font);
                     }}
-                    className="ribbon-select ribbon-font-latin"
+                    onPreview={onPreviewFontFamily}
+                    width="92px"
                     title="English / Latin Font Family"
-                    style={{
-                      border: detectedScript === 'latin' ? '1px solid #2563eb' : '1px solid var(--panel-border)',
-                      boxShadow: detectedScript === 'latin' ? '0 0 0 2px rgba(37, 99, 235, 0.25)' : 'none',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    {recentEnglishFonts.length > 0 && (
-                      <optgroup label={lang === 'ur' ? 'حال ہی میں انگلش (Recent English)' : 'Recent English Fonts'}>
-                        {recentEnglishFonts.map((font) => (
-                          <option key={`recent-en-${font}`} value={font} style={{ fontFamily: font }}>
-                            {font}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    <optgroup label={lang === 'ur' ? 'تمام انگلش فونٹس (All English Fonts)' : 'All English Fonts'}>
-                      {WINDOWS_STANDARD_FONTS.map((font) => (
-                        <option key={`all-en-${font}`} value={font} style={{ fontFamily: font }}>
-                          {font}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
+                    lang={lang}
+                    isHighlighted={detectedScript === 'latin'}
+                    groups={[
+                      ...(recentEnglishFonts.length > 0
+                        ? [
+                            {
+                              label: lang === 'ur' ? 'حال ہی میں انگلش (Recent)' : 'Recent English Fonts',
+                              fonts: recentEnglishFonts,
+                            },
+                          ]
+                        : []),
+                      {
+                        label: lang === 'ur' ? 'تمام انگلش فونٹس (All English Fonts)' : 'All English Fonts',
+                        fonts: WINDOWS_STANDARD_FONTS,
+                      },
+                    ]}
+                  />
 
-                  {/* Bold */}
+                  {/* Bold B */}
                   <button
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={onToggleBold}
                     className={`ribbon-action-btn ${isBold ? 'active' : ''}`}
                     title="Bold (Ctrl+B)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                    style={{ padding: '1px 5px', fontSize: '11px', fontWeight: 700 }}
                   >
                     <b>B</b>
                   </button>
 
-                  {/* Italic */}
+                  {/* Italic I */}
                   <button
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={onToggleItalic}
                     className={`ribbon-action-btn ${isItalic ? 'active' : ''}`}
                     title="Italic (Ctrl+I)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontStyle: 'italic' }}
+                    style={{ padding: '1px 5px', fontSize: '11px', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}
                   >
                     <i>I</i>
                   </button>
 
-                  {/* Underline U (Direct Toggle) */}
+                  {/* Underline U */}
                   <button
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={onToggleUnderline}
                     className={`ribbon-action-btn ${isUnderline ? 'active' : ''}`}
                     title="Underline (Ctrl+U)"
-                    style={{ padding: '1px 5px', fontSize: '10px', textDecoration: 'underline' }}
+                    style={{ padding: '1px 5px', fontSize: '11px', textDecoration: 'underline' }}
                   >
                     <u>U</u>
                   </button>
 
+                  {/* Strikethrough ab */}
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={_onToggleStrikethrough}
+                    className={`ribbon-action-btn ${_isStrikethrough ? 'active' : ''}`}
+                    title="Strikethrough"
+                    style={{ padding: '1px 4px', fontSize: '10px', textDecoration: 'line-through' }}
+                  >
+                    ab
+                  </button>
+
+                  {/* Subscript x₂ */}
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={_onToggleSubscript}
+                    className={`ribbon-action-btn ${_isSubscript ? 'active' : ''}`}
+                    title="Subscript"
+                    style={{ padding: '1px 4px', fontSize: '10px' }}
+                  >
+                    x<sub>2</sub>
+                  </button>
+
+                  {/* Superscript x² */}
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={_onToggleSuperscript}
+                    className={`ribbon-action-btn ${_isSuperscript ? 'active' : ''}`}
+                    title="Superscript"
+                    style={{ padding: '1px 4px', fontSize: '10px' }}
+                  >
+                    x<sup>2</sup>
+                  </button>
+
                   <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
 
-                  {/* Text Highlight Color 🖊️▼ Palette */}
+                  {/* Text Highlight Color Palette */}
                   <div style={{ position: 'relative' }}>
                     <button
                       onMouseDown={(e) => e.preventDefault()}
@@ -906,8 +1336,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       title="Text Highlight Color"
                       style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
                     >
-                      <AppIcon name="paint" size={14} />
-                      <AppIcon name="chevron-down" size={10} />
+                      <AppIcon name="paint" size={15} />
+                      <AppIcon name="chevron-down" size={9} />
                     </button>
 
                     {showHighlightPalette && (
@@ -919,17 +1349,20 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     )}
                   </div>
 
-                  {/* Font Color A▼ Palette */}
+                  {/* Font Color Palette */}
                   <div style={{ position: 'relative' }}>
                     <button
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => setShowFontColorPalette((prev) => !prev)}
                       className="ribbon-action-btn"
                       title="Font Color"
-                      style={{ padding: '1px 4px', fontSize: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px' }}
+                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
                     >
-                      <span style={{ fontWeight: 700, fontSize: '10px' }}>A</span>
-                      <div style={{ width: '12px', height: '3px', backgroundColor: fontColor, borderRadius: '1px' }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px' }}>
+                        <span style={{ fontWeight: 800, fontSize: '11px', lineHeight: '12px', color: fontColor || 'inherit' }}>A</span>
+                        <div style={{ width: '12px', height: '3px', backgroundColor: fontColor || '#ef4444', borderRadius: '1px' }} />
+                      </div>
+                      <AppIcon name="chevron-down" size={9} />
                     </button>
 
                     {showFontColorPalette && (
@@ -968,27 +1401,282 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             {/* Group 3: Paragraph */}
             <div className="ribbon-group-box ribbon-paragraph-group" style={{ position: 'relative', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                {/* Top Row: Bullets, Numbering, Indents, Directions, Show/Hide Marks */}
+                {/* Top Row: Bullets, Numbering, Indents, Directions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  {/* Bullets •= */}
-                  <button
-                    onClick={onToggleBulletList}
-                    className={`ribbon-action-btn ${isBulletList ? 'active' : ''}`}
-                    title="Bullets"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
-                  >
-                    <AppIcon name="bullets" size={17} />
-                  </button>
+                  {/* Bullets •= Dropdown Split Button */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        borderRadius: '4px',
+                        border: isBulletList ? '1px solid var(--accent-primary, #10b981)' : '1px solid var(--panel-border)',
+                        backgroundColor: isBulletList ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={onToggleBulletList}
+                        className="ribbon-action-btn"
+                        title="Bullets (Click to toggle)"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '2px 4px',
+                          border: 'none',
+                          height: '22px',
+                          background: 'transparent',
+                        }}
+                      >
+                        <AppIcon name="bullets" size={16} />
+                      </button>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setShowBulletMenu((prev) => !prev)}
+                        className="ribbon-action-btn"
+                        title="Bullet Library & Styles"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0 3px',
+                          border: 'none',
+                          height: '22px',
+                          background: 'transparent',
+                        }}
+                      >
+                        <AppIcon name="chevron-down" size={8} />
+                      </button>
+                    </div>
 
-                  {/* Numbering 1≡ */}
-                  <button
-                    onClick={onToggleOrderedList}
-                    className={`ribbon-action-btn ${isOrderedList ? 'active' : ''}`}
-                    title="Numbering"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
-                  >
-                    <AppIcon name="numbered-list" size={17} />
-                  </button>
+                    {showBulletMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
+                          padding: '8px',
+                          minWidth: '220px',
+                        }}
+                      >
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                          BULLET LIBRARY
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '8px' }}>
+                          {[
+                            { label: 'None', glyph: 'None', style: 'none' },
+                            { label: 'Solid Circle', glyph: '•', style: 'disc' },
+                            { label: 'Hollow Circle', glyph: '◦', style: 'circle' },
+                            { label: 'Square', glyph: '▪', style: 'square' },
+                            { label: 'Arrow', glyph: '➢', style: 'arrow' },
+                            { label: 'Checkmark', glyph: '✓', style: 'checkmark' },
+                            { label: 'Diamond', glyph: '◆', style: 'diamond' },
+                          ].map((item) => (
+                            <button
+                              key={item.style}
+                              onClick={() => {
+                                onSelectBulletStyle?.(item.style);
+                                setShowBulletMenu(false);
+                              }}
+                              style={{
+                                padding: '6px',
+                                border: '1px solid var(--panel-border)',
+                                borderRadius: '4px',
+                                background: 'var(--panel-bg)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '14px',
+                                color: 'var(--text-main)',
+                              }}
+                              title={item.label}
+                            >
+                              <span>{item.glyph}</span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: 'var(--panel-border)', margin: '6px 0' }} />
+
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                          CHANGE LIST LEVEL
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <button
+                              key={`lvl-${level}`}
+                              onClick={() => {
+                                onChangeListLevel?.(level);
+                                setShowBulletMenu(false);
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                textAlign: 'left',
+                                fontSize: '11px',
+                                background: 'transparent',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer',
+                                color: 'var(--text-main)',
+                                paddingLeft: `${8 + (level - 1) * 12}px`,
+                              }}
+                            >
+                              Level {level}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Numbering 1≡ Dropdown Split Button */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        borderRadius: '4px',
+                        border: isOrderedList ? '1px solid var(--accent-primary, #10b981)' : '1px solid var(--panel-border)',
+                        backgroundColor: isOrderedList ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={onToggleOrderedList}
+                        className="ribbon-action-btn"
+                        title="Numbering (Click to toggle)"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '2px 4px',
+                          border: 'none',
+                          height: '22px',
+                          background: 'transparent',
+                        }}
+                      >
+                        <AppIcon name="numbered-list" size={16} />
+                      </button>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setShowNumberingMenu((prev) => !prev)}
+                        className="ribbon-action-btn"
+                        title="Numbering Library & Formats"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0 3px',
+                          border: 'none',
+                          height: '22px',
+                          background: 'transparent',
+                        }}
+                      >
+                        <AppIcon name="chevron-down" size={8} />
+                      </button>
+                    </div>
+
+                    {showNumberingMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          left: 0,
+                          zIndex: 9999,
+                          backgroundColor: 'var(--panel-bg)',
+                          border: '1px solid var(--panel-border)',
+                          borderRadius: '6px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
+                          padding: '8px',
+                          minWidth: '240px',
+                        }}
+                      >
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                          NUMBERING LIBRARY
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '8px' }}>
+                          {[
+                            { label: 'None', style: 'none' },
+                            { label: '1. 2. 3.', style: 'decimal' },
+                            { label: '1) 2) 3)', style: 'decimal-paren' },
+                            { label: 'A. B. C.', style: 'upper-alpha' },
+                            { label: 'a. b. c.', style: 'lower-alpha' },
+                            { label: 'a) b) c)', style: 'lower-alpha-paren' },
+                            { label: 'I. II. III.', style: 'upper-roman' },
+                            { label: 'i. ii. iii.', style: 'lower-roman' },
+                            { label: '۱. ۲. ۳.', style: 'urdu' },
+                            { label: 'ا. ب. ج.', style: 'abjad' },
+                          ].map((item) => (
+                            <button
+                              key={item.style}
+                              onClick={() => {
+                                onSelectNumberStyle?.(item.style);
+                                setShowNumberingMenu(false);
+                              }}
+                              style={{
+                                padding: '6px 4px',
+                                border: '1px solid var(--panel-border)',
+                                borderRadius: '4px',
+                                background: 'var(--panel-bg)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                color: 'var(--text-main)',
+                              }}
+                              title={item.label}
+                            >
+                              <span>{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: 'var(--panel-border)', margin: '6px 0' }} />
+
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                          CHANGE LIST LEVEL
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <button
+                              key={`nlvl-${level}`}
+                              onClick={() => {
+                                onChangeListLevel?.(level);
+                                setShowNumberingMenu(false);
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                textAlign: 'left',
+                                fontSize: '11px',
+                                background: 'transparent',
+                                border: 'none',
+                                borderRadius: '3px',
+                                cursor: 'pointer',
+                                color: 'var(--text-main)',
+                                paddingLeft: `${8 + (level - 1) * 12}px`,
+                              }}
+                            >
+                              Level {level}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
 
@@ -997,7 +1685,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onClick={onDecreaseIndent}
                     className="ribbon-action-btn"
                     title="Decrease Indent"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                    style={{ width: '30px', minWidth: '30px', padding: '1px 0', fontSize: '10px' }}
                   >
                     <AppIcon name="indent-decrease" size={16} />
                   </button>
@@ -1007,7 +1695,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onClick={onIncreaseIndent}
                     className="ribbon-action-btn"
                     title="Increase Indent"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                    style={{ width: '30px', minWidth: '30px', padding: '1px 0', fontSize: '10px' }}
                   >
                     <AppIcon name="indent-increase" size={16} />
                   </button>
@@ -1019,7 +1707,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onClick={() => onDirectionChange?.('ltr')}
                     className={`ribbon-action-btn ${activeDirection === 'ltr' ? 'active' : ''}`}
                     title="Left-to-Right Text Direction"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                    style={{ width: '30px', minWidth: '30px', padding: '1px 0', fontSize: '10px', fontWeight: 700 }}
                   >
                     <AppIcon name="direction-ltr" size={17} />
                   </button>
@@ -1029,23 +1717,20 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onClick={() => onDirectionChange?.('rtl')}
                     className={`ribbon-action-btn ${activeDirection === 'rtl' ? 'active' : ''}`}
                     title="Right-to-Left Text Direction (Urdu)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                    style={{ width: '30px', minWidth: '30px', padding: '1px 0', fontSize: '10px', fontWeight: 700 }}
                   >
                     <AppIcon name="direction-rtl" size={17} />
                   </button>
-
-                  <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--panel-border)', margin: '0 1px' }} />
-
                 </div>
 
-                {/* Bottom Row: Align Left, Center, Right, Justify, Line Spacing */}
+                {/* Bottom Row: Align Left, Center, Right, Justify, Line Spacing, Paragraph Mark */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                   {/* Align Left */}
                   <button
                     onClick={() => onAlignmentChange?.('left')}
                     className={`ribbon-action-btn ${activeAlignment === 'left' ? 'active' : ''}`}
                     title="Align Left (Ctrl+L)"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                    style={{ width: '26px', minWidth: '26px', padding: '1px 0', fontSize: '10px' }}
                   >
                     <AppIcon name="align-left" size={17} />
                   </button>
@@ -1055,7 +1740,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onClick={() => onAlignmentChange?.('center')}
                     className={`ribbon-action-btn ${activeAlignment === 'center' ? 'active' : ''}`}
                     title="Center (Ctrl+E)"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                    style={{ width: '26px', minWidth: '26px', padding: '1px 0', fontSize: '10px' }}
                   >
                     <AppIcon name="align-center" size={17} />
                   </button>
@@ -1065,7 +1750,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     onClick={() => onAlignmentChange?.('right')}
                     className={`ribbon-action-btn ${activeAlignment === 'right' || activeAlignment === 'start' ? 'active' : ''}`}
                     title="Align Right (Ctrl+R)"
-                    style={{ padding: '1px 5px', fontSize: '10px' }}
+                    style={{ width: '26px', minWidth: '26px', padding: '1px 0', fontSize: '10px' }}
                   >
                     <AppIcon name="align-right" size={17} />
                   </button>
@@ -1076,10 +1761,10 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       onClick={() => setShowJustifyMenu((prev) => !prev)}
                       className={`ribbon-action-btn ${activeAlignment === 'justify' ? 'active' : ''}`}
                       title="Justify (Ctrl+J)"
-                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                      style={{ width: '29px', minWidth: '29px', padding: '1px 0', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px' }}
                     >
-                      <AppIcon name="align-justify" size={17} />
-                      <AppIcon name="chevron-down" size={10} />
+                      <AppIcon name="align-justify" size={16} />
+                      <AppIcon name="chevron-down" size={9} />
                     </button>
 
                     {showJustifyMenu && (
@@ -1136,14 +1821,15 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       onClick={() => setShowLineSpacingMenu((prev) => !prev)}
                       className="ribbon-action-btn"
                       title="Line and Paragraph Spacing"
-                      style={{ padding: '1px 5px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '2px' }}
+                      style={{ width: '29px', minWidth: '29px', padding: '1px 0', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1px' }}
                     >
                       <AppIcon name="line-spacing" size={16} />
-                      <AppIcon name="chevron-down" size={10} />
+                      <AppIcon name="chevron-down" size={9} />
                     </button>
 
                     {showLineSpacingMenu && (
                       <div
+                        onMouseLeave={() => onPreviewLineHeight?.(null)}
                         style={{
                           position: 'absolute',
                           top: 'calc(100% + 4px)',
@@ -1162,6 +1848,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                         {[1.0, 1.15, 1.5, 2.0, 2.5, 3.0].map((lh) => (
                           <button
                             key={lh}
+                            onMouseEnter={() => onPreviewLineHeight?.(lh)}
                             onClick={() => { onLineHeightChange?.(lh); setShowLineSpacingMenu(false); }}
                             className="ribbon-menu-item"
                             style={{
@@ -1188,11 +1875,12 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                       </div>
                     )}
                   </div>
+
                   <button
                     onClick={onToggleFormattingMarks}
                     className={`ribbon-action-btn ${showFormattingMarks ? 'active' : ''}`}
                     title="Show/Hide Non-Printing Formatting Marks (Ctrl+*)"
-                    style={{ padding: '1px 5px', fontSize: '10px', fontWeight: 700 }}
+                    style={{ width: '26px', minWidth: '26px', padding: '1px 0', fontSize: '10px', fontWeight: 700 }}
                   >
                     <AppIcon name="paragraph-mark" size={17} />
                   </button>
@@ -1229,18 +1917,29 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                     { id: 'normal', name: lang === 'ur' ? 'عام متن' : 'Normal', preview: 'متن', tag: '¶ Nastaliq' },
                     { id: 'heading-1', name: lang === 'ur' ? 'عنوان ۱' : 'Heading 1', preview: 'عنوان ۱', tag: 'H1 24pt' },
                     { id: 'heading-2', name: lang === 'ur' ? 'عنوان ۲' : 'Heading 2', preview: 'عنوان ۲', tag: 'H2 18pt' },
+                    { id: 'heading-3', name: lang === 'ur' ? 'عنوان ۳' : 'Heading 3', preview: 'عنوان ۳', tag: 'H3 16pt' },
                     { id: 'poetry', name: lang === 'ur' ? 'شاعری' : 'Poetry', preview: 'شعر', tag: 'Poetry 16pt' },
                     { id: 'quote', name: lang === 'ur' ? 'اقتباس' : 'Quote', preview: 'اقتباس', tag: 'Quote 14pt' },
+                    { id: 'quran', name: lang === 'ur' ? 'آیات/احادیث' : 'Quran', preview: 'آیت', tag: 'Amiri 18pt' },
                   ].map((st) => (
                     <button
                       key={st.id}
                       onClick={() => onApplyStyle?.(st.id)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setStyleContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          styleId: st.id,
+                          styleName: st.name,
+                        });
+                      }}
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '58px',
+                        width: '46px',
                         height: '36px',
                         border: activeStyleId === st.id ? '2px solid var(--emerald-accent)' : '1px solid var(--panel-border)',
                         borderRadius: '4px',
@@ -2428,6 +3127,101 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
           </div>
         )}
       </div>
+      )}
+      {styleContextMenu && (
+        <>
+          <div
+            onClick={() => setStyleContextMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setStyleContextMenu(null); }}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99998 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: `${styleContextMenu.y}px`,
+              left: `${styleContextMenu.x}px`,
+              zIndex: 99999,
+              backgroundColor: '#1e293b',
+              border: '1px solid #334155',
+              borderRadius: '6px',
+              boxShadow: '0 12px 28px rgba(0, 0, 0, 0.65)',
+              padding: '4px 0',
+              minWidth: '240px',
+              color: '#f8fafc',
+              fontSize: '12px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                onUpdateStyleToMatchSelection?.(styleContextMenu.styleId);
+                setStyleContextMenu(null);
+              }}
+              className="ribbon-context-menu-item"
+            >
+              <AppIcon name="sync" size={14} /> Update {styleContextMenu.styleName} to Match Selection
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onOpenStylesManager?.();
+                setStyleContextMenu(null);
+              }}
+              className="ribbon-context-menu-item"
+            >
+              <AppIcon name="edit" size={14} /> Modify...
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSelectAllInstancesOfStyle?.(styleContextMenu.styleId);
+                setStyleContextMenu(null);
+              }}
+              className="ribbon-context-menu-item"
+            >
+              <AppIcon name="document-text" size={14} /> Select All: (Matching Instances)
+            </button>
+
+            <div style={{ height: '1px', backgroundColor: '#334155', margin: '4px 0' }} />
+
+            <button
+              type="button"
+              onClick={() => {
+                onRenameStyle?.(styleContextMenu.styleId);
+                setStyleContextMenu(null);
+              }}
+              className="ribbon-context-menu-item"
+            >
+              <AppIcon name="edit" size={14} /> Rename...
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onRemoveStyleFromGallery?.(styleContextMenu.styleId);
+                setStyleContextMenu(null);
+              }}
+              className="ribbon-context-menu-item"
+            >
+              <AppIcon name="dismiss" size={14} /> Remove from Style Gallery
+            </button>
+
+            <div style={{ height: '1px', backgroundColor: '#334155', margin: '4px 0' }} />
+
+            <button
+              type="button"
+              onClick={() => {
+                onAddStyleToQuickAccess?.(styleContextMenu.styleId);
+                setStyleContextMenu(null);
+              }}
+              className="ribbon-context-menu-item"
+            >
+              <AppIcon name="star" size={14} /> Add Gallery to Quick Access Toolbar
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

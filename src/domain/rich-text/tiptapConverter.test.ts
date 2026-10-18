@@ -52,4 +52,19 @@ describe('Tiptap HTML & Canonical Converter (Phase UX-2)', () => {
     expect(roundtripDoc.content[0]!.direction).toBe('rtl');
     expect(roundtripDoc.content[1]!.direction).toBe('ltr');
   });
+
+  it('reassembles a paragraph split between visual page containers without adding a paragraph break', () => {
+    const pagedHtml = [
+      '<section data-repage-page="true"><p dir="rtl" data-repage-fragment="start">First half </p></section>',
+      '<section data-repage-page="true"><p dir="rtl" data-repage-fragment="end">second half</p></section>',
+    ].join('');
+
+    const canonical = tiptapHtmlToCanonical(pagedHtml);
+
+    expect(canonical.content).toHaveLength(1);
+    expect(canonical.content[0]!.content).toEqual([
+      { type: 'text', text: 'First half ' },
+      { type: 'text', text: 'second half' },
+    ]);
+  });
 });

@@ -14,18 +14,12 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - A shared browser core is desirable; Tauri is the intended desktop shell after the core architecture stabilizes.
 - Local editing, saving, autosave, recovery, and export must work without an account or internet connection.
 - Collaboration is optional and comes after reliable local publishing.
-- Voice and AI features are optional plugins, not dependencies for basic layout and editing.
-- **Current Milestone**: Page Layout & Section Model Architecture — claimed complete (Phases 0–8) in July 2026; not re-verified since. 2026-10-18 code audit found the Tauri desktop shell, PDF exporter, and WebRTC networking listed as complete are in fact stubs/planned (desktop shell not buildable, PDF export produces metadata only, no WebRTC transport).
-  - **ADR-0008 Page Layout & Section Model**: Realized physical page geometry (`width`, `height`, `margins`, `bleed`, `background`) stored in PDF points. Section breaks (`next-page`, `continuous`) anchored to `startPageId` in `doc.sections`.
-  - **Phase 0 (Model Repair)**: Defined `DocumentSection` schema & reference validation; section boundary engine with page slice querying & dangling section cleanup.
-  - **Phase 1 (Commands & Transactions)**: Canonical `pageLayoutCommands.ts` routed through `updateDocument()` for full undo/redo transaction history.
-  - **Phase 2 (Page Setup Modal & Ribbon UI)**: Built `PageSetupModal.tsx` with size presets (A4, A5, A3, Letter, Legal, 6×9 Book, Custom), inside/outside mirror margins, gutter positioning, bleed/background controls, validation, and object overflow warnings. Updated `MsWordRibbon.tsx` with 5 structured ribbon groups.
-  - **Phase 3 (Breaks & Backgrounds)**: Section break visual badges in viewport (`PaginatedPrintLayout.tsx`), realized custom page background color rendering (`page.background`), section anchor re-anchoring on page addition/deletion (`documentCommands.ts`).
-  - **Phase 4 (Urdu Multi-Column Layout)**: RTL column flow (`direction: rtl`, `column-count`, `column-gap`), visual column separator guide lines (gutter rules in `PaginatedPrintLayout.tsx`), and column geometry calculation (`columnEngine.ts`).
-  - **Phase 5 (Headers, Footers, Master Pages & Urdu Numbering)**: Master page object compositing (`resolvePageCompositeObjects`), running section header & footer stories, localized section page numbers (`getSectionPageNumberString` supporting Urdu `۰, ۱, ۲`, Abjad `ا, ب, ج`, and Western styles with `restartAtSection`).
-  - **Phase 6 (Professional Layout Aids)**: Interactive rulers, guide creation/dragging (`updateGuidesCommand`), snap-to-guides toggle (`toggleSnapToGuidesCommand`), bleed frame overlays (`page.bleed`), and guide persistence in `.urdup` packages.
-  - **Phase 7 (Preflight & Print Safety)**: Text-overflow detection, font license checking, low DPI image asset warnings, bleed boundary violation checks, and `getExportReadinessReport()` with PDF Readiness tab in `PreflightPanel.tsx`.
-  - **Phase 8 (Milestone Exit Gate & Verification)**: Exit gate verification suite in `m8ExitGate.test.ts`. Test counts in this document are stale (July 2026); measured 2026-10-18: 109 test files, ~306 test cases by grep count.
+- **Current Milestone**: Phase 1 — Stable Core (Windows Desktop & Zero Data-Loss Publishing Core).
+  - **Tauri v2 Shell**: `@tauri-apps/cli@^2`, `@tauri-apps/api@^2`, `@tauri-apps/plugin-dialog@^2`, `@tauri-apps/plugin-fs@^2`, capabilities least-privilege scoping, and verified `cargo check` and compilation.
+  - **Vector Print-to-PDF**: dedicated `@media print` rules in `global.css` suppressing application chrome and producing clean vector pages with selectable Urdu typography.
+  - **Zero Data-Loss Persistence**: atomic file save (`.tmp` -> atomic rename), safety backup on corrupted package (`.corrupt`), in-memory IndexedDB fallback, 2.5s debounced autosave, and startup crash recovery modal.
+  - **CI & Test Suite**: 100% green local checks (`npm run check:utf8`, `npm run lint`, `npm run test`, `npm run build`).
+  - **Prior Page Layout & Section Model Architecture**: ADR-0008 physical page geometry, section engine, page setup modal, RTL multi-column layout, localized Urdu page numbering, and preflight print safety.
 - **M7 Urdu Tools System (ADR-0007)**:
   - Canonical language mutation command `applyLanguageChangesCommand` operating in reverse offset order to preserve offsets.
   - Scope isolation (`selection`, `story`, `document`).

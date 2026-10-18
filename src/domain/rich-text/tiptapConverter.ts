@@ -88,9 +88,10 @@ export function tiptapHtmlToCanonical(
   // Parse HTML elements
   const parser = new DOMParser();
   const dom = parser.parseFromString(cleanHtml, 'text/html');
-  const paragraphElements = Array.from(dom.body.children).filter(
-    (el) => el.tagName.toLowerCase() === 'p' || el.tagName.toLowerCase() === 'div' || el.tagName.toLowerCase() === 'h1' || el.tagName.toLowerCase() === 'h2' || el.tagName.toLowerCase() === 'h3',
-  );
+  const paragraphElements = Array.from(dom.body.querySelectorAll('p, div, h1, h2, h3')).filter((el) => {
+    const parent = el.parentElement;
+    return parent === dom.body || parent?.matches('section[data-repage-page]') === true;
+  });
 
   if (paragraphElements.length === 0) {
     // Single plain text content
@@ -101,7 +102,7 @@ export function tiptapHtmlToCanonical(
     };
   }
 
-  const canonicalParagraphs: ParagraphNode[] = paragraphElements.map((pEl) => {
+  const parsedParagraphs = paragraphElements.map((pEl) => {
     const dirAttr = pEl.getAttribute('dir')?.toLowerCase();
     const dir: TextDirection = dirAttr === 'ltr' ? 'ltr' : 'rtl';
 
@@ -163,12 +164,29 @@ export function tiptapHtmlToCanonical(
     Array.from(pEl.childNodes).forEach((child) => walk(child, []));
 
     return {
-      type: 'paragraph',
-      direction: dir,
-      alignment: 'start',
-      content: runs.length > 0 ? runs : [],
+      fragment: pEl.getAttribute('data-repage-fragment'),
+      paragraph: {
+        type: 'paragraph' as const,
+        direction: dir,
+        alignment: 'start' as const,
+        content: runs.length > 0 ? runs : [],
+      },
     };
   });
+
+  const canonicalParagraphs: ParagraphNode[] = [];
+  let priorFragment: string | null = null;
+
+  for (const { fragment, paragraph: parsedParagraph } of parsedParagraphs) {
+    const continuesPrevious = (priorFragment === 'start' || priorFragment === 'middle')
+      && (fragment === 'middle' || fragment === 'end');
+    if (continuesPrevious && canonicalParagraphs.length > 0) {
+      canonicalParagraphs[canonicalParagraphs.length - 1]!.content.push(...parsedParagraph.content);
+    } else {
+      canonicalParagraphs.push(parsedParagraph);
+    }
+    priorFragment = fragment;
+  }
 
   return {
     type: 'doc',

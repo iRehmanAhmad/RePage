@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "RePage — Urdu Document Publishing System",
         "width": 1280,
         "height": 840,
@@ -46,9 +47,7 @@
     "macOS": {
       "frameworks": [],
       "minimumSystemVersion": "10.15",
-      "signing": {
-        "entitlements": null
-      }
+      "entitlements": null
     },
     "linux": {
       "deb": {

@@ -34,41 +34,85 @@ export const FONT_REGISTRY: Record<string, FontDefinition> = {
     upstreamUrl: 'https://fonts.google.com/specimen/Gulzar',
     fallbackChain: ['Noto Nastaliq Urdu', 'serif'],
   },
-  'inpage-nastaliq': {
-    id: 'inpage-nastaliq',
-    name: 'InPage Nastaliq',
-    family: "'InPage Nastaliq', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif",
-    category: 'nastaliq',
-    license: 'Proprietary',
-    isBundled: false,
-    fallbackChain: ['Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'serif'],
+  'amiri': {
+    id: 'amiri',
+    name: 'Amiri',
+    family: "'Amiri', 'Traditional Arabic', serif",
+    category: 'naskh',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Amiri',
+    fallbackChain: ['Traditional Arabic', 'serif'],
   },
-  'inpage-noori-nastaliq': {
-    id: 'inpage-noori-nastaliq',
-    name: 'InPage Noori Nastaliq',
-    family: "'InPage Noori Nastaliq', 'Noori Nastaliq', 'Noto Nastaliq Urdu', serif",
-    category: 'nastaliq',
-    license: 'Proprietary',
-    isBundled: false,
-    fallbackChain: ['Noori Nastaliq', 'Noto Nastaliq Urdu', 'serif'],
+  'aref-ruqaa': {
+    id: 'aref-ruqaa',
+    name: 'Aref Ruqaa',
+    family: "'Aref Ruqaa', serif",
+    category: 'naskh',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Aref+Ruqaa',
+    fallbackChain: ['serif'],
   },
-  'inpage-ali-nastaliq': {
-    id: 'inpage-ali-nastaliq',
-    name: 'InPage Ali Nastaliq',
-    family: "'InPage Ali Nastaliq', 'Ali Nastaliq', 'Noto Nastaliq Urdu', serif",
+  'lateef': {
+    id: 'lateef',
+    name: 'Lateef',
+    family: "'Lateef', cursive",
     category: 'nastaliq',
-    license: 'Proprietary',
-    isBundled: false,
-    fallbackChain: ['Ali Nastaliq', 'Noto Nastaliq Urdu', 'serif'],
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Lateef',
+    fallbackChain: ['cursive'],
   },
-  'inpage-lahori-nastaliq': {
-    id: 'inpage-lahori-nastaliq',
-    name: 'InPage Lahori Nastaliq',
-    family: "'InPage Lahori Nastaliq', 'Faiz Lahori Nastaliq', 'Noto Nastaliq Urdu', serif",
-    category: 'nastaliq',
-    license: 'Proprietary',
-    isBundled: false,
-    fallbackChain: ['Faiz Lahori Nastaliq', 'Noto Nastaliq Urdu', 'serif'],
+  'scheherazade-new': {
+    id: 'scheherazade-new',
+    name: 'Scheherazade New',
+    family: "'Scheherazade New', 'Traditional Arabic', serif",
+    category: 'naskh',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Scheherazade+New',
+    fallbackChain: ['serif'],
+  },
+  'reem-kufi': {
+    id: 'reem-kufi',
+    name: 'Reem Kufi',
+    family: "'Reem Kufi', sans-serif",
+    category: 'sans-serif',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Reem+Kufi',
+    fallbackChain: ['sans-serif'],
+  },
+  'tajawal': {
+    id: 'tajawal',
+    name: 'Tajawal',
+    family: "'Tajawal', sans-serif",
+    category: 'sans-serif',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Tajawal',
+    fallbackChain: ['sans-serif'],
+  },
+  'el-messiri': {
+    id: 'el-messiri',
+    name: 'El Messiri',
+    family: "'El Messiri', sans-serif",
+    category: 'sans-serif',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/El+Messiri',
+    fallbackChain: ['sans-serif'],
+  },
+  'harmattan': {
+    id: 'harmattan',
+    name: 'Harmattan',
+    family: "'Harmattan', sans-serif",
+    category: 'sans-serif',
+    license: 'OFL',
+    isBundled: true,
+    upstreamUrl: 'https://fonts.google.com/specimen/Harmattan',
+    fallbackChain: ['sans-serif'],
   },
   'noto-naskh-arabic': {
     id: 'noto-naskh-arabic',
@@ -113,8 +157,17 @@ export const URDU_FONTS_LIST: string[] = [
   'Gulzar',
   'Pak Nastaleeq',
   'Mehr Nastaliq',
-  'InPage Ali Nastaliq',
-  'InPage Lahori Nastaliq',
+  'Alvi Nastaleeq',
+  'Nafees Nastaleeq',
+  'Amiri',
+  'Aref Ruqaa',
+  'Lateef',
+  'Scheherazade New',
+  'Reem Kufi',
+  'Tajawal',
+  'El Messiri',
+  'Harmattan',
+  'Noto Naskh Arabic',
   'Urdu Typesetting',
   'Arabic Typesetting',
 ];
@@ -125,8 +178,17 @@ export const URDU_FONT_PRESETS: { name: string; urduName: string; category: Font
   { name: 'Gulzar', urduName: 'گلزار (Gulzar)', category: 'nastaliq' },
   { name: 'Pak Nastaleeq', urduName: 'پاک نستعلیق', category: 'nastaliq' },
   { name: 'Mehr Nastaliq', urduName: 'مہر نستعلیق', category: 'nastaliq' },
-  { name: 'InPage Ali Nastaliq', urduName: 'انپیج علی نستعلیق', category: 'nastaliq' },
-  { name: 'InPage Lahori Nastaliq', urduName: 'انپیج لاہوری نستعلیق', category: 'nastaliq' },
+  { name: 'Alvi Nastaleeq', urduName: 'علوی نستعلیق', category: 'nastaliq' },
+  { name: 'Nafees Nastaleeq', urduName: 'نفیس نستعلیق', category: 'nastaliq' },
+  { name: 'Amiri', urduName: 'امیری (Amiri)', category: 'naskh' },
+  { name: 'Aref Ruqaa', urduName: 'عارف رقعہ (Ruqaa)', category: 'naskh' },
+  { name: 'Lateef', urduName: 'لطیف (Lateef)', category: 'nastaliq' },
+  { name: 'Scheherazade New', urduName: 'شہرزاد (Scheherazade)', category: 'naskh' },
+  { name: 'Reem Kufi', urduName: 'ریم کوفی (Kufi)', category: 'sans-serif' },
+  { name: 'Tajawal', urduName: 'تجوال (Tajawal)', category: 'sans-serif' },
+  { name: 'El Messiri', urduName: 'المسیری (El Messiri)', category: 'sans-serif' },
+  { name: 'Harmattan', urduName: 'حرمل (Harmattan)', category: 'sans-serif' },
+  { name: 'Noto Naskh Arabic', urduName: 'نوٹو نسخ عربی', category: 'naskh' },
 ];
 
 export const WINDOWS_STANDARD_FONTS: string[] = [
@@ -168,17 +230,56 @@ export const WINDOWS_STANDARD_FONTS: string[] = [
   'Wingdings',
 ];
 
-export const BUNDLED_URDU_FONTS: string[] = ['Noto Nastaliq Urdu', 'Gulzar', 'Noto Naskh Arabic'];
-export const UNAVAILABLE_INPAGE_FONTS: string[] = ['InPage Nastaliq', 'InPage Noori Nastaliq', 'InPage Ali Nastaliq', 'InPage Lahori Nastaliq'];
+export const BUNDLED_URDU_FONTS: string[] = [
+  'Noto Nastaliq Urdu',
+  'Gulzar',
+  'Amiri',
+  'Aref Ruqaa',
+  'Lateef',
+  'Scheherazade New',
+  'Reem Kufi',
+  'Tajawal',
+  'El Messiri',
+  'Harmattan',
+  'Noto Naskh Arabic',
+];
 
 export function getFontCategoryBadge(fontName: string): { label: string; isUnavailable: boolean } {
   if (BUNDLED_URDU_FONTS.includes(fontName)) {
     return { label: 'Bundled OFL', isUnavailable: false };
   }
-  if (UNAVAILABLE_INPAGE_FONTS.includes(fontName)) {
-    return { label: '⚠️ Not Installed', isUnavailable: true };
-  }
   return { label: 'System Font', isUnavailable: false };
+}
+
+export function getFontFamilyCss(fontName: string): string {
+  if (!fontName) return "'Noto Nastaliq Urdu', serif";
+  const normalizedKey = fontName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const foundDef = FONT_REGISTRY[normalizedKey];
+  if (foundDef) {
+    return foundDef.family;
+  }
+  if (fontName.includes('Jameel')) {
+    return "'Jameel Noori Nastaleeq', 'Jameel Noori Nastaliq', 'Noto Nastaliq Urdu', serif";
+  }
+  if (fontName.includes('Pak')) {
+    return "'Pak Nastaleeq', 'Pak Nastaleeq v1.0', 'Noto Nastaliq Urdu', serif";
+  }
+  if (fontName.includes('Mehr')) {
+    return "'Mehr Nastaliq', 'Mehr Nastaliq Web', 'Noto Nastaliq Urdu', serif";
+  }
+  if (fontName.includes('Alvi')) {
+    return "'Alvi Nastaleeq', 'Alvi Lahori Nastaleeq', 'Noto Nastaliq Urdu', serif";
+  }
+  if (fontName.includes('Nafees')) {
+    return "'Nafees Nastaleeq', 'Nafees Naskh', 'Noto Nastaliq Urdu', serif";
+  }
+  if (fontName.includes('Urdu')) {
+    return "'Urdu Typesetting', 'Noto Nastaliq Urdu', serif";
+  }
+  if (fontName.includes('Arabic')) {
+    return "'Arabic Typesetting', 'Traditional Arabic', 'Noto Naskh Arabic', serif";
+  }
+  return `'${fontName}', system-ui, sans-serif`;
 }
 
 export function getFontDefinition(fontId: string): FontDefinition {

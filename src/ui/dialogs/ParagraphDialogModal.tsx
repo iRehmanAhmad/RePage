@@ -52,26 +52,47 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
     onClose();
   };
 
+  const fieldInputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '24px',
+    marginTop: '2px',
+    padding: '2px 6px',
+    fontSize: '11px',
+    color: '#f8fafc',
+    backgroundColor: '#0f172a',
+    border: '1px solid #334155',
+    borderRadius: '3px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const optionStyle: React.CSSProperties = {
+    backgroundColor: '#0f172a',
+    color: '#f8fafc',
+  };
+
   return (
-    <div className="modal-backdrop">
-      <div className="modal-card" style={{ width: '540px', padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Paragraph Formatting</h3>
-          <button onClick={onClose} className="modal-close-btn"><AppIcon name="dismiss" /></button>
+    <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.65)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="modal-card" style={{ width: '450px', padding: '14px 18px', backgroundColor: '#1e293b', color: '#f8fafc', border: '1px solid #334155', borderRadius: '6px', boxShadow: '0 16px 36px rgba(0, 0, 0, 0.6)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>Paragraph Formatting</h3>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', borderRadius: '3px' }}>
+            <AppIcon name="dismiss" size={14} />
+          </button>
         </div>
 
         {/* Tab Header Navigation */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--panel-border)', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '6px', borderBottom: '1px solid #334155', marginBottom: '10px' }}>
           <button
             onClick={() => setActiveTab('spacing')}
             style={{
-              padding: '6px 16px',
+              padding: '4px 12px',
               fontWeight: 600,
-              fontSize: '12px',
+              fontSize: '11px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'spacing' ? '2px solid var(--emerald-accent)' : '2px solid transparent',
-              color: activeTab === 'spacing' ? 'var(--emerald-accent)' : 'var(--text-muted)',
+              borderBottom: activeTab === 'spacing' ? '2px solid #10b981' : '2px solid transparent',
+              color: activeTab === 'spacing' ? '#10b981' : '#94a3b8',
               cursor: 'pointer',
             }}
           >
@@ -80,13 +101,13 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
           <button
             onClick={() => setActiveTab('breaks')}
             style={{
-              padding: '6px 16px',
+              padding: '4px 12px',
               fontWeight: 600,
-              fontSize: '12px',
+              fontSize: '11px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'breaks' ? '2px solid var(--emerald-accent)' : '2px solid transparent',
-              color: activeTab === 'breaks' ? 'var(--emerald-accent)' : 'var(--text-muted)',
+              borderBottom: activeTab === 'breaks' ? '2px solid #10b981' : '2px solid transparent',
+              color: activeTab === 'breaks' ? '#10b981' : '#94a3b8',
               cursor: 'pointer',
             }}
           >
@@ -98,99 +119,99 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
         {activeTab === 'spacing' && (
           <div>
             {/* General Section */}
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>General:</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>General:</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Alignment:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Alignment:</label>
                 <select
                   value={alignment}
                   onChange={(e) => setAlignment(e.target.value as TextAlignment)}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 >
-                  <option value="start">Right (Urdu) / Left (English)</option>
-                  <option value="left">Left</option>
-                  <option value="center">Centered</option>
-                  <option value="right">Right</option>
-                  <option value="justify">Justified</option>
+                  <option value="start" style={optionStyle}>Right (Urdu) / Left (English)</option>
+                  <option value="left" style={optionStyle}>Left</option>
+                  <option value="center" style={optionStyle}>Centered</option>
+                  <option value="right" style={optionStyle}>Right</option>
+                  <option value="justify" style={optionStyle}>Justified</option>
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Direction:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Direction:</label>
                 <select
                   value={direction}
                   onChange={(e) => setDirection(e.target.value as TextDirection)}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 >
-                  <option value="rtl">Right-to-Left (Urdu)</option>
-                  <option value="ltr">Left-to-Right (English)</option>
+                  <option value="rtl" style={optionStyle}>Right-to-Left (Urdu)</option>
+                  <option value="ltr" style={optionStyle}>Left-to-Right (English)</option>
                 </select>
               </div>
             </div>
 
             {/* Indentation Section */}
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Indentation:</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Indentation:</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Indent Level:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Indent Level:</label>
                 <input
                   type="number"
                   min={0}
                   max={10}
                   value={indentLevel}
                   onChange={(e) => setIndentLevel(Number(e.target.value))}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>First Line Indent (pt):</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>First Line Indent (pt):</label>
                 <input
                   type="number"
                   step={6}
                   value={firstLineIndent}
                   onChange={(e) => setFirstLineIndent(Number(e.target.value))}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 />
               </div>
             </div>
 
             {/* Spacing Section */}
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Spacing:</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Spacing:</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Before (pt):</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Before (pt):</label>
                 <input
                   type="number"
                   min={0}
                   max={72}
                   value={spaceBefore}
                   onChange={(e) => setSpaceBefore(Number(e.target.value))}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>After (pt):</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>After (pt):</label>
                 <input
                   type="number"
                   min={0}
                   max={72}
                   value={spaceAfter}
                   onChange={(e) => setSpaceAfter(Number(e.target.value))}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Line Spacing:</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>Line Spacing:</label>
                 <select
                   value={lineHeight}
                   onChange={(e) => setLineHeight(Number(e.target.value))}
-                  style={{ width: '100%', height: '28px', marginTop: '4px', padding: '0 6px', fontSize: '11px' }}
+                  style={fieldInputStyle}
                 >
-                  <option value={1.0}>Single (1.0)</option>
-                  <option value={1.15}>1.15 lines</option>
-                  <option value={1.5}>1.5 lines</option>
-                  <option value={2.0}>Double (2.0)</option>
-                  <option value={2.5}>2.5 lines</option>
-                  <option value={3.0}>3.0 lines</option>
+                  <option value={1.0} style={optionStyle}>Single (1.0)</option>
+                  <option value={1.15} style={optionStyle}>1.15 lines</option>
+                  <option value={1.5} style={optionStyle}>1.5 lines</option>
+                  <option value={2.0} style={optionStyle}>Double (2.0)</option>
+                  <option value={2.5} style={optionStyle}>2.5 lines</option>
+                  <option value={3.0} style={optionStyle}>3.0 lines</option>
                 </select>
               </div>
             </div>
@@ -199,10 +220,10 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
 
         {/* Line and Page Breaks Tab */}
         {activeTab === 'breaks' && (
-          <div style={{ marginBottom: '16px', fontSize: '11px' }}>
-            <div style={{ fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>Pagination:</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <div style={{ marginBottom: '10px', fontSize: '11px' }}>
+            <div style={{ fontWeight: 700, color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pagination:</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#cbd5e1' }}>
                 <input
                   type="checkbox"
                   checked={widowOrphanControl}
@@ -210,7 +231,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                 />
                 Widow/Orphan control
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#cbd5e1' }}>
                 <input
                   type="checkbox"
                   checked={keepWithNext}
@@ -223,24 +244,24 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
         )}
 
         {/* Live Bilingual Preview Box */}
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Preview:</div>
+        <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginBottom: '3px' }}>Preview:</div>
         <div
           style={{
-            border: '1px solid var(--panel-border)',
+            border: '1px solid #334155',
             borderRadius: '4px',
-            padding: '12px',
-            minHeight: '70px',
-            backgroundColor: '#ffffff',
-            color: '#172119',
+            padding: '6px 10px',
+            minHeight: '46px',
+            backgroundColor: '#0f172a',
+            color: '#f8fafc',
             fontFamily: 'Noto Nastaliq Urdu',
-            fontSize: '14px',
+            fontSize: '13px',
             direction: direction === 'rtl' ? 'rtl' : 'ltr',
             textAlign: alignment === 'justify' ? 'justify' : alignment === 'center' ? 'center' : alignment === 'left' ? 'left' : alignment === 'right' ? 'right' : direction === 'rtl' ? 'right' : 'left',
             lineHeight: `${lineHeight}`,
             marginTop: `${spaceBefore}px`,
             marginBottom: `${spaceAfter}px`,
-            paddingLeft: direction === 'ltr' ? `${indentLevel * 15 + firstLineIndent}px` : undefined,
-            paddingRight: direction === 'rtl' ? `${indentLevel * 15 + firstLineIndent}px` : undefined,
+            paddingLeft: direction === 'ltr' ? `${indentLevel * 10 + firstLineIndent}px` : undefined,
+            paddingRight: direction === 'rtl' ? `${indentLevel * 10 + firstLineIndent}px` : undefined,
             overflow: 'hidden',
           }}
         >
@@ -248,9 +269,37 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
         </div>
 
         {/* Dialog Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-          <button onClick={onClose} className="ribbon-action-btn">Cancel</button>
-          <button onClick={handleSave} className="ribbon-action-btn primary">OK</button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '4px 14px',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: '#cbd5e1',
+              backgroundColor: '#334155',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              padding: '4px 18px',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: '#ffffff',
+              backgroundColor: '#10b981',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+            }}
+          >
+            OK
+          </button>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ export interface StylesManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
   document: RePageDocument;
-  onApplyStyle?: (styleName: string) => void;
+  onApplyStyle?: (styleId: string) => void;
   lang: UiLanguage;
 }
 
@@ -19,23 +19,25 @@ export function StylesManagerModal({
   lang,
 }: StylesManagerModalProps) {
   const [filterQuery, setFilterQuery] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState<string>('Normal');
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('normal');
 
   if (!isOpen) return null;
 
   const defaultStyles = [
-    { name: 'Normal', font: 'Noto Nastaliq Urdu', size: 12, lineSpacing: 1.5, isUrdu: true },
-    { name: 'Heading 1 (باب / عنوان)', font: 'Jameel Noori Nastaleeq', size: 22, lineSpacing: 1.2, isUrdu: true },
-    { name: 'Heading 2 (ذیلی عنوان)', font: 'Jameel Noori Nastaleeq', size: 16, lineSpacing: 1.3, isUrdu: true },
-    { name: 'Heading 3 (سرخی 3)', font: 'Noto Nastaliq Urdu', size: 14, lineSpacing: 1.4, isUrdu: true },
-    { name: 'Poetry (شاعری / غزل)', font: 'Jameel Noori Nastaleeq', size: 14, lineSpacing: 2.0, isUrdu: true },
-    { name: 'Quote (اقتباس)', font: 'Noto Nastaliq Urdu', size: 11, lineSpacing: 1.4, isUrdu: true },
+    { id: 'normal', name: 'Normal (عام متن)', font: 'Noto Nastaliq Urdu', size: 16, lineSpacing: 1.5, alignment: 'right' },
+    { id: 'heading-1', name: 'Heading 1 (عنوان ۱)', font: 'Noto Nastaliq Urdu', size: 24, lineSpacing: 1.3, alignment: 'right' },
+    { id: 'heading-2', name: 'Heading 2 (عنوان ۲)', font: 'Noto Nastaliq Urdu', size: 20, lineSpacing: 1.4, alignment: 'right' },
+    { id: 'heading-3', name: 'Heading 3 (عنوان ۳)', font: 'Noto Nastaliq Urdu', size: 16, lineSpacing: 1.5, alignment: 'right' },
+    { id: 'poetry', name: 'Poetry (شاعری / غزل)', font: 'Noto Nastaliq Urdu', size: 18, lineSpacing: 2.0, alignment: 'center' },
+    { id: 'quote', name: 'Quote (اقتباس)', font: 'Noto Nastaliq Urdu', size: 15, lineSpacing: 1.8, alignment: 'center' },
+    { id: 'quran', name: 'Quran / Hadith (آیات و احادیث)', font: 'Amiri', size: 18, lineSpacing: 1.8, alignment: 'center' },
   ];
 
   const filteredStyles = defaultStyles.filter((s) =>
     s.name.toLowerCase().includes(filterQuery.toLowerCase()),
   );
 
+  const activeStyleObj = defaultStyles.find((s) => s.id === selectedStyleId) || defaultStyles[0];
   const isUr = lang === 'ur';
 
   return (
@@ -46,22 +48,22 @@ export function StylesManagerModal({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 100,
+        zIndex: 99999,
       }}
     >
       <div
         style={{
           width: '460px',
-          backgroundColor: '#0f172a',
-          border: '1px solid #1e293b',
+          backgroundColor: '#1e293b',
+          border: '1px solid #334155',
           borderRadius: '8px',
-          padding: '20px',
+          padding: '18px 22px',
           color: '#f8fafc',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
           fontSize: '12px',
         }}
       >
@@ -70,13 +72,13 @@ export function StylesManagerModal({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '14px',
+            marginBottom: '12px',
             borderBottom: '1px solid #334155',
             paddingBottom: '8px',
           }}
         >
-          <h3 style={{ margin: 0, fontSize: '15px', color: '#38bdf8', fontWeight: 700 }}>
-            {isUr ? 'اسٹائلز منیجر (Styles Manager)' : 'Styles Manager'}
+          <h3 style={{ margin: 0, fontSize: '15px', color: '#f8fafc', fontWeight: 700 }}>
+            {isUr ? 'اردو اسٹائلز منیجر (Styles Manager)' : 'Urdu Styles Manager'}
           </h3>
           <button
             type="button"
@@ -85,16 +87,19 @@ export function StylesManagerModal({
               backgroundColor: 'transparent',
               border: 'none',
               color: '#94a3b8',
-              fontSize: '16px',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2px',
             }}
           >
-            <AppIcon name="dismiss" />
+            <AppIcon name="dismiss" size={16} />
           </button>
         </div>
 
         {/* Filter Input */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '10px' }}>
           <input
             type="text"
             value={filterQuery}
@@ -102,13 +107,14 @@ export function StylesManagerModal({
             placeholder={isUr ? 'اسٹائل تلاش کریں...' : 'Search styles...'}
             style={{
               width: '100%',
-              backgroundColor: '#1e293b',
+              backgroundColor: '#0f172a',
               border: '1px solid #334155',
               borderRadius: '4px',
               padding: '6px 10px',
               color: '#f8fafc',
               fontSize: '11px',
               outline: 'none',
+              boxSizing: 'border-box',
             }}
           />
         </div>
@@ -116,25 +122,25 @@ export function StylesManagerModal({
         {/* Style List */}
         <div
           style={{
-            height: '200px',
+            height: '170px',
             overflowY: 'auto',
-            backgroundColor: '#090d16',
-            border: '1px solid #1e293b',
+            backgroundColor: '#0f172a',
+            border: '1px solid #334155',
             borderRadius: '6px',
             padding: '6px',
-            marginBottom: '16px',
+            marginBottom: '12px',
           }}
         >
           {filteredStyles.map((style) => {
-            const isSelected = selectedStyle === style.name;
+            const isSelected = selectedStyleId === style.id;
             return (
               <div
-                key={style.name}
-                onClick={() => setSelectedStyle(style.name)}
+                key={style.id}
+                onClick={() => setSelectedStyleId(style.id)}
                 style={{
                   padding: '8px 12px',
                   borderRadius: '4px',
-                  backgroundColor: isSelected ? '#0369a1' : 'transparent',
+                  backgroundColor: isSelected ? '#10b981' : 'transparent',
                   color: isSelected ? '#ffffff' : '#e2e8f0',
                   cursor: 'pointer',
                   display: 'flex',
@@ -144,7 +150,7 @@ export function StylesManagerModal({
                 }}
               >
                 <span style={{ fontWeight: 600, fontFamily: style.font }}>{style.name}</span>
-                <span style={{ fontSize: '10px', opacity: 0.8 }}>
+                <span style={{ fontSize: '10px', opacity: 0.85 }}>
                   {style.font} ({style.size}pt)
                 </span>
               </div>
@@ -152,11 +158,51 @@ export function StylesManagerModal({
           })}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Live Preview Box */}
+        <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
+          {isUr ? 'اسٹائل کی لائیو نمائش:' : 'Style Preview:'}
+        </div>
+        <div
+          style={{
+            border: '1px solid #334155',
+            borderRadius: '6px',
+            padding: '10px 14px',
+            minHeight: '48px',
+            backgroundColor: '#0f172a',
+            color: activeStyleObj?.id.includes('heading') ? '#38bdf8' : activeStyleObj?.id === 'quran' ? '#34d399' : '#f8fafc',
+            fontFamily: activeStyleObj?.font || 'Noto Nastaliq Urdu',
+            fontSize: `${Math.min(20, activeStyleObj?.size || 16)}px`,
+            lineHeight: `${activeStyleObj?.lineSpacing || 1.5}`,
+            textAlign: (activeStyleObj?.alignment || 'right') as any,
+            direction: 'rtl',
+            overflow: 'hidden',
+            marginBottom: '14px',
+          }}
+        >
+          اردو رسم الخط اور اسٹائلز کا نمونہ
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              backgroundColor: '#334155',
+              color: '#cbd5e1',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '6px 14px',
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {isUr ? 'کنسل' : 'Cancel'}
+          </button>
           <button
             type="button"
             onClick={() => {
-              if (onApplyStyle) onApplyStyle(selectedStyle);
+              if (onApplyStyle) onApplyStyle(selectedStyleId);
               onClose();
             }}
             style={{
@@ -164,29 +210,13 @@ export function StylesManagerModal({
               color: '#ffffff',
               border: 'none',
               borderRadius: '4px',
-              padding: '6px 16px',
-              fontSize: '12px',
+              padding: '6px 18px',
+              fontSize: '11px',
               fontWeight: 600,
               cursor: 'pointer',
             }}
           >
-            {isUr ? 'منتخب اسٹائل لاگو کریں' : 'Apply Selected Style'}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              backgroundColor: '#334155',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '6px 16px',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {isUr ? 'بند کریں' : 'Close'}
+            {isUr ? 'اسٹائل لاگو کریں' : 'Apply Style'}
           </button>
         </div>
       </div>

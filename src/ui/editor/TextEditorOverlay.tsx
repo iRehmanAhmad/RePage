@@ -15,6 +15,9 @@ import { canonicalToTiptapHtml, tiptapHtmlToCanonical } from '../../domain/rich-
 import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
 
+import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
+import { mapKeyToUrduCharacter } from '../../domain/unicode/keyboardLayouts';
+
 export interface TextSelectionInfo {
   isBold: boolean;
   isItalic: boolean;
@@ -35,6 +38,8 @@ export interface TextEditorOverlayProps {
   color?: string;
   lineHeight?: number;
   scale?: number;
+  keyboardMode?: KeyboardMode;
+  numeralSystem?: 'urdu' | 'western';
   pendingChar?: string | null;
   onCommit: (updatedContent: RichTextDocument) => void;
   onClose: () => void;
@@ -50,6 +55,8 @@ export function TextEditorOverlay({
   color = '#172119',
   lineHeight = 1.8,
   scale = 1,
+  keyboardMode = 'crulp',
+  numeralSystem = 'urdu',
   pendingChar,
   onCommit,
   onClose,
@@ -58,6 +65,14 @@ export function TextEditorOverlay({
 }: TextEditorOverlayProps) {
   const fontDef = getFontDefinition(fontFamily);
   const lastPendingCharacter = useRef<string | null>(null);
+
+  const keyboardModeRef = useRef(keyboardMode);
+  const numeralSystemRef = useRef(numeralSystem);
+
+  useEffect(() => {
+    keyboardModeRef.current = keyboardMode;
+    numeralSystemRef.current = numeralSystem;
+  }, [keyboardMode, numeralSystem]);
 
   const editor = useEditor({
     extensions: [
@@ -75,6 +90,26 @@ export function TextEditorOverlay({
     content: canonicalToTiptapHtml(story.content),
     autofocus: 'end',
     editorProps: {
+      handleKeyDown: (view, event) => {
+        const mode = keyboardModeRef.current;
+        const numSys = numeralSystemRef.current;
+        if (
+          !event.ctrlKey &&
+          !event.altKey &&
+          !event.metaKey
+        ) {
+          if (event.key.length === 1) {
+            const mapped = mapKeyToUrduCharacter(event.key, mode, event.shiftKey, numSys);
+            if (mapped) {
+              event.preventDefault();
+              const { from, to } = view.state.selection;
+              view.dispatch(view.state.tr.insertText(mapped, from, to));
+              return true;
+            }
+          }
+        }
+        return false;
+      },
       attributes: {
         dir: 'rtl',
         style: `

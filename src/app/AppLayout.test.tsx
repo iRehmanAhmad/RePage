@@ -43,7 +43,7 @@ describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspecto
     expect(screen.getByText('Urdu Styles')).toBeInTheDocument();
 
     // Right Sidebar Properties Inspector Header
-    expect(screen.getByText('⚙ Properties')).toBeInTheDocument();
+    expect(screen.getByText('Properties')).toBeInTheDocument();
 
     // Click File menu button
     fireEvent.click(screen.getByText('File'));
@@ -57,6 +57,6 @@ describe('Streamlined Workspace Layout with MS Word Ribbon & Properties Inspecto
     expect(screen.getByText('ہوم')).toBeInTheDocument();
     expect(screen.getByText('اردو ان پٹ')).toBeInTheDocument();
     expect(screen.getByText('اردو اسٹائلز')).toBeInTheDocument();
-    expect(screen.getByText('⚙ خواص')).toBeInTheDocument();
+    expect(screen.getByText('خواص')).toBeInTheDocument();
   }, 15000);
 });

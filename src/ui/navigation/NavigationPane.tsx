@@ -15,6 +15,7 @@ export interface NavigationPaneProps {
   lang: UiLanguage;
   width?: number | undefined;
   onWidthChange?: ((width: number) => void) | undefined;
+  initialTab?: NavTab | undefined;
 }
 
 type NavTab = 'headings' | 'pages' | 'results';
@@ -29,13 +30,49 @@ export function NavigationPane({
   lang,
   width = 280,
   onWidthChange,
+  initialTab,
 }: NavigationPaneProps) {
-  const [activeTab, setActiveTab] = useState<NavTab>('pages');
+  const [activeTab, setActiveTab] = useState<NavTab>(initialTab || 'pages');
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [searchQuery, setSearchQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
   const [ignoreAerab, setIgnoreAerab] = useState(true);
   const [matchVariants, setMatchVariants] = useState(true);
   const [replaceMsg, setReplaceMsg] = useState('');
+
+  const searchResults = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const results: { storyId: string; paragraphIndex: number; text: string; matchesCount: number }[] = [];
+    for (const [storyId, story] of Object.entries(document.stories)) {
+      if (story.content?.content) {
+        story.content.content.forEach((p, pIdx) => {
+          if (p.content) {
+            const fullParaText = p.content
+              .filter((r) => r.type === 'text' && 'text' in r && typeof r.text === 'string')
+              .map((r) => ('text' in r ? r.text : ''))
+              .join('');
+            if (fullParaText) {
+              const matches = findInUrduText(fullParaText, searchQuery, { ignoreAerab, matchVariants });
+              if (matches.length > 0) {
+                results.push({
+                  storyId,
+                  paragraphIndex: pIdx,
+                  text: fullParaText,
+                  matchesCount: matches.length,
+                });
+              }
+            }
+          }
+        });
+      }
+    }
+    return results;
+  }, [document.stories, searchQuery, ignoreAerab, matchVariants]);
 
   const handleReplaceAll = () => {
     if (!searchQuery || !onUpdateDocument) return;
@@ -390,7 +427,7 @@ export function NavigationPane({
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '4px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '2px 0' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '10px', color: '#cbd5e1' }}>
                 <input
                   type="checkbox"
@@ -409,26 +446,71 @@ export function NavigationPane({
               </label>
             </div>
 
-            <button
-              type="button"
-              onClick={handleReplaceAll}
-              disabled={!searchQuery}
-              style={{
-                padding: '6px',
-                backgroundColor: searchQuery ? '#0284c7' : '#334155',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '4px',
-                fontWeight: 600,
-                cursor: searchQuery ? 'pointer' : 'not-allowed',
-              }}
-            >
-              {lang === 'ur' ? 'تمام تبدیل کریں' : 'Replace All'}
-            </button>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={handleReplaceAll}
+                disabled={!searchQuery}
+                style={{
+                  flex: 1,
+                  padding: '6px',
+                  backgroundColor: searchQuery ? '#0284c7' : '#334155',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  cursor: searchQuery ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {lang === 'ur' ? 'تمام تبدیل کریں' : 'Replace All'}
+              </button>
+            </div>
 
             {replaceMsg && (
               <div style={{ padding: '4px', color: '#10b981', fontSize: '10px', textAlign: 'center', fontWeight: 600 }}>
                 {replaceMsg}
+              </div>
+            )}
+
+            {/* Results Match Summary & Snippet List */}
+            {searchQuery.trim() !== '' && (
+              <div style={{ marginTop: '8px', borderTop: '1px solid #1e293b', paddingTop: '8px' }}>
+                <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 700, marginBottom: '6px' }}>
+                  {searchResults.reduce((acc, r) => acc + r.matchesCount, 0)}{' '}
+                  {lang === 'ur' ? 'مطابقت کے مقامات ملے:' : 'results found:'}
+                </div>
+                {searchResults.length === 0 ? (
+                  <div style={{ fontSize: '11px', color: '#94a3b8', padding: '4px' }}>
+                    {lang === 'ur' ? 'کوئی متن نہیں ملا' : 'No matching text found'}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {searchResults.map((res, idx) => (
+                      <div
+                        key={`${res.storyId}-${res.paragraphIndex}-${idx}`}
+                        style={{
+                          backgroundColor: '#1e293b',
+                          border: '1px solid #334155',
+                          borderRadius: '4px',
+                          padding: '6px 8px',
+                          cursor: 'pointer',
+                          direction: 'rtl',
+                          textAlign: 'right',
+                          fontFamily: "'Noto Nastaliq Urdu', serif",
+                          fontSize: '11px',
+                        }}
+                      >
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#f8fafc' }}>
+                          {res.text}
+                        </div>
+                        <span style={{ fontSize: '9px', color: '#10b981', direction: 'ltr', display: 'block' }}>
+                          {res.matchesCount} match{res.matchesCount > 1 ? 'es' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

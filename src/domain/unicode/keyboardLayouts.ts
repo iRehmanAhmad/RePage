@@ -90,11 +90,35 @@ export const SPECIAL_URDU_CHARACTERS = [
   { label: 'ؓ', char: '\u0617', description: 'Radi Allahu Anhu' },
 ];
 
+export const URDU_DIGITS_MAP: Record<string, string> = {
+  '0': '۰',
+  '1': '۱',
+  '2': '۲',
+  '3': '۳',
+  '4': '۴',
+  '5': '۵',
+  '6': '۶',
+  '7': '۷',
+  '8': '۸',
+  '9': '۹',
+};
+
 export function mapKeyToUrduCharacter(
   key: string,
   mode: KeyboardMode,
   isShift: boolean,
+  numeralSystem: 'urdu' | 'western' = 'urdu',
 ): string | null {
+  if (numeralSystem === 'urdu' && mode !== 'english' && /^[0-9]$/.test(key) && !isShift) {
+    return URDU_DIGITS_MAP[key] || null;
+  }
+
+  if (mode !== 'english') {
+    if (key === '?') return '؟';
+    if (key === ',') return '،';
+    if (key === ';') return '؛';
+  }
+
   if (mode === 'native' || mode === 'english') {
     return null; // Passes through native OS input
   }

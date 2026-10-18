@@ -6,18 +6,44 @@ export interface FontColorPaletteProps {
   onClose: () => void;
 }
 
+function getLightness(hex: string): number {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+  const r = parseInt(c.substring(0, 2), 16) / 255;
+  const g = parseInt(c.substring(2, 4), 16) / 255;
+  const b = parseInt(c.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  return (max + min) / 2;
+}
+
 const THEME_COLOR_COLUMNS = [
-  ['#ffffff', '#f2f2f2', '#d9d9d9', '#bfbfbf', '#a6a6a6', '#7f7f7f'],
-  ['#000000', '#7f7f7f', '#595959', '#3f3f3f', '#262626', '#0c0c0c'],
-  ['#e7e6e6', '#d9d9d9', '#bfbfbf', '#a6a6a6', '#7f7f7f', '#3b3b3b'],
-  ['#44546a', '#d9e1f2', '#b4c6e7', '#8ea9db', '#305496', '#1f3864'],
-  ['#5b9bd5', '#dedeef', '#bdd7ee', '#9cc3e5', '#2f5597', '#203764'],
-  ['#ed7d31', '#fce4d6', '#f8cbad', '#f4b084', '#c65911', '#833c0c'],
-  ['#a5a5a5', '#edd9c0', '#e2f0d9', '#c6e0b4', '#a9d08e', '#548235'],
-  ['#ffc000', '#fff2cc', '#ffe699', '#ffd966', '#bf8f00', '#806000'],
-  ['#4472c4', '#d9e1f2', '#b4c6e7', '#8ea9db', '#2f5597', '#1f3864'],
-  ['#70ad47', '#e2f0d9', '#c6e0b4', '#a9d08e', '#548235', '#375623'],
+  // 0: White / Gray spectrum
+  ['#ffffff', '#f2f2f2', '#e6e6e6', '#d9d9d9', '#bfbfbf', '#808080'],
+  // 1: Pure Black to Light Gray spectrum
+  ['#ffffff', '#d9d9d9', '#a6a6a6', '#595959', '#262626', '#000000'],
+  // 2: Warm Off-White / Silver spectrum
+  ['#fbf9f6', '#e7e6e6', '#d9d9d9', '#bfbfbf', '#7f7f7f', '#3b3b3b'],
+  // 3: Dark Slate Blue spectrum
+  ['#edf2f7', '#d9e1f2', '#b4c6e7', '#8ea9db', '#305496', '#1f3864'],
+  // 4: Accent Blue spectrum
+  ['#eef4fc', '#dedeef', '#bdd7ee', '#9cc3e5', '#2f5597', '#203764'],
+  // 5: Accent Orange / Amber spectrum
+  ['#fff5ee', '#fce4d6', '#f8cbad', '#f4b084', '#c65911', '#833c0c'],
+  // 6: Accent Grey / Warm Steel spectrum
+  ['#f4f4f6', '#edd9c0', '#e2f0d9', '#c6e0b4', '#7f7f7f', '#404040'],
+  // 7: Accent Gold / Yellow spectrum
+  ['#fffae6', '#fff2cc', '#ffe699', '#ffd966', '#bf8f00', '#806000'],
+  // 8: Sky Blue / Cyan spectrum
+  ['#e6f7ff', '#ddebf7', '#bdd7ee', '#9cc3e5', '#2e75b6', '#1f4e78'],
+  // 9: Accent Green spectrum
+  ['#f0f9eb', '#e2f0d9', '#c6e0b4', '#a9d08e', '#548235', '#234015'],
 ];
+
+// Sort each column strictly from High (Darkest/Strongest) at Row 0 down to Low/Dim (Lightest) at Row 5
+const SORTED_THEME_COLOR_COLUMNS = THEME_COLOR_COLUMNS.map((col) =>
+  [...col].sort((a, b) => getLightness(a) - getLightness(b)),
+);
 
 const STANDARD_COLORS = [
   '#c00000',
@@ -94,26 +120,29 @@ export const FontColorPalette: React.FC<FontColorPaletteProps> = ({
         Theme Colors
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '2px', marginBottom: '8px' }}>
-        {THEME_COLOR_COLUMNS.map((col, colIdx) =>
-          col.map((hex, rowIdx) => (
-            <button
-              key={`${colIdx}-${rowIdx}`}
-              onClick={() => {
-                onSelectColor(hex);
-                onClose();
-              }}
-              title={hex}
-              style={{
-                width: '18px',
-                height: rowIdx === 0 ? '18px' : '14px',
-                backgroundColor: hex,
-                border: '1px solid rgba(0, 0, 0, 0.15)',
-                borderRadius: '2px',
-                cursor: 'pointer',
-                outline: activeColor === hex ? '2px solid var(--emerald-accent)' : 'none',
-              }}
-            />
-          )),
+        {[0, 1, 2, 3, 4, 5].map((rowIdx) =>
+          SORTED_THEME_COLOR_COLUMNS.map((col, colIdx) => {
+            const hex = col[rowIdx] || '#ffffff';
+            return (
+              <button
+                key={`${colIdx}-${rowIdx}`}
+                onClick={() => {
+                  onSelectColor(hex);
+                  onClose();
+                }}
+                title={hex}
+                style={{
+                  width: '18px',
+                  height: rowIdx === 0 ? '18px' : '14px',
+                  backgroundColor: hex,
+                  border: '1px solid rgba(0, 0, 0, 0.15)',
+                  borderRadius: '2px',
+                  cursor: 'pointer',
+                  outline: activeColor === hex ? '2px solid var(--emerald-accent)' : 'none',
+                }}
+              />
+            );
+          }),
         )}
       </div>
 

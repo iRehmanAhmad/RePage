@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createStarterDocument } from '../document/createDocument';
-import { paragraph } from '../rich-text/types';
+import { paragraph, type ParagraphNode } from '../rich-text/types';
 import {
   getPrintableHeight,
   getPrintableWidth,
@@ -43,6 +43,41 @@ describe('paginationEngine (Phase UX-3)', () => {
     const result = repaginateDocument(longDoc as any);
     expect(result.requiredPages).toBeGreaterThan(1);
     expect(result.repaginatedDoc.pageOrder.length).toBe(result.requiredPages);
+  });
+
+  it('flows one very long pasted paragraph across every needed page without losing marks or Urdu controls', () => {
+    const doc = createStarterDocument();
+    const primaryStory = doc.stories['primary-body-story']!;
+    const pastedText = `${'لفظ\u200cبہ\n'.repeat(420)}اختتام`;
+    const pastedParagraph: ParagraphNode = {
+      ...paragraph('', 'rtl'),
+      content: [
+        { type: 'text', text: pastedText, marks: [{ type: 'bold' }] },
+      ],
+    };
+    const longDoc = {
+      ...doc,
+      stories: {
+        ...doc.stories,
+        'primary-body-story': {
+          ...primaryStory,
+          content: { type: 'doc' as const, content: [pastedParagraph] },
+        },
+      },
+    };
+
+    const result = repaginateDocument(longDoc);
+    const pageFragments = result.repaginatedDoc.stories['primary-body-story']!.content.content;
+    const reassembledText = pageFragments
+      .flatMap((item) => item.content)
+      .map((item) => (item.type === 'text' ? item.text : '\n'))
+      .join('');
+
+    expect(result.requiredPages).toBeGreaterThan(2);
+    expect(reassembledText).toBe(pastedText);
+    expect(pageFragments.every((item) => item.content.every(
+      (inline) => inline.type !== 'text' || inline.marks?.some((mark) => mark.type === 'bold'),
+    ))).toBe(true);
   });
 
   it('formats page numbers in Urdu and Western numerals', () => {

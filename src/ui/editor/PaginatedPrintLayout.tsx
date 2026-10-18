@@ -1,13 +1,18 @@
 import React from 'react';
 import type { PageId, RePageDocument } from '../../domain/document/types';
+import type { RichTextDocument } from '../../domain/rich-text/types';
 import { getSectionForPage } from '../../domain/layout/sectionEngine';
 import { computeColumnSeparatorGuides } from '../../domain/layout/columnEngine';
 import { resolvePageCompositeObjects } from '../../domain/layout/masterPageEngine';
 import { getSectionPageNumberString } from '../../domain/unicode/pageNumbering';
+import { repaginateDocument, getPrintableHeight } from '../../domain/layout/paginationEngine';
 import { FabricCanvas } from '../canvas/FabricCanvas';
 import { DocumentBodyEditor } from './DocumentBodyEditor';
 import { TextEditorOverlay } from './TextEditorOverlay';
 import { AppIcon } from '../icons/AppIcon';
+
+import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
+import type { TextAlignment } from '../../domain/rich-text/types';
 
 export interface PaginatedPrintLayoutProps {
   document: RePageDocument;
@@ -15,6 +20,13 @@ export interface PaginatedPrintLayoutProps {
   zoomLevel: number;
   activeFontFamily: string;
   activeFontSize: number;
+  activeAlignment?: TextAlignment;
+  pairedLatinFont?: string;
+  disableUrduKeyMapping?: boolean;
+  isTransliterationEnabled?: boolean;
+  showFormattingMarks?: boolean;
+  keyboardMode?: KeyboardMode;
+  numeralSystem?: 'urdu' | 'western';
   pendingChar: string | null;
   editingObjectId: string | null;
   isObjectSelectionMode?: boolean;
@@ -31,7 +43,48 @@ export interface PaginatedPrintLayoutProps {
   onSelectionChange?: ((info: any) => void) | undefined;
   onUpdateTableCell?: ((tableId: string, rowIndex: number, colIndex: number, text: string) => void) | undefined;
   onActiveTableCellChange?: ((rowIndex: number, colIndex: number) => void) | undefined;
-  onUpdateGuides?: ((pageId: PageId, guides: import('../../domain/document/types').PageGuide[]) => void) | undefined;
+  onUpdateGuides?: ((pageId: string, guides: import('../../domain/document/types').PageGuide[]) => void) | undefined;
+}
+
+/**
+ * Page editors receive a layout fragment, while the canonical body story is a
+ * single document. Reassemble the edited fragment with its untouched siblings
+ * before committing so editing Page 2 cannot replace Page 1 (or later pages).
+ */
+export function mergePaginatedPageContent(
+  storyContent: RichTextDocument,
+  paragraphPageMap: number[],
+  pageIndex: number,
+  updatedPageContent: RichTextDocument,
+): RichTextDocument {
+  const pageParagraphIndexes = paragraphPageMap
+    .map((mappedPage, paragraphIndex) => (mappedPage === pageIndex ? paragraphIndex : -1))
+    .filter((paragraphIndex) => paragraphIndex >= 0);
+
+  const pageStart = pageParagraphIndexes[0];
+  const pageEnd = pageParagraphIndexes[pageParagraphIndexes.length - 1];
+
+  if (pageStart === undefined || pageEnd === undefined) {
+    const insertionIndex = paragraphPageMap.findIndex((mappedPage) => mappedPage > pageIndex);
+    const targetIndex = insertionIndex === -1 ? storyContent.content.length : insertionIndex;
+    return {
+      ...storyContent,
+      content: [
+        ...storyContent.content.slice(0, targetIndex),
+        ...updatedPageContent.content,
+        ...storyContent.content.slice(targetIndex),
+      ],
+    };
+  }
+
+  return {
+    ...storyContent,
+    content: [
+      ...storyContent.content.slice(0, pageStart),
+      ...updatedPageContent.content,
+      ...storyContent.content.slice(pageEnd + 1),
+    ],
+  };
 }
 
 export function PaginatedPrintLayout({
@@ -40,9 +93,16 @@ export function PaginatedPrintLayout({
   zoomLevel,
   activeFontFamily,
   activeFontSize,
+  activeAlignment = 'start',
+  pairedLatinFont = 'Calibri',
+  disableUrduKeyMapping = false,
+  isTransliterationEnabled = false,
+  showFormattingMarks = false,
+  keyboardMode = 'crulp',
+  numeralSystem = 'urdu',
   pendingChar,
   editingObjectId,
-  isObjectSelectionMode: _isObjectSelectionMode = false,
+  isObjectSelectionMode = false,
   bodyEditorFocusRequest = 0,
   selectedObjectId,
   onSelectPage,
@@ -64,6 +124,55 @@ export function PaginatedPrintLayout({
     content: { type: 'doc', content: [] },
   };
 
+  const pagination = repaginateDocument(document, primaryStoryId);
+
+  // A single editor owns the complete story, while its page-node extension
+  // renders each calculated sheet. This preserves native document-wide ranges.
+  if (!editingObjectId && !isObjectSelectionMode) {
+    const firstPageId = document.pageOrder[0];
+    const firstPage = firstPageId ? document.pages[firstPageId] : null;
+
+    if (firstPage && firstPageId) {
+      return (
+        <div
+          data-testid="paginated-document-editor"
+          onClick={() => onSelectPage(firstPageId)}
+          style={{
+            width: '100%',
+            padding: '32px 0 64px',
+            transform: `scale(${zoomLevel / 100})`,
+            transformOrigin: 'top center',
+          }}
+        >
+          <DocumentBodyEditor
+            story={primaryStory}
+            fontFamily={activeFontFamily}
+            pairedLatinFont={pairedLatinFont}
+            disableUrduKeyMapping={disableUrduKeyMapping}
+            isTransliterationEnabled={isTransliterationEnabled}
+            showFormattingMarks={showFormattingMarks}
+            fontSize={activeFontSize}
+            color="#172119"
+            lineHeight={1.8}
+            alignment={activeAlignment}
+            keyboardMode={keyboardMode}
+            numeralSystem={numeralSystem}
+            pendingChar={pendingChar}
+            focusRequest={bodyEditorFocusRequest}
+            pageLayout={{
+              pageWidth: firstPage.width,
+              pageHeight: firstPage.height,
+              margins: firstPage.margins,
+            }}
+            onCommit={(updatedContent) => onCommitStory(primaryStoryId, updatedContent)}
+            onEditorReady={onEditorReady}
+            onSelectionChange={onSelectionChange}
+          />
+        </div>
+      );
+    }
+  }
+
   return (
     <div
       style={{
@@ -79,7 +188,20 @@ export function PaginatedPrintLayout({
         const page = document.pages[pageId];
         if (!page) return null;
 
+        const printableHeight = getPrintableHeight(page);
         const isActive = pageId === activePageId;
+
+        const repaginatedStory = pagination.repaginatedDoc.stories[primaryStoryId] || primaryStory;
+        const pageParagraphs = repaginatedStory.content.content.filter(
+          (_, pIdx) => (pagination.paragraphPageMap[pIdx] ?? 0) === pageIndex,
+        );
+        const pageStory = {
+          ...repaginatedStory,
+          content: {
+            ...repaginatedStory.content,
+            content: pageParagraphs.length > 0 ? pageParagraphs : (pageIndex === 0 ? repaginatedStory.content.content : []),
+          },
+        };
         const visibleObjects = resolvePageCompositeObjects(document, pageId);
 
         const sectionPageNumStr = getSectionPageNumberString(document, pageId);
@@ -98,6 +220,7 @@ export function PaginatedPrintLayout({
               content: { type: 'doc', content: [] },
             }
           : null;
+
         const isEditingTextBoxOnPage = Boolean(
           editingTextBox?.pageId === pageId && editingStory,
         );
@@ -401,30 +524,51 @@ export function PaginatedPrintLayout({
                 position: 'absolute',
                 top: `${page.margins.top}pt`,
                 right: `${page.margins.right}pt`,
-                bottom: `${page.margins.bottom}pt`,
                 left: `${page.margins.left}pt`,
+                height: `${printableHeight}pt`,
+                maxHeight: `${printableHeight}pt`,
+                overflow: 'hidden',
                 zIndex: 10,
                 pointerEvents: editingObjectId ? 'none' : 'auto',
+                boxSizing: 'border-box',
               }}
             >
               {isActive ? (
                 <DocumentBodyEditor
-                  story={primaryStory}
+                  story={pageStory}
                   fontFamily={activeFontFamily}
-                  fontSize={activeFontSize}
+                  pairedLatinFont={pairedLatinFont}
+                  disableUrduKeyMapping={disableUrduKeyMapping}
+                  isTransliterationEnabled={isTransliterationEnabled}
+                  showFormattingMarks={showFormattingMarks}
+                  fontSize={18}
                   color="#172119"
                   lineHeight={1.8}
+                  alignment={activeAlignment}
                   columns={section.columns}
                   columnGap={section.columnGap}
                   rtlColumnOrder={section.rtlColumnOrder}
+                  keyboardMode={keyboardMode}
+                  numeralSystem={numeralSystem}
                   pendingChar={!editingObjectId ? pendingChar : null}
                   focusRequest={isActive ? bodyEditorFocusRequest : 0}
-                  onCommit={(updatedContent) => onCommitStory(primaryStoryId, updatedContent)}
+                  onCommit={(updatedContent) =>
+                    onCommitStory(
+                      primaryStoryId,
+                      mergePaginatedPageContent(
+                        repaginatedStory.content,
+                        pagination.paragraphPageMap,
+                        pageIndex,
+                        updatedContent,
+                      ),
+                    )
+                  }
                   onEditorReady={onEditorReady}
                   onSelectionChange={onSelectionChange}
                 />
               ) : (
                 <div
+                  onClick={() => onSelectPage(pageId)}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -432,11 +576,23 @@ export function PaginatedPrintLayout({
                     direction: 'rtl',
                     fontFamily: activeFontFamily,
                     fontSize: `${activeFontSize}px`,
-                    color: '#475569',
-                    opacity: 0.85,
+                    color: '#1e293b',
+                    lineHeight: 1.8,
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    overflow: 'hidden',
                   }}
                 >
-                  صفحہ {pageIndex + 1} - اردو دستاویز متن
+                  {repaginatedStory.content.content
+                    .filter((_, pIdx) => (pagination.paragraphPageMap[pIdx] ?? 0) === pageIndex)
+                    .map((para, pIdx) => {
+                      const text = para.content?.map((run) => ('text' in run ? run.text : '')).join('') || '';
+                      return (
+                        <p key={pIdx} style={{ margin: '0 0 16px 0', minHeight: '1em' }}>
+                          {text}
+                        </p>
+                      );
+                    })}
                 </div>
               )}
             </div>
@@ -447,7 +603,7 @@ export function PaginatedPrintLayout({
                 position: 'absolute',
                 inset: 0,
                 zIndex: 20,
-                pointerEvents: editingObjectId ? 'none' : 'auto',
+                pointerEvents: (isObjectSelectionMode || selectedObjectId || editingObjectId) ? 'auto' : 'none',
               }}
             >
               <FabricCanvas
@@ -483,6 +639,8 @@ export function PaginatedPrintLayout({
                   fontSize={'fontSize' in editingTextBox ? editingTextBox.fontSize : 20}
                   color={'color' in editingTextBox ? editingTextBox.color : '#1e293b'}
                   lineHeight={'lineHeight' in editingTextBox ? editingTextBox.lineHeight : 1.8}
+                  keyboardMode={keyboardMode}
+                  numeralSystem={numeralSystem}
                   pendingChar={pendingChar}
                   onCommit={(updatedContent) => {
                     const sid = editingTextBox.storyId || `shape-story-${editingTextBox.id}`;

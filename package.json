@@ -18,6 +18,9 @@
   },
   "dependencies": {
     "@fluentui/react-icons": "2.0.334",
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/plugin-dialog": "^2.8.3",
+    "@tauri-apps/plugin-fs": "^2.7.1",
     "@tiptap/extension-color": "^3.29.0",
     "@tiptap/extension-font-family": "^3.29.0",
     "@tiptap/extension-highlight": "^3.29.0",
@@ -37,6 +40,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",
