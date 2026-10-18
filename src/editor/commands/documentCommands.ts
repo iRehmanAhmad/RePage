@@ -14,6 +14,8 @@ import type {
   TextStory,
 } from '../../domain/document/types';
 import { paragraph } from '../../domain/rich-text/types';
+import { applyChainOverflowFlags, getTextFrameChain, unlinkTextFrame } from '../../domain/document/textFlow';
+import { linkTextFramesEngine } from '../../domain/document/textFlowEngine';
 
 function touch(document: RePageDocument): RePageDocument {
   return {
@@ -359,3 +361,40 @@ export function addImageFrame(
   return { document: nextDoc, objectId };
 }
 
+
+/**
+ * Links two text frames so the source frame's story flows into the target frame.
+ * Wraps the domain link engine, then recomputes per-frame overflow badges for the chain.
+ * Throws on invalid frames or circular links (callers should surface the message).
+ */
+export function linkTextFramesCommand(
+  document: RePageDocument,
+  sourceFrameId: ObjectId,
+  targetFrameId: ObjectId,
+): RePageDocument {
+  const linked = linkTextFramesEngine(document, sourceFrameId, targetFrameId);
+  const withFlags = applyChainOverflowFlags(linked, sourceFrameId);
+  return touch(withFlags);
+}
+
+/**
+ * Breaks a text frame out of its flow chain. Overflow badges of the remaining
+ * chain are recomputed. Note: the unlinked frame keeps sharing the story
+ * (no story fork in v1) — it renders the full story text again.
+ */
+export function unlinkTextFrameCommand(
+  document: RePageDocument,
+  frameId: ObjectId,
+): RePageDocument {
+  const unlinked = unlinkTextFrame(document, frameId);
+  const withFlags = applyChainOverflowFlags(unlinked, frameId);
+  return touch(withFlags);
+}
+
+/**
+ * Returns the flow chain (in order) containing the given text frame.
+ * Re-exported here so UI layers stay on the commands boundary.
+ */
+export function getLinkedFrameChain(document: RePageDocument, frameId: ObjectId) {
+  return getTextFrameChain(document, frameId);
+}

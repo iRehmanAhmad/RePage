@@ -13,6 +13,8 @@ interface FabricCanvasProps {
   onSelectionChanged?: (objectId: string | null) => void;
   onObjectDoubleClicked?: (objectId: string) => void;
   onBlankCanvasClick?: () => void;
+  /** Precomputed per-frame text slices for linked text-frame chains (frameId -> visible text). */
+  storySlices?: Record<string, string> | null | undefined;
 }
 
 export function FabricCanvas({
@@ -26,6 +28,7 @@ export function FabricCanvas({
   onSelectionChanged,
   onObjectDoubleClicked,
   onBlankCanvasClick,
+  storySlices,
 }: FabricCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const adapterRef = useRef<FabricCanvasAdapter | null>(null);
@@ -65,9 +68,9 @@ export function FabricCanvas({
   // Synchronize objects on canvas when page objects, stories, assets, selected object, or editing object change
   useEffect(() => {
     if (adapterRef.current) {
-      adapterRef.current.syncObjects(objects, stories, selectedObjectId, assets, editingObjectId);
+      adapterRef.current.syncObjects(objects, stories, selectedObjectId, assets, editingObjectId, storySlices ?? null);
     }
-  }, [objects, stories, assets, selectedObjectId, editingObjectId]);
+  }, [objects, stories, assets, selectedObjectId, editingObjectId, storySlices]);
 
   return (
     <div className="canvas-wrapper" style={{ position: 'relative', width: '100%', height: '100%' }}>

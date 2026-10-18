@@ -112,6 +112,7 @@ export class FabricCanvasAdapter {
     selectedObjectId?: string | null,
     assets?: Record<string, import('../../domain/document/types').AssetReference>,
     editingObjectId?: string | null,
+    storySlices?: Record<string, string> | null | undefined,
   ): void {
     if (!this.canvas) return;
 
@@ -324,7 +325,11 @@ export class FabricCanvasAdapter {
 
         const isEditing = editingObjectId && editingObjectId === obj.id;
         let displayContent = '';
-        if (!isEditing && stories && stories[obj.storyId]?.content?.content) {
+        // Linked frames render their flow slice; unlinked frames render the full story.
+        const flowSlice = !isEditing ? storySlices?.[obj.id] : undefined;
+        if (flowSlice !== undefined) {
+          displayContent = flowSlice;
+        } else if (!isEditing && stories && stories[obj.storyId]?.content?.content) {
           displayContent = stories[obj.storyId]!.content.content
             .map((p) => p.content.map((run) => (run.type === 'text' ? run.text : '')).join(''))
             .join('\n');

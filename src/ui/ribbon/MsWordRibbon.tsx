@@ -171,6 +171,14 @@ export interface MsWordRibbonProps {
   onRenameStyle?: (styleId: string) => void;
   onRemoveStyleFromGallery?: (styleId: string) => void;
   onAddStyleToQuickAccess?: (styleId: string) => void;
+  /** Link the selected text frame's story into another text frame. */
+  onLinkTextFrame?: (targetFrameId: string) => void;
+  /** Break the selected text frame out of its flow chain. */
+  onUnlinkTextFrame?: () => void;
+  /** Candidate target frames for linking (excludes the selected frame). */
+  linkTargetFrames?: Array<{ id: string; label: string }>;
+  /** Whether the selected text frame is part of a flow chain. */
+  isFrameLinked?: boolean;
   onOpenFind?: () => void;
   onOpenReplace?: () => void;
   onSelectAll?: () => void;
@@ -345,6 +353,10 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onRenameStyle,
   onRemoveStyleFromGallery,
   onAddStyleToQuickAccess,
+  onLinkTextFrame,
+  onUnlinkTextFrame,
+  linkTargetFrames,
+  isFrameLinked,
   onOpenFind,
   onOpenReplace,
   onSelectAll,
@@ -394,6 +406,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   const [newPresetName, setNewPresetName] = useState('');
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const [showTableGridPicker, setShowTableGridPicker] = useState(false);
+  const [showLinkFrameMenu, setShowLinkFrameMenu] = useState(false);
   const [tableHoverRows, setTableHoverRows] = useState(3);
   const [tableHoverCols, setTableHoverCols] = useState(3);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -2513,6 +2526,78 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
               </div>
               <div className="ribbon-group-caption">{lang === 'ur' ? 'الائنمنٹ' : 'Alignment'}</div>
             </div>
+
+            {selectedObjectType === 'text-frame' && (
+              <div className="ribbon-group-box">
+                <div className="ribbon-chunk">
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowLinkFrameMenu((prev) => !prev)}
+                      className="ribbon-action-btn highlight"
+                      title={lang === 'ur' ? 'اس فریم کا متن اگلے فریم میں بہائیں' : 'Flow this frame’s text into another frame'}
+                    >
+                      <AppIcon name="link" />
+                      <span>{lang === 'ur' ? 'فریم جوڑیں…' : 'Link frame…'} <AppIcon name="chevron-down" size={11} /></span>
+                    </button>
+
+                    {showLinkFrameMenu && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          zIndex: 100,
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
+                          padding: '6px',
+                          minWidth: '220px',
+                          maxHeight: '260px',
+                          overflowY: 'auto',
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a', padding: '4px 8px' }}>
+                          {lang === 'ur' ? 'ہدف فریم منتخب کریں' : 'Choose target frame'}
+                        </div>
+                        {(linkTargetFrames ?? []).length === 0 && (
+                          <div style={{ fontSize: '12px', color: '#64748b', padding: '4px 8px' }}>
+                            {lang === 'ur' ? 'کوئی دوسرا ٹیکسٹ فریم نہیں ملا' : 'No other text frames found'}
+                          </div>
+                        )}
+                        {(linkTargetFrames ?? []).map((target) => (
+                          <button
+                            key={target.id}
+                            type="button"
+                            onClick={() => {
+                              setShowLinkFrameMenu(false);
+                              onLinkTextFrame?.(target.id);
+                            }}
+                            className="ribbon-menu-item"
+                            style={{ width: '100%', textAlign: 'left', padding: '6px 8px' }}
+                          >
+                            {target.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {isFrameLinked && (
+                    <button
+                      type="button"
+                      onClick={() => onUnlinkTextFrame?.()}
+                      className="ribbon-action-btn"
+                      title={lang === 'ur' ? 'اس فریم کو بہاؤ کی زنجیر سے الگ کریں' : 'Break this frame out of the flow chain'}
+                    >
+                      <AppIcon name="unlink" />
+                      <span>{lang === 'ur' ? 'لنک توڑیں' : 'Unlink'}</span>
+                    </button>
+                  )}
+                </div>
+                <div className="ribbon-group-caption">{lang === 'ur' ? 'متن کا بہاؤ' : 'Text Flow'}</div>
+              </div>
+            )}
           </div>
         )}
 

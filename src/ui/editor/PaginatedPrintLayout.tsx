@@ -6,6 +6,7 @@ import { computeColumnSeparatorGuides } from '../../domain/layout/columnEngine';
 import { resolvePageCompositeObjects } from '../../domain/layout/masterPageEngine';
 import { getSectionPageNumberString } from '../../domain/unicode/pageNumbering';
 import { repaginateDocument, getPrintableHeight } from '../../domain/layout/paginationEngine';
+import { computeChainTextSlices, getTextFrameChain } from '../../domain/document/textFlow';
 import { FabricCanvas } from '../canvas/FabricCanvas';
 import { DocumentBodyEditor } from './DocumentBodyEditor';
 import { TextEditorOverlay } from './TextEditorOverlay';
@@ -125,6 +126,21 @@ export function PaginatedPrintLayout({
   };
 
   const pagination = repaginateDocument(document, primaryStoryId);
+
+  // Precompute visible text slices for linked text-frame chains (frameId -> text).
+  // Unlinked frames are absent from the map and render their full story text.
+  const storySlices = React.useMemo(() => {
+    const result: Record<string, string> = {};
+    const visited = new Set<string>();
+    for (const obj of Object.values(document.objects)) {
+      if (obj.type !== 'text-frame' || visited.has(obj.id)) continue;
+      const chain = getTextFrameChain(document, obj.id);
+      for (const frame of chain) visited.add(frame.id);
+      const flow = computeChainTextSlices(document, chain);
+      if (flow) Object.assign(result, flow.slices);
+    }
+    return result;
+  }, [document]);
 
   // A single editor owns the complete story, while its page-node extension
   // renders each calculated sheet. This preserves native document-wide ranges.
@@ -613,6 +629,7 @@ export function PaginatedPrintLayout({
                 assets={document.assets}
                 selectedObjectId={selectedObjectId}
                 editingObjectId={editingObjectId}
+                storySlices={storySlices}
                 onObjectModified={onObjectModified}
                 onSelectionChanged={(id) => {
                   onSelectObject(id);

@@ -49,6 +49,7 @@ import {
   ImageRegular,
   KeyboardRegular,
   LinkRegular,
+  LinkDismissRegular,
   LockClosedRegular,
   LockOpenRegular,
   MoreHorizontalRegular,
@@ -111,7 +112,7 @@ export type AppIconName =
   | 'border-bottom' | 'border-top' | 'border-left' | 'border-right' | 'align-justify'
   | 'align-left' | 'align-right' | 'align-center' | 'indent-increase' | 'indent-decrease'
   | 'line-spacing' | 'bullets' | 'numbered-list' | 'bold' | 'italic' | 'underline'
-  | 'text-color' | 'direction-ltr' | 'direction-rtl' | 'paragraph-mark' | 'history' | 'comment' | 'link' | 'ruler' | 'grid' | 'speaker'
+  | 'text-color' | 'direction-ltr' | 'direction-rtl' | 'paragraph-mark' | 'history' | 'comment' | 'link' | 'unlink' | 'ruler' | 'grid' | 'speaker'
   | 'play' | 'stop' | 'target' | 'edit' | 'document-text' | 'panel-left' | 'panel-right'
   | 'more' | 'camera' | 'tag' | 'bookmark' | 'spell-check' | 'clear-format' | 'square' | 'circle'
   | 'triangle' | 'star' | 'hexagon' | 'chat' | 'subtract';
@@ -198,6 +199,7 @@ const icons: Record<AppIconName, ElementType> = {
   history: HistoryRegular,
   comment: CommentRegular,
   link: LinkRegular,
+  unlink: LinkDismissRegular,
   ruler: RulerRegular,
   grid: GridRegular,
   speaker: Speaker1Regular,

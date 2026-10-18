@@ -29,7 +29,8 @@ Last updated: 2026-10-18
 - **Preflight & Print Production Engine (M8 Phase 0)**:
   - Multi-axis preflight diagnostics (image DPI calculation, boundary checks, overset text detection, font license compliance).
   - Target-specific preflight options (`targetDpi: 300`, `pressReady: true`).
-- 109 test files (~306 test cases by grep count) of automated unit and integration tests (`vitest`).
+- 115 test files (~367 test cases by grep count) of automated unit and integration tests (`vitest`).
+- **Linked text-frame flow (Phase 2)**: text frames can be linked into flow chains from the ribbon (Shape Format → Text Flow → "Link frame…", target picker by page; "Unlink" breaks the chain). Story text is distributed across chained frames at word boundaries (`computeChainTextSlices` in `domain/document/textFlow.ts`, estimation-based like the existing overflow heuristics) and rendered per-frame on the canvas; sequence badges `[#1]`, `[#2]` and the `[+]` overflow badge reflect the chain. Commands: `linkTextFramesCommand` / `unlinkTextFrameCommand` in `editor/commands/documentCommands.ts`. Known v1 limitation: unlinking does not fork the story (the unlinked frame keeps sharing the story text).
 
 ## Verification baseline
 
@@ -38,7 +39,7 @@ Recorded on 2026-07-26 after M8 Phase 0 completion:
 - `npm run check:utf8`: 331 files verified as valid UTF-8 without corrupt mojibake.
 - `npm run lint`: oxlint passes with 0 warnings and 0 errors across 231 files.
 - `npm run build`: passes strict TypeScript compilation (`tsc -b`) and Vite production bundle.
-- `npm run test`: vitest covers 109 test files (~306 test cases by grep count).
+- `npm run test`: vitest covers 115 test files (~367 test cases by grep count).
 - Production build: compiles cleanly with 0 TypeScript errors.
 
 ## Status update protocol

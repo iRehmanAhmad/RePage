@@ -54,8 +54,11 @@ import {
   addRectangle,
   addTextFrame,
   deleteObject,
+  getLinkedFrameChain,
+  linkTextFramesCommand,
   removePage,
   renameDocument,
+  unlinkTextFrameCommand,
   updateObjectGeometry,
 } from '../editor/commands/documentCommands';
 import { TransactionHistory } from '../editor/history/transactionHistory';
@@ -385,6 +388,61 @@ export function App() {
     }
     setMessage('Text Box inserted and selected. Double-click or press Enter to edit text.');
   }, [activePageId, document, updateDocument]);
+
+  // Text-frame flow-chain candidates for the Link menu (all text frames except the selected one).
+  // Frames already in the selected frame's chain are excluded (linking them would be circular).
+  const linkTargetFrames = React.useMemo(() => {
+    if (!selectedObject || selectedObject.type !== 'text-frame' || !selectedObjectId) return [];
+    const chainIds = new Set(getLinkedFrameChain(document, selectedObjectId).map((f) => f.id));
+    const targets: Array<{ id: string; label: string }> = [];
+    document.pageOrder.forEach((pageId, pageIndex) => {
+      const page = document.pages[pageId];
+      if (!page) return;
+      let frameNumber = 0;
+      for (const objectId of page.objectOrder) {
+        const obj = document.objects[objectId];
+        if (!obj || obj.type !== 'text-frame') continue;
+        frameNumber++;
+        if (chainIds.has(objectId)) continue;
+        targets.push({
+          id: objectId,
+          label: lang === 'ur'
+            ? `صفحہ ${pageIndex + 1} · ٹیکسٹ فریم ${frameNumber}`
+            : `Page ${pageIndex + 1} · Text frame ${frameNumber}`,
+        });
+      }
+    });
+    return targets;
+  }, [document, selectedObject, selectedObjectId, lang]);
+
+  const isSelectedFrameLinked = Boolean(
+    selectedObject &&
+    selectedObject.type === 'text-frame' &&
+    (selectedObject.nextFrameId || selectedObject.previousFrameId),
+  );
+
+  const handleLinkTextFrame = React.useCallback((targetFrameId: string) => {
+    if (!selectedObjectId) return;
+    // Append at the chain tail: linking from a mid-chain frame extends the flow,
+    // never orphans the existing downstream frames.
+    const chain = getLinkedFrameChain(document, selectedObjectId);
+    const sourceId = chain.length > 0 ? chain[chain.length - 1]!.id : selectedObjectId;
+    try {
+      const nextDoc = linkTextFramesCommand(document, sourceId, targetFrameId);
+      updateDocument(nextDoc, 'Link text frames');
+      setMessage(lang === 'ur' ? 'ٹیکسٹ فریم منسلک ہو گیا — متن اب اگلے فریم میں بہے گا' : 'Text frames linked — text now flows into the next frame');
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      setMessage(lang === 'ur' ? `لنک نہیں ہو سکا: ${reason}` : `Cannot link frames: ${reason}`);
+    }
+  }, [document, selectedObjectId, updateDocument, lang]);
+
+  const handleUnlinkTextFrame = React.useCallback(() => {
+    if (!selectedObjectId) return;
+    const nextDoc = unlinkTextFrameCommand(document, selectedObjectId);
+    updateDocument(nextDoc, 'Unlink text frame');
+    setMessage(lang === 'ur' ? 'فریم کا لنک ٹوٹ گیا' : 'Text frame unlinked');
+  }, [document, selectedObjectId, updateDocument, lang]);
 
   const handleAddTable = React.useCallback(
     (rowCount = 3, colCount = 3) => {
@@ -1863,6 +1921,10 @@ export function App() {
             setShowGrid((prev) => !prev);
           }}
           selectedObjectType={selectedObject ? selectedObject.type : null}
+          onLinkTextFrame={handleLinkTextFrame}
+          onUnlinkTextFrame={handleUnlinkTextFrame}
+          linkTargetFrames={linkTargetFrames}
+          isFrameLinked={isSelectedFrameLinked}
           onReorderObject={(action) => {
             if (selectedObjectId) {
               updateDocument(reorderPageObject(document, activePageId, selectedObjectId, action), 'Reorder object');
