@@ -2591,6 +2591,7 @@ export function App() {
           onSaveDocument={() => void handleSaveNative()}
           onSaveAsDocument={() => void handleSaveAsNative()}
           onExportPdf={handleBrowserPrint}
+          onExportVectorPdf={handleExportVectorPdf}
           onPrint={triggerNativePrintDialog}
         />
 

@@ -14,6 +14,7 @@ export interface FileBackstageOverlayProps {
   onSaveDocument: () => void;
   onSaveAsDocument: () => void;
   onExportPdf: () => void;
+  onExportVectorPdf: () => void;
   onPrint: () => void;
 }
 
@@ -30,6 +31,7 @@ export function FileBackstageOverlay({
   onSaveDocument,
   onSaveAsDocument,
   onExportPdf,
+  onExportVectorPdf,
   onPrint,
 }: FileBackstageOverlayProps) {
   const [activeSection, setActiveSection] = useState<BackstageSection>('home');
@@ -384,21 +386,23 @@ export function FileBackstageOverlay({
               </button>
               <button
                 type="button"
-                disabled
-                title={lang === 'ur' ? 'نیٹِو ویکٹر PDF برآمد فی الحال غیر دستیاب ہے۔' : 'Native vector PDF export is currently under development and unavailable.'}
+                onClick={() => {
+                  onExportVectorPdf();
+                  onClose();
+                }}
+                title={lang === 'ur' ? 'دستاویز سے ویکٹر PDF بناتا ہے (پرنٹ ڈائیلاگ میں "Save as PDF" منتخب کریں)۔' : 'Generates a vector PDF from the document (choose "Save as PDF" in the print dialog).'}
                 style={{
                   padding: '16px 24px',
-                  backgroundColor: '#1e293b',
-                  color: '#64748b',
-                  border: '1px solid #334155',
+                  backgroundColor: '#0f766e',
+                  color: '#ffffff',
+                  border: 'none',
                   borderRadius: '8px',
                   fontWeight: 700,
                   fontSize: '14px',
-                  cursor: 'not-allowed',
-                  opacity: 0.6,
+                  cursor: 'pointer',
                 }}
               >
-                <AppIcon name="document-pdf" /> {lang === 'ur' ? 'PDF برآمد (عنقریب)' : 'PDF Export (Coming Soon)'}
+                <AppIcon name="document-pdf" /> {lang === 'ur' ? 'ویکٹر PDF برآمد' : 'Vector PDF Export'}
               </button>
             </div>
           </div>
