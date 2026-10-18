@@ -7,7 +7,7 @@ import {
 } from './networkProvider';
 
 describe('networkProvider (M5.4)', () => {
-  it('configures STUN/TURN servers and default production signaling endpoint', () => {
+  it('configures STUN server (TURN only when configured out of band) and default production signaling endpoint', () => {
     const provider = new CollaborativeNetworkProvider({ roomName: 'urdu-doc-101' });
     const diagnostics = provider.getDiagnostics();
 

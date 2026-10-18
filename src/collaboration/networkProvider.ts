@@ -33,13 +33,18 @@ export interface NetworkProviderOptions {
 }
 
 export const DEFAULT_SIGNALING_URL = 'wss://signaling.repage.org';
+/**
+ * Optional TURN relay configuration.
+ *
+ * SECURITY: Never commit TURN credentials to source control. Populate this
+ * from environment / build-time configuration (e.g. `import.meta.env`) when
+ * a relay is actually deployed. It defaults to `null`: peer connections use
+ * STUN-only discovery until an operator configures a relay out of band.
+ */
+export const TURN_SERVER_CONFIG: { urls: string; username?: string | undefined; credential?: string | undefined } | null = null;
 export const DEFAULT_ICE_SERVERS: IceServerConfig[] = [
   { urls: 'stun:stun.l.google.com:19302' },
-  {
-    urls: 'turn:turn.repage.org:3478',
-    username: 'repage-user',
-    credential: 'repage-secure-turn-password',
-  },
+  ...(TURN_SERVER_CONFIG ? [TURN_SERVER_CONFIG] : []),
 ];
 export const MAX_PEERS_PER_ROOM = 4;
 

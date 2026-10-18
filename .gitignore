@@ -10,3 +10,12 @@ src-tauri/target/
 *.urdup
 !tests/fixtures/**/*.urdup
 graphify-out/
+
+# Secrets & credentials — never commit these
+.env
+.env.*
+*.pem
+*.key
+
+# Microsoft Office lock files — never commit these
+~$*

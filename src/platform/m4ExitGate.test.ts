@@ -14,8 +14,8 @@ import {
 } from './tauri/updateManager';
 
 describe('M4 Release Exit Gate Verification Suite', () => {
-  it('validates signed update manifest structure and signatures', () => {
-    const validManifest: UpdateManifest = {
+  it('refuses every update manifest until real signature verification exists (fail closed)', () => {
+    const manifest: UpdateManifest = {
       version: '0.1.0-beta.1',
       notes: 'Initial beta release candidate',
       pubDate: '2026-07-25T12:00:00Z',
@@ -24,7 +24,8 @@ describe('M4 Release Exit Gate Verification Suite', () => {
       channel: 'beta',
     };
 
-    expect(validateSignedUpdateManifest(validManifest)).toBe(true);
+    // Without real minisign/ed25519 verification, no manifest is trusted.
+    expect(validateSignedUpdateManifest(manifest)).toBe(false);
     expect(validateSignedUpdateManifest({ version: '0.1.0' })).toBe(false);
   });
 

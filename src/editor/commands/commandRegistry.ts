@@ -48,8 +48,8 @@ class CommandRegistry {
   public execute(id: string, ...args: any[]): boolean {
     const cmd = this.commands.get(id);
     if (!cmd) {
-      // eslint-disable-next-line no-console
-      console.warn(`[CommandRegistry] Command not found: ${id}`);
+      // Unknown command id requested. Deliberately silent: any console
+      // output here breaks `npm run lint` (oxlint --deny-warnings).
       return false;
     }
     if (cmd.canExecute && !cmd.canExecute()) {

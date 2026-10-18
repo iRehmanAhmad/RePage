@@ -22,22 +22,25 @@ export const BETA_UPDATE_ENDPOINT = 'https://releases.repage.org/beta/update.jso
 
 /**
  * Validates a signed update manifest.
+ *
+ * SECURITY — FAIL CLOSED: real minisign/ed25519 signature verification is
+ * NOT implemented yet. Until it is, no remote manifest can be trusted, so
+ * every manifest is rejected. Do not weaken this without wiring real
+ * cryptographic verification against a pinned release pubkey.
  */
-export function validateSignedUpdateManifest(manifest: Partial<UpdateManifest>): manifest is UpdateManifest {
-  return Boolean(
-    manifest &&
-      typeof manifest.version === 'string' &&
-      typeof manifest.signature === 'string' &&
-      manifest.signature.length > 32 &&
-      typeof manifest.url === 'string' &&
-      (manifest.channel === 'stable' || manifest.channel === 'beta'),
-  );
+export function validateSignedUpdateManifest(_manifest: Partial<UpdateManifest>): _manifest is UpdateManifest {
+  return false;
 }
 
 /**
  * Checks for application updates from the designated channel endpoint.
+ *
+ * FAIL CLOSED: even when an update is announced, it is never accepted,
+ * because update signature verification is not implemented. Installing an
+ * unverified binary would hand remote code execution to any network
+ * attacker or a compromised update server.
  */
-export async function checkForApplicationUpdates(channel: UpdateChannel = 'stable'): Promise<CheckUpdateResult> {
+export async function checkForApplicationUpdates(_channel: UpdateChannel = 'stable'): Promise<CheckUpdateResult> {
   if (!isTauriEnvironment()) {
     return { shouldUpdate: false };
   }
@@ -49,15 +52,8 @@ export async function checkForApplicationUpdates(channel: UpdateChannel = 'stabl
 
     if (update && update.available) {
       return {
-        shouldUpdate: true,
-        manifest: {
-          version: update.version,
-          notes: update.body || '',
-          pubDate: update.date || new Date().toISOString(),
-          signature: update.signature || 'SIMULATED_ED25519_SIGNATURE_KEY_REPAGE_VERIFIED',
-          url: channel === 'beta' ? BETA_UPDATE_ENDPOINT : STABLE_UPDATE_ENDPOINT,
-          channel,
-        },
+        shouldUpdate: false,
+        error: 'An update is available, but it was refused: real update signature verification is not implemented.',
       };
     }
 
