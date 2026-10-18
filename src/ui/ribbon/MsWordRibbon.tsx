@@ -9,6 +9,18 @@ import type { CustomUrduPreset } from '../../domain/document/customPresets';
 import { FontColorPalette } from './FontColorPalette';
 import { AppIcon } from '../icons/AppIcon';
 import { HighlightColorPalette } from './HighlightColorPalette';
+import { GALLERY_STYLE_IDS } from '../../editor/commands/styleCommands';
+
+/** Gallery tile metadata (preview glyph + tag); display names come from props/presets. */
+const STYLE_GALLERY_META: Record<string, { preview: string; tag: string; nameEn: string; nameUr: string }> = {
+  normal: { preview: 'متن', tag: '¶ Nastaliq', nameEn: 'Normal', nameUr: 'عام متن' },
+  'heading-1': { preview: 'عنوان ۱', tag: 'H1 24pt', nameEn: 'Heading 1', nameUr: 'عنوان ۱' },
+  'heading-2': { preview: 'عنوان ۲', tag: 'H2 18pt', nameEn: 'Heading 2', nameUr: 'عنوان ۲' },
+  'heading-3': { preview: 'عنوان ۳', tag: 'H3 16pt', nameEn: 'Heading 3', nameUr: 'عنوان ۳' },
+  poetry: { preview: 'شعر', tag: 'Poetry 16pt', nameEn: 'Poetry', nameUr: 'شاعری' },
+  quote: { preview: 'اقتباس', tag: 'Quote 14pt', nameEn: 'Quote', nameUr: 'اقتباس' },
+  quran: { preview: 'آیت', tag: 'Amiri 18pt', nameEn: 'Quran', nameUr: 'آیات/احادیث' },
+};
 
 export type ActiveTool = 'select' | 'text' | 'rectangle' | 'image' | 'pan';
 export type RibbonTab =
@@ -171,6 +183,10 @@ export interface MsWordRibbonProps {
   onRenameStyle?: (styleId: string) => void;
   onRemoveStyleFromGallery?: (styleId: string) => void;
   onAddStyleToQuickAccess?: (styleId: string) => void;
+  /** Style ids the user hid via "Remove from Style Gallery". */
+  hiddenStyleIds?: string[];
+  /** User rename overrides for style display names. */
+  styleNameOverrides?: Record<string, string>;
   /** Link the selected text frame's story into another text frame. */
   onLinkTextFrame?: (targetFrameId: string) => void;
   /** Break the selected text frame out of its flow chain. */
@@ -353,6 +369,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onRenameStyle,
   onRemoveStyleFromGallery,
   onAddStyleToQuickAccess,
+  hiddenStyleIds,
+  styleNameOverrides,
   onLinkTextFrame,
   onUnlinkTextFrame,
   linkTargetFrames,
@@ -1926,15 +1944,15 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
             <div className="ribbon-group-box ribbon-styles-group" style={{ position: 'relative' }}>
               <div className="ribbon-style-gallery-wrap">
                 <div className="ribbon-style-gallery">
-                  {[
-                    { id: 'normal', name: lang === 'ur' ? 'عام متن' : 'Normal', preview: 'متن', tag: '¶ Nastaliq' },
-                    { id: 'heading-1', name: lang === 'ur' ? 'عنوان ۱' : 'Heading 1', preview: 'عنوان ۱', tag: 'H1 24pt' },
-                    { id: 'heading-2', name: lang === 'ur' ? 'عنوان ۲' : 'Heading 2', preview: 'عنوان ۲', tag: 'H2 18pt' },
-                    { id: 'heading-3', name: lang === 'ur' ? 'عنوان ۳' : 'Heading 3', preview: 'عنوان ۳', tag: 'H3 16pt' },
-                    { id: 'poetry', name: lang === 'ur' ? 'شاعری' : 'Poetry', preview: 'شعر', tag: 'Poetry 16pt' },
-                    { id: 'quote', name: lang === 'ur' ? 'اقتباس' : 'Quote', preview: 'اقتباس', tag: 'Quote 14pt' },
-                    { id: 'quran', name: lang === 'ur' ? 'آیات/احادیث' : 'Quran', preview: 'آیت', tag: 'Amiri 18pt' },
-                  ].map((st) => (
+                  {GALLERY_STYLE_IDS.filter((id) => !hiddenStyleIds?.includes(id)).map((id) => {
+                    const meta = STYLE_GALLERY_META[id] ?? { preview: id, tag: '', nameEn: id, nameUr: id };
+                    const st = {
+                      id,
+                      name: styleNameOverrides?.[id] ?? (lang === 'ur' ? meta.nameUr : meta.nameEn),
+                      preview: meta.preview,
+                      tag: meta.tag,
+                    };
+                    return (
                     <button
                       key={st.id}
                       onClick={() => onApplyStyle?.(st.id)}
@@ -1971,7 +1989,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                         {st.name}
                       </span>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

@@ -7,6 +7,7 @@ import { resolvePageCompositeObjects } from '../../domain/layout/masterPageEngin
 import { getSectionPageNumberString } from '../../domain/unicode/pageNumbering';
 import { repaginateDocument, getPrintableHeight } from '../../domain/layout/paginationEngine';
 import { computeChainTextSlices, getTextFrameChain } from '../../domain/document/textFlow';
+import { createCanvasTextMeasurer } from '../../editor/canvas/canvasTextMeasurer';
 import { FabricCanvas } from '../canvas/FabricCanvas';
 import { DocumentBodyEditor } from './DocumentBodyEditor';
 import { TextEditorOverlay } from './TextEditorOverlay';
@@ -129,6 +130,9 @@ export function PaginatedPrintLayout({
 
   // Precompute visible text slices for linked text-frame chains (frameId -> text).
   // Unlinked frames are absent from the map and render their full story text.
+  // Uses measured shaping when a live text engine exists (browser/Tauri WebView);
+  // headless/test environments fall back to the deterministic heuristic.
+  const textMeasurer = React.useMemo(() => createCanvasTextMeasurer(), []);
   const storySlices = React.useMemo(() => {
     const result: Record<string, string> = {};
     const visited = new Set<string>();
@@ -136,11 +140,11 @@ export function PaginatedPrintLayout({
       if (obj.type !== 'text-frame' || visited.has(obj.id)) continue;
       const chain = getTextFrameChain(document, obj.id);
       for (const frame of chain) visited.add(frame.id);
-      const flow = computeChainTextSlices(document, chain);
+      const flow = computeChainTextSlices(document, chain, textMeasurer ?? undefined);
       if (flow) Object.assign(result, flow.slices);
     }
     return result;
-  }, [document]);
+  }, [document, textMeasurer]);
 
   // A single editor owns the complete story, while its page-node extension
   // renders each calculated sheet. This preserves native document-wide ranges.

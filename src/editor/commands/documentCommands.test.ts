@@ -6,6 +6,8 @@ import {
   linkTextFramesCommand,
   unlinkTextFrameCommand,
 } from './documentCommands';
+import { applyStyleToStory } from './styleCommands';
+import { computeChainTextSlices, getStoryPlainText } from '../../domain/document/textFlow';
 import type { RePageDocument, TextFrameObject, TextStory } from '../../domain/document/types';
 
 function twoFrameDoc(text: string): { doc: RePageDocument; frame1: string; frame2: string; storyId: string } {
@@ -27,6 +29,56 @@ function twoFrameDoc(text: string): { doc: RePageDocument; frame1: string; frame
     stories: { ...afterSecond.stories, [storyId]: updatedStory },
   };
   return { doc, frame1, frame2, storyId };
+}
+
+
+/** Builds a doc with three small linked text frames (A→B→C) sharing one story. */
+function threeFrameDoc(text: string): {
+  doc: RePageDocument; frameA: string; frameB: string; frameC: string; storyId: string;
+} {
+  const { doc: twoDoc, frame1, frame2, storyId } = twoFrameDoc(text);
+  const pageId = twoDoc.pageOrder[0]!;
+
+  // Shrink frames so capacities are small and deterministic (mirrors the
+  // textFlow slicing tests: 100x60, fontSize 10 -> 132-char capacity).
+  const shrink = (id: string, src: RePageDocument): TextFrameObject => {
+    const f = src.objects[id] as TextFrameObject;
+    return {
+      ...f,
+      frame: { ...f.frame, width: 100, height: 60 },
+      fontSize: 10,
+      lineHeight: 1,
+      padding: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+  };
+  // twoFrameDoc leaves A and B unlinked: link A→B first.
+  const linkedAB = linkTextFramesCommand(twoDoc, frame1, frame2);
+  const frame3: TextFrameObject = {
+    ...shrink(frame1, linkedAB),
+    id: 'frame-3',
+    name: 'Frame 3',
+    storyId: 'other-story',
+    nextFrameId: null,
+    previousFrameId: null,
+  };
+  const docWith3: RePageDocument = {
+    ...linkedAB,
+    objects: {
+      ...linkedAB.objects,
+      [frame1]: shrink(frame1, linkedAB),
+      [frame2]: shrink(frame2, linkedAB),
+      'frame-3': frame3,
+    },
+    pages: {
+      ...linkedAB.pages,
+      [pageId]: {
+        ...linkedAB.pages[pageId]!,
+        objectOrder: [...linkedAB.pages[pageId]!.objectOrder, 'frame-3'],
+      },
+    },
+  };
+  const linked = linkTextFramesCommand(docWith3, frame2, 'frame-3');
+  return { doc: linked, frameA: frame1, frameB: frame2, frameC: 'frame-3', storyId };
 }
 
 describe('linkTextFramesCommand', () => {
@@ -84,3 +136,97 @@ describe('unlinkTextFrameCommand', () => {
     expect(f1.previousFrameId ?? null).toBeNull();
   });
 });
+
+describe('unlinkTextFrameCommand story fork', () => {
+  const longText = Array.from({ length: 300 }, (_, i) => `لفظ${i}`).join(' ');
+
+  it('detaches the middle frame keeping its downstream chain (A→B→C becomes A and B→C)', () => {
+    const { doc, frameA, frameB, frameC } = threeFrameDoc(longText);
+    const unlinked = unlinkTextFrameCommand(doc, frameB);
+    const a = unlinked.objects[frameA] as TextFrameObject;
+    const b = unlinked.objects[frameB] as TextFrameObject;
+    const c = unlinked.objects[frameC] as TextFrameObject;
+    expect(a.nextFrameId ?? null).toBeNull();
+    expect(b.previousFrameId ?? null).toBeNull();
+    expect(b.nextFrameId).toBe(frameC);
+    expect(c.previousFrameId).toBe(frameB);
+    expect(b.sequenceIndex).toBe(0);
+    expect(c.sequenceIndex).toBe(1);
+  });
+
+  it('forks an independent story for the detached subchain with its displayed text', () => {
+    const { doc, frameA, frameB, frameC, storyId } = threeFrameDoc(longText);
+    const chain = [frameA, frameB, frameC].map((id) => doc.objects[id] as TextFrameObject);
+    const flow = computeChainTextSlices(doc, chain)!;
+    const expectedUpstream = flow.slices[frameA] ?? '';
+    const expectedForked = (flow.slices[frameB] ?? '') + (flow.slices[frameC] ?? '') + flow.overflowText;
+
+    const unlinked = unlinkTextFrameCommand(doc, frameB);
+    const a = unlinked.objects[frameA] as TextFrameObject;
+    const b = unlinked.objects[frameB] as TextFrameObject;
+    const c = unlinked.objects[frameC] as TextFrameObject;
+
+    // Story identity: A keeps the original, B+C share a new fork.
+    expect(a.storyId).toBe(storyId);
+    expect(b.storyId).not.toBe(storyId);
+    expect(c.storyId).toBe(b.storyId);
+    expect(unlinked.stories[b.storyId]?.name).toContain('(fork)');
+
+    // Text split: upstream keeps its slices, fork keeps its slices + overflow.
+    expect(getStoryPlainText(unlinked.stories[a.storyId])).toBe(expectedUpstream);
+    expect(getStoryPlainText(unlinked.stories[b.storyId])).toBe(expectedForked);
+  });
+
+  it('makes the fork independent: editing one side does not affect the other', () => {
+    const { doc, frameA, frameB, storyId } = threeFrameDoc(longText);
+    const unlinked = unlinkTextFrameCommand(doc, frameB);
+    const b = unlinked.objects[frameB] as TextFrameObject;
+    const forkedBefore = getStoryPlainText(unlinked.stories[b.storyId]);
+    const edited = applyStyleToStory(unlinked, b.storyId, 'poetry');
+    // Original story untouched by the fork's restyle.
+    expect(getStoryPlainText(edited.stories[storyId])).toBe(
+      getStoryPlainText(unlinked.stories[storyId]),
+    );
+    expect(edited.stories[storyId]!.content.content[0]!.styleId).toBeUndefined();
+    expect(getStoryPlainText(edited.stories[b.storyId])).toBe(forkedBefore);
+    void frameA;
+  });
+
+  it('forks the head frame out, leaving the downstream chain on the original story', () => {
+    const { doc, frameA, frameB, frameC, storyId } = threeFrameDoc(longText);
+    const chain = [frameA, frameB, frameC].map((id) => doc.objects[id] as TextFrameObject);
+    const flow = computeChainTextSlices(doc, chain)!;
+    const expectedHead = flow.slices[frameA] ?? '';
+    const expectedDownstream =
+      (flow.slices[frameB] ?? '') + (flow.slices[frameC] ?? '') + flow.overflowText;
+
+    const unlinked = unlinkTextFrameCommand(doc, frameA);
+    const a = unlinked.objects[frameA] as TextFrameObject;
+    const b = unlinked.objects[frameB] as TextFrameObject;
+    const c = unlinked.objects[frameC] as TextFrameObject;
+
+    // Links: head detached, downstream stays chained.
+    expect(a.nextFrameId ?? null).toBeNull();
+    expect(a.previousFrameId ?? null).toBeNull();
+    expect(b.previousFrameId ?? null).toBeNull();
+    expect(b.nextFrameId).toBe(frameC);
+    expect(c.previousFrameId).toBe(frameB);
+    // Stories: head forked, downstream keeps the original.
+    expect(a.storyId).not.toBe(storyId);
+    expect(b.storyId).toBe(storyId);
+    expect(c.storyId).toBe(storyId);
+    expect(getStoryPlainText(unlinked.stories[a.storyId])).toBe(expectedHead);
+    expect(getStoryPlainText(unlinked.stories[storyId])).toBe(expectedDownstream);
+    // Overflow badges recomputed on both resulting chains.
+    expect(typeof a.overflow).toBe('boolean');
+    expect(typeof b.overflow).toBe('boolean');
+    expect(typeof c.overflow).toBe('boolean');
+  });
+
+  it('touches the document (dirty semantics)', () => {
+    const { doc, frameB } = threeFrameDoc(longText);
+    const unlinked = unlinkTextFrameCommand(doc, frameB);
+    expect(unlinked.metadata.modifiedAt).toBeTruthy();
+  });
+});
+

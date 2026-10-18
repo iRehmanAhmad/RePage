@@ -9,7 +9,9 @@ import {
   getStoryPlainText,
   getTextFrameChain,
   linkTextFrames,
+  splitStoryAtTextOffset,
 } from './textFlow';
+import type { ChainTextMeasurer } from './textFlow';
 import type { ObjectId, RePageDocument, TextFrameObject, TextStory } from './types';
 
 function storyWithText(doc: RePageDocument, storyId: string, text: string): RePageDocument {
@@ -179,5 +181,143 @@ describe('applyChainOverflowFlags', () => {
     const flagged = applyChainOverflowFlags(doc, frame1);
     expect((flagged.objects[frame1] as TextFrameObject).overflow).toBe(false);
     expect((flagged.objects[frame2] as TextFrameObject).overflow).toBe(false);
+  });
+});
+
+describe('computeChainTextSlices with measured shaping', () => {
+  // 10px per char, 20px line height. Test frames are 100x60 with no padding:
+  // 10 chars/line, 3 lines per frame.
+  const fakeMeasurer: ChainTextMeasurer = {
+    measureTokenPx: (token) => token.length * 10,
+    lineHeightPx: () => 20,
+  };
+
+  const wordsOf = (slices: Record<string, string>, ids: string[]): string[] =>
+    ids.flatMap((id) => (slices[id] ?? '').split(/\s+/).filter(Boolean));
+
+  it('splits by measured width without losing or duplicating words', () => {
+    const words = Array.from({ length: 10 }, (_, i) => `w${i}`);
+    const { doc, frame1, frame2, storyId } = twoFrameDoc(words.join(' '));
+    const chain = getTextFrameChain(doc, frame1);
+    const flow = computeChainTextSlices(doc, chain, fakeMeasurer);
+    expect(flow).not.toBeNull();
+    expect(flow!.overflowBeyondLast).toBe(false);
+    // 3 words/line (90px), 3 lines/frame -> 9 words in frame 1, 1 in frame 2.
+    expect(wordsOf(flow!.slices, [frame1])).toEqual(words.slice(0, 9));
+    expect(wordsOf(flow!.slices, [frame2])).toEqual(words.slice(9));
+    expect(flow!.overflowText).toBe('');
+    void storyId;
+  });
+
+  it('forces a line break at paragraph boundaries', () => {
+    // Shrink frames to a single line each.
+    const { doc, frame1, frame2 } = twoFrameDoc('aaaa\nbbbb');
+    const oneLine = (id: string): TextFrameObject => {
+      const f = doc.objects[id] as TextFrameObject;
+      return { ...f, frame: { ...f.frame, height: 20 } };
+    };
+    const resized: RePageDocument = {
+      ...doc,
+      objects: { ...doc.objects, [frame1]: oneLine(frame1), [frame2]: oneLine(frame2) },
+    };
+    const chain = getTextFrameChain(resized, frame1);
+    const flow = computeChainTextSlices(resized, chain, fakeMeasurer);
+    expect(flow).not.toBeNull();
+    expect(flow!.slices[frame1]).toBe('aaaa\n');
+    expect(flow!.slices[frame2]).toBe('bbbb');
+    expect(flow!.overflowBeyondLast).toBe(false);
+  });
+
+  it('reports overflowText when text exceeds measured capacity', () => {
+    const words = Array.from({ length: 40 }, (_, i) => `w${i}`);
+    const { doc, frame1, frame2 } = twoFrameDoc(words.join(' '));
+    const chain = getTextFrameChain(doc, frame1);
+    const flow = computeChainTextSlices(doc, chain, fakeMeasurer);
+    expect(flow).not.toBeNull();
+    expect(flow!.overflowBeyondLast).toBe(true);
+    expect(flow!.overflowText.length).toBeGreaterThan(0);
+    // Displayed words + overflow words = all words, in order.
+    const shown = wordsOf(flow!.slices, [frame1, frame2]);
+    const overflowWords = flow!.overflowText.split(/\s+/).filter(Boolean);
+    expect([...shown, ...overflowWords]).toEqual(words);
+  });
+
+  it('falls back to the heuristic when no measurer is given', () => {
+    const { doc, frame1 } = twoFrameDoc('مختصر متن');
+    const chain = getTextFrameChain(doc, frame1);
+    const flow = computeChainTextSlices(doc, chain);
+    expect(flow!.slices[frame1]).toBe('مختصر متن');
+  });
+});
+
+describe('splitStoryAtTextOffset', () => {
+  const storyOf = (paragraphs: string[]): TextStory => ({
+    id: 'story-1',
+    name: 'Story 1',
+    content: { type: 'doc', content: paragraphs.map((t) => paragraph(t)) },
+  });
+
+  const textOf = (paras: { content: { type: string; text?: string }[] }[]): string =>
+    paras
+      .map((p) => p.content.map((r) => (r.type === 'text' ? (r.text ?? '') : '')).join(''))
+      .join('\n');
+
+  it('splits inside a paragraph preserving both halves', () => {
+    const { head, tail } = splitStoryAtTextOffset(storyOf(['hello world']), 5);
+    expect(textOf(head)).toBe('hello');
+    expect(textOf(tail)).toBe(' world');
+  });
+
+  it('splits exactly at a paragraph boundary', () => {
+    const { head, tail } = splitStoryAtTextOffset(storyOf(['one', 'two', 'three']), 3);
+    expect(textOf(head)).toBe('one');
+    expect(textOf(tail)).toBe('two\nthree');
+  });
+
+  it('splits at offset 0 and at the end', () => {
+    const start = splitStoryAtTextOffset(storyOf(['abc']), 0);
+    expect(textOf(start.head)).toBe('');
+    expect(textOf(start.tail)).toBe('abc');
+    const end = splitStoryAtTextOffset(storyOf(['abc']), 3);
+    expect(textOf(end.head)).toBe('abc');
+    expect(textOf(end.tail)).toBe('');
+  });
+
+  it('clamps out-of-range offsets', () => {
+    const { head, tail } = splitStoryAtTextOffset(storyOf(['abc']), 999);
+    expect(textOf(head)).toBe('abc');
+    expect(textOf(tail)).toBe('');
+  });
+
+  it('never returns an empty side (pads with a blank paragraph)', () => {
+    const { head, tail } = splitStoryAtTextOffset(storyOf(['abc']), 999);
+    expect(head.length).toBeGreaterThan(0);
+    expect(tail.length).toBeGreaterThan(0);
+  });
+
+  it('preserves marks and paragraph attributes across the split', () => {
+    const para = paragraph('hello world');
+    para.styleId = 'poetry';
+    const firstRun = para.content[0];
+    if (firstRun?.type === 'text') firstRun.marks = [{ type: 'bold' }];
+    const story: TextStory = {
+      id: 's',
+      name: 'S',
+      content: { type: 'doc', content: [para] },
+    };
+    const { head, tail } = splitStoryAtTextOffset(story, 5);
+    expect(head[0]!.styleId).toBe('poetry');
+    expect(tail[0]!.styleId).toBe('poetry');
+    expect(head[0]!.content[0]).toMatchObject({ text: 'hello', marks: [{ type: 'bold' }] });
+    expect(tail[0]!.content[0]).toMatchObject({ text: ' world', marks: [{ type: 'bold' }] });
+  });
+
+  it('handles empty and missing stories', () => {
+    const e1 = splitStoryAtTextOffset(storyOf([]), 0);
+    expect(e1.head.length).toBe(1);
+    expect(e1.tail.length).toBe(1);
+    const e2 = splitStoryAtTextOffset(undefined, 5);
+    expect(e2.head.length).toBe(1);
+    expect(e2.tail.length).toBe(1);
   });
 });

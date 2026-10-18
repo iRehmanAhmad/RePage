@@ -98,6 +98,8 @@ export interface ParagraphNode {
   type: 'paragraph' | 'bulletList' | 'orderedList' | 'listItem';
   direction?: TextDirection | undefined;
   alignment?: TextAlignment | undefined;
+  /** Id of the named style preset last applied to this paragraph (e.g. 'poetry'). */
+  styleId?: string | undefined;
   lineHeight?: number | undefined;
   spaceBefore?: number | undefined;
   spaceAfter?: number | undefined;
@@ -162,6 +164,7 @@ export const paragraphNodeSchema = z.object({
   type: z.enum(['paragraph', 'bulletList', 'orderedList', 'listItem']),
   direction: z.enum(['rtl', 'ltr', 'auto']).optional(),
   alignment: z.enum(['start', 'center', 'end', 'justify', 'left', 'right']).optional(),
+  styleId: z.string().optional(),
   lineHeight: z.number().positive().optional(),
   spaceBefore: z.number().nonnegative().optional(),
   spaceAfter: z.number().nonnegative().optional(),

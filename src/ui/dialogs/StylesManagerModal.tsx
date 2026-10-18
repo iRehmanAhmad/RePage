@@ -9,6 +9,12 @@ export interface StylesManagerModalProps {
   document: RePageDocument;
   onApplyStyle?: (styleId: string) => void;
   lang: UiLanguage;
+  /** User rename overrides for style display names. */
+  styleNameOverrides?: Record<string, string>;
+  /** Style ids hidden from the ribbon gallery via "Remove from Style Gallery". */
+  hiddenStyleIds?: string[];
+  /** Toggles a style's visibility in the ribbon gallery (restore path). */
+  onToggleGalleryVisibility?: (styleId: string) => void;
 }
 
 export function StylesManagerModal({
@@ -17,6 +23,9 @@ export function StylesManagerModal({
   document: _document,
   onApplyStyle,
   lang,
+  styleNameOverrides,
+  hiddenStyleIds,
+  onToggleGalleryVisibility,
 }: StylesManagerModalProps) {
   const [filterQuery, setFilterQuery] = useState('');
   const [selectedStyleId, setSelectedStyleId] = useState<string>('normal');
@@ -31,10 +40,15 @@ export function StylesManagerModal({
     { id: 'poetry', name: 'Poetry (شاعری / غزل)', font: 'Noto Nastaliq Urdu', size: 18, lineSpacing: 2.0, alignment: 'center' },
     { id: 'quote', name: 'Quote (اقتباس)', font: 'Noto Nastaliq Urdu', size: 15, lineSpacing: 1.8, alignment: 'center' },
     { id: 'quran', name: 'Quran / Hadith (آیات و احادیث)', font: 'Amiri', size: 18, lineSpacing: 1.8, alignment: 'center' },
-  ];
+  ].map((s) => ({
+    ...s,
+    // A user rename replaces the whole label; otherwise keep the bilingual base name.
+    displayName: styleNameOverrides?.[s.id] ?? s.name,
+  }));
 
   const filteredStyles = defaultStyles.filter((s) =>
-    s.name.toLowerCase().includes(filterQuery.toLowerCase()),
+    s.name.toLowerCase().includes(filterQuery.toLowerCase()) ||
+    s.displayName.toLowerCase().includes(filterQuery.toLowerCase()),
   );
 
   const activeStyleObj = defaultStyles.find((s) => s.id === selectedStyleId) || defaultStyles[0];
@@ -133,6 +147,7 @@ export function StylesManagerModal({
         >
           {filteredStyles.map((style) => {
             const isSelected = selectedStyleId === style.id;
+            const isHiddenFromGallery = hiddenStyleIds?.includes(style.id) ?? false;
             return (
               <div
                 key={style.id}
@@ -149,9 +164,33 @@ export function StylesManagerModal({
                   marginBottom: '4px',
                 }}
               >
-                <span style={{ fontWeight: 600, fontFamily: style.font }}>{style.name}</span>
-                <span style={{ fontSize: '10px', opacity: 0.85 }}>
-                  {style.font} ({style.size}pt)
+                <span style={{ fontWeight: 600, fontFamily: style.font }}>{style.displayName}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', opacity: 0.85 }}>
+                    {style.font} ({style.size}pt)
+                  </span>
+                  {onToggleGalleryVisibility && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleGalleryVisibility(style.id);
+                      }}
+                      title={isHiddenFromGallery
+                        ? (isUr ? 'اسٹائل گیلری میں واپس دکھائیں' : 'Show in style gallery')
+                        : (isUr ? 'اسٹائل گیلری سے چھپائیں' : 'Hide from style gallery')}
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: isHiddenFromGallery ? '#f59e0b' : '#94a3b8',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        padding: '2px',
+                      }}
+                    >
+                      <AppIcon name={isHiddenFromGallery ? 'eye-off' : 'eye'} size={14} />
+                    </button>
+                  )}
                 </span>
               </div>
             );

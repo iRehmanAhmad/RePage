@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppIcon } from '../ui/icons/AppIcon';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { createId } from '../domain/document/ids';
-import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, ViewMode } from '../domain/document/types';
+import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, TextFrameObject, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
 import { getFontFamilyCss } from '../domain/unicode/fontRegistry';
@@ -46,7 +46,7 @@ import {
   deleteCustomUrduPreset,
   type CustomUrduPreset,
 } from '../domain/document/customPresets';
-import { applyStyleToStory, URDU_STYLE_PRESETS } from '../editor/commands/styleCommands';
+import { applyStyleToStory, findStyleInstances, getStyleDisplayName, URDU_STYLE_PRESETS } from '../editor/commands/styleCommands';
 import { commandRegistry } from '../editor/commands/commandRegistry';
 import {
   addImageFrame,
@@ -92,7 +92,7 @@ import { exportDocumentToEpub } from '../export/exportEngine';
 // Theme, i18n & QAT
 import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
 import { UiLanguage, DICTIONARY } from '../ui/i18n/menuTranslation';
-import { QatItemKey, getInitialQatItems, saveQatItems } from '../ui/header/qatEngine';
+import { QatItemKey, getInitialQatItems, saveQatItems, qatKeyForStyle } from '../ui/header/qatEngine';
 
 // Studio Layout, MS Word Ribbon & Navigation Components
 import { StudioHeader } from '../ui/common/StudioHeader';
@@ -193,6 +193,11 @@ export function App() {
 
   // Quick Access Toolbar State
   const [qatItems, setQatItems] = useState<QatItemKey[]>(() => getInitialQatItems());
+
+  // Style gallery customization (rename / hide); overrides are display-only,
+  // paragraphs reference styles by styleId so renames never break the association.
+  const [styleNameOverrides, setStyleNameOverrides] = useState<Record<string, string>>({});
+  const [hiddenGalleryStyleIds, setHiddenGalleryStyleIds] = useState<string[]>([]);
 
   // Active translation dictionary
   const t = DICTIONARY[lang];
@@ -439,9 +444,15 @@ export function App() {
 
   const handleUnlinkTextFrame = React.useCallback(() => {
     if (!selectedObjectId) return;
+    const frame = document.objects[selectedObjectId];
+    const wasChained = frame?.type === 'text-frame' && (!!frame.previousFrameId || !!frame.nextFrameId);
     const nextDoc = unlinkTextFrameCommand(document, selectedObjectId);
     updateDocument(nextDoc, 'Unlink text frame');
-    setMessage(lang === 'ur' ? 'فریم کا لنک ٹوٹ گیا' : 'Text frame unlinked');
+    setMessage(
+      wasChained
+        ? (lang === 'ur' ? 'فریم کا لنک ٹوٹ گیا — متن تقسیم ہو کر آزاد کہانی بن گئی' : 'Text frame unlinked — its text forked into an independent story')
+        : (lang === 'ur' ? 'فریم کا لنک ٹوٹ گیا' : 'Text frame unlinked'),
+    );
   }, [document, selectedObjectId, updateDocument, lang]);
 
   const handleAddTable = React.useCallback(
@@ -1372,24 +1383,61 @@ export function App() {
   }, [activeFontFamily, activeFontSize, activeAlignment, lineHeight]);
 
   const handleSelectAllInstancesOfStyle = React.useCallback((styleId: string) => {
-    setMessage(`Selected all matching instances of style "${styleId}"`);
-  }, []);
+    const instances = findStyleInstances(document, styleId);
+    if (instances.length === 0) {
+      setMessage(`No text uses style "${getStyleDisplayName(styleId, styleNameOverrides)}" yet`);
+      return;
+    }
+    const storyIds = new Set(instances.map((i) => i.storyId));
+    const frames = Object.values(document.objects).filter(
+      (o): o is TextFrameObject => o.type === 'text-frame' && storyIds.has(o.storyId),
+    );
+    if (frames.length > 0) {
+      const first = frames[0] as TextFrameObject;
+      setActivePageId(first.pageId);
+      setSelectedObjectId(first.id);
+      setMessage(
+        `${instances.length} paragraph(s) in ${frames.length} frame(s) use style "${getStyleDisplayName(styleId, styleNameOverrides)}" — first frame selected`,
+      );
+    } else {
+      setMessage(`${instances.length} paragraph(s) use style "${getStyleDisplayName(styleId, styleNameOverrides)}"`);
+    }
+  }, [document, styleNameOverrides]);
 
   const handleRenameStyle = React.useCallback((styleId: string) => {
-    const newName = window.prompt(`Enter new name for style "${styleId}":`, URDU_STYLE_PRESETS[styleId]?.name || styleId);
-    if (newName && URDU_STYLE_PRESETS[styleId]) {
-      URDU_STYLE_PRESETS[styleId].name = newName;
-      setMessage(`Renamed style to "${newName}"`);
+    const current = getStyleDisplayName(styleId, styleNameOverrides);
+    const newName = window.prompt(`Enter new name for style "${current}":`, current);
+    const trimmed = newName?.trim();
+    if (trimmed) {
+      setStyleNameOverrides((prev) => ({ ...prev, [styleId]: trimmed }));
+      setMessage(`Renamed style to "${trimmed}"`);
     }
-  }, []);
+  }, [styleNameOverrides]);
 
   const handleRemoveStyleFromGallery = React.useCallback((styleId: string) => {
-    setMessage(`Removed style "${styleId}" from Style Gallery`);
+    setHiddenGalleryStyleIds((prev) => (prev.includes(styleId) ? prev : [...prev, styleId]));
+    setMessage(`Removed style "${getStyleDisplayName(styleId, styleNameOverrides)}" from Style Gallery (restore it in the Styles Manager)`);
+  }, [styleNameOverrides]);
+
+  const handleToggleGalleryVisibility = React.useCallback((styleId: string) => {
+    setHiddenGalleryStyleIds((prev) =>
+      prev.includes(styleId) ? prev.filter((id) => id !== styleId) : [...prev, styleId],
+    );
   }, []);
 
   const handleAddStyleToQuickAccess = React.useCallback((styleId: string) => {
-    setMessage(`Added style "${styleId}" gallery to Quick Access Toolbar`);
-  }, []);
+    const key = qatKeyForStyle(styleId);
+    if (qatItems.includes(key)) {
+      setMessage(`Style "${getStyleDisplayName(styleId, styleNameOverrides)}" is already in the Quick Access Toolbar`);
+      return;
+    }
+    setQatItems((prev) => {
+      const next = [...prev, key];
+      saveQatItems(next);
+      return next;
+    });
+    setMessage(`Added style "${getStyleDisplayName(styleId, styleNameOverrides)}" to Quick Access Toolbar`);
+  }, [qatItems, styleNameOverrides]);
 
   const handleDecreaseIndent = React.useCallback(() => {
     if (activeEditorRef.current) {
@@ -1666,6 +1714,8 @@ export function App() {
           saveState={saveState}
           qatItems={qatItems}
           onToggleQatItem={handleToggleQatItem}
+          onApplyQatStyle={handleApplyStyle}
+          styleNameOverrides={styleNameOverrides}
         />
 
         {/* MS Word 6-Tab Ribbon Toolbar */}
@@ -1776,6 +1826,8 @@ export function App() {
           onRenameStyle={handleRenameStyle}
           onRemoveStyleFromGallery={handleRemoveStyleFromGallery}
           onAddStyleToQuickAccess={handleAddStyleToQuickAccess}
+          hiddenStyleIds={hiddenGalleryStyleIds}
+          styleNameOverrides={styleNameOverrides}
           onOpenFind={() => { setFindReplaceModalTab('find'); setShowFindReplaceModal(true); }}
           onOpenReplace={() => { setFindReplaceModalTab('replace'); setShowFindReplaceModal(true); }}
           onOpenSelectionPane={() => setIsSelectionPaneOpen(true)}
@@ -2505,6 +2557,9 @@ export function App() {
             document={document}
             onApplyStyle={handleApplyStyle}
             lang={lang}
+            styleNameOverrides={styleNameOverrides}
+            hiddenStyleIds={hiddenGalleryStyleIds}
+            onToggleGalleryVisibility={handleToggleGalleryVisibility}
           />
         )}
 

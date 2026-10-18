@@ -11,7 +11,8 @@ export type QatItemKey =
   | 'epub'
   | 'ocr'
   | 'langTools'
-  | 'collab';
+  | 'collab'
+  | `style:${string}`;
 
 export interface QatDefinition {
   key: QatItemKey;
@@ -42,10 +43,8 @@ export function getInitialQatItems(): QatItemKey[] {
     try {
       const stored = localStorage.getItem(QAT_STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed as QatItemKey[];
-        }
+        const cleaned = sanitizeQatItems(JSON.parse(stored));
+        if (cleaned.length > 0) return cleaned;
       }
     } catch {
       // Fallback
@@ -62,4 +61,32 @@ export function saveQatItems(items: QatItemKey[]): void {
       // Ignore
     }
   }
+}
+
+/** QAT key for pinning a paragraph style, e.g. `style:poetry`. */
+export function qatKeyForStyle(styleId: string): `style:${string}` {
+  return `style:${styleId}`;
+}
+
+/** True for dynamic style-pin keys (`style:<id>`); false for built-in action keys. */
+export function isStyleQatKey(key: string): key is `style:${string}` {
+  return key.startsWith('style:') && key.length > 'style:'.length;
+}
+
+/** Extracts the style id from a `style:<id>` QAT key. */
+export function styleIdFromQatKey(key: `style:${string}`): string {
+  return key.slice('style:'.length);
+}
+
+/**
+ * Sanitizes a stored QAT list: keeps known action keys and well-formed style keys,
+ * drops anything else (corrupt or from a newer version).
+ */
+export function sanitizeQatItems(items: unknown): QatItemKey[] {
+  if (!Array.isArray(items)) return [];
+  const actionKeys = new Set<string>(QAT_CATALOG.map((item) => item.key));
+  return items.filter(
+    (key): key is QatItemKey =>
+      typeof key === 'string' && (actionKeys.has(key) || isStyleQatKey(key)),
+  );
 }

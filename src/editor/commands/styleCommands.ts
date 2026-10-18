@@ -134,6 +134,8 @@ export const URDU_STYLE_PRESETS: Record<string, StylePreset> = {
 
 /**
  * Applies a built-in Urdu style preset to the story content of a canonical RePageDocument.
+ * Every touched paragraph is stamped with the applied `styleId` so the style association
+ * survives renames and can be queried later (see findStyleInstances).
  */
 export function applyStyleToStory(
   doc: RePageDocument,
@@ -162,6 +164,7 @@ export function applyStyleToStory(
     paragraph.alignment = preset.alignment;
     paragraph.direction = preset.direction;
     paragraph.lineHeight = preset.lineHeight;
+    paragraph.styleId = styleId;
 
     if (paragraph.content && Array.isArray(paragraph.content)) {
       for (const run of paragraph.content) {
@@ -185,4 +188,57 @@ export function applyStyleToStory(
   }
 
   return updatedDoc;
+}
+
+/**
+ * Canonical order of the style ids shown in the ribbon Style Gallery.
+ * Shared by the ribbon, the Quick Access Toolbar style picker, and the Styles Manager
+ * so all three surfaces agree on which styles exist and in what order.
+ */
+export const GALLERY_STYLE_IDS = [
+  'normal',
+  'heading-1',
+  'heading-2',
+  'heading-3',
+  'poetry',
+  'quote',
+  'quran',
+] as const;
+
+export type GalleryStyleId = (typeof GALLERY_STYLE_IDS)[number];
+
+/**
+ * Resolves the display name for a style: a user rename override wins,
+ * otherwise the preset's own name, otherwise the raw id.
+ */
+export function getStyleDisplayName(
+  styleId: string,
+  nameOverrides?: Record<string, string>,
+): string {
+  if (nameOverrides?.[styleId]) return nameOverrides[styleId] as string;
+  return URDU_STYLE_PRESETS[styleId]?.name ?? styleId;
+}
+
+export interface StyleInstance {
+  storyId: string;
+  paragraphIndex: number;
+}
+
+/**
+ * Finds every paragraph stamped with the given styleId across all stories.
+ * Only paragraphs styled through applyStyleToStory (the canonical path) carry
+ * the stamp; direct Tiptap formatting does not.
+ */
+export function findStyleInstances(doc: RePageDocument, styleId: string): StyleInstance[] {
+  const hits: StyleInstance[] = [];
+  for (const [storyId, story] of Object.entries(doc.stories)) {
+    const paragraphs = story?.content?.content;
+    if (!Array.isArray(paragraphs)) continue;
+    paragraphs.forEach((paragraph, paragraphIndex) => {
+      if ((paragraph as ParagraphNode).styleId === styleId) {
+        hits.push({ storyId, paragraphIndex });
+      }
+    });
+  }
+  return hits;
 }

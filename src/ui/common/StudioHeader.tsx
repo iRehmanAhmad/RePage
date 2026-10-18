@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import type { ThemeMode } from '../theme/themeEngine';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
-import { QatItemKey, QAT_CATALOG } from '../header/qatEngine';
+import { QatItemKey, QAT_CATALOG, isStyleQatKey, styleIdFromQatKey } from '../header/qatEngine';
+import { GALLERY_STYLE_IDS, getStyleDisplayName } from '../../editor/commands/styleCommands';
 import { AppIcon } from '../icons/AppIcon';
 
 export interface StudioHeaderProps {
@@ -29,6 +30,10 @@ export interface StudioHeaderProps {
   saveState: string;
   qatItems: QatItemKey[];
   onToggleQatItem: (key: QatItemKey) => void;
+  /** Applies a pinned paragraph style (for `style:<id>` QAT keys). */
+  onApplyQatStyle?: (styleId: string) => void;
+  /** User rename overrides for style display names. */
+  styleNameOverrides?: Record<string, string>;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -55,6 +60,8 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   saveState,
   qatItems,
   onToggleQatItem,
+  onApplyQatStyle,
+  styleNameOverrides,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showQatDropdown, setShowQatDropdown] = useState(false);
@@ -103,6 +110,20 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
         {/* Quick Access Toolbar (QAT) */}
         <div className="qat-bar">
           {qatItems.map((key) => {
+            if (isStyleQatKey(key)) {
+              const styleId = styleIdFromQatKey(key);
+              const label = getStyleDisplayName(styleId, styleNameOverrides);
+              return (
+                <button
+                  key={key}
+                  onClick={() => onApplyQatStyle?.(styleId)}
+                  className="qat-btn"
+                  title={lang === 'ur' ? `فوری رسائی: اسٹائل "${label}" لگائیں` : `Quick Access: apply style "${label}"`}
+                >
+                  <AppIcon name="paragraph-mark" size={16} />
+                </button>
+              );
+            }
             const def = QAT_CATALOG.find((item) => item.key === key);
             if (!def) return null;
             const label = lang === 'ur' ? def.labelUr : def.labelEn;
@@ -147,6 +168,24 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                       />
                       <AppIcon name={item.icon} size={16} />
                       <span>{itemLabel}</span>
+                    </label>
+                  );
+                })}
+                <div className="qat-dropdown-header" style={{ marginTop: '4px' }}>
+                  {lang === 'ur' ? 'اسٹائلز' : 'Styles'}
+                </div>
+                {GALLERY_STYLE_IDS.map((styleId) => {
+                  const styleKey = `style:${styleId}` as QatItemKey;
+                  const isChecked = qatItems.includes(styleKey);
+                  return (
+                    <label key={styleKey} className="qat-dropdown-item">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => onToggleQatItem(styleKey)}
+                      />
+                      <AppIcon name="paragraph-mark" size={16} />
+                      <span>{getStyleDisplayName(styleId, styleNameOverrides)}</span>
                     </label>
                   );
                 })}
