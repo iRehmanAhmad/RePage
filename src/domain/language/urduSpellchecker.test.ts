@@ -13,8 +13,10 @@ describe('urduSpellchecker', () => {
   });
 
   it('detects spelling errors in Urdu text', () => {
-    const errors = checkUrduText('پاکستان اک خوبصورت ملک ہے');
+    // NOTE: 'اک' was the old fixture, but it is a real word present in the
+    // vendored wordlist; the fixture now uses the genuine misspelling 'پکستان'.
+    const errors = checkUrduText('پاکستان پکستان خوبصورت ملک ہے');
     expect(errors.length).toBeGreaterThanOrEqual(1);
-    expect(errors.some((e) => e.word === 'اک')).toBe(true);
+    expect(errors.some((e) => e.word === 'پکستان')).toBe(true);
   });
 });

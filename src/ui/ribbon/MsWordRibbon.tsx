@@ -71,6 +71,9 @@ export interface MsWordRibbonProps {
   onAddFootnote: () => void;
   onAddEndnote: () => void;
   onOpenLanguageTools: (tab?: 'spelling' | 'proofread' | 'transliteration' | 'normalization' | 'character-fix') => void;
+  /** Inline spellcheck toggle state (Urdu Tools > Proofing). */
+  spellcheckEnabled?: boolean;
+  onToggleSpellcheck?: () => void;
   onOpenOcr: () => void;
   onExportPdf: () => void;
   onExportEpub: () => void;
@@ -256,6 +259,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onAddFootnote,
   onAddEndnote: _onAddEndnote,
   onOpenLanguageTools,
+  spellcheckEnabled = true,
+  onToggleSpellcheck,
   onOpenOcr,
   onExportPdf,
   onExportEpub: _onExportEpub,
@@ -2757,6 +2762,19 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 >
                   <AppIcon name="edit" aria-hidden="true" />
                   <span>{lang === 'ur' ? 'پروف ریڈ' : 'Proofread'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onToggleSpellcheck?.()}
+                  className={`ribbon-action-btn${spellcheckEnabled ? ' highlight' : ''}`}
+                  aria-pressed={spellcheckEnabled}
+                  aria-label={lang === 'ur' ? 'املا کی جانچ' : 'Spellcheck'}
+                  title={lang === 'ur'
+                    ? (spellcheckEnabled ? 'لائیو املا بند کریں' : 'لائیو املا آن کریں')
+                    : (spellcheckEnabled ? 'Turn live spellcheck off' : 'Turn live spellcheck on')}
+                >
+                  <AppIcon name="spell-check" aria-hidden="true" />
+                  <span>{lang === 'ur' ? 'املا جانچ' : 'Spellcheck'}</span>
                 </button>
               </div>
               <div className="ribbon-group-caption">{lang === 'ur' ? 'املا' : 'Proofing'}</div>

@@ -1,4 +1,5 @@
 import { isPersonalWord } from './personalDictionary';
+import { URDU_WORDLIST } from './urduWordlist.generated';
 
 export interface DictionaryEntry {
   word: string;
@@ -121,7 +122,11 @@ const customDictionaryWords: Set<string> = new Set();
 
 export function normalizeForDictionary(word: string): string {
   if (!word) return '';
+  // NFC first so canonically equivalent spellings (composed vs decomposed
+  // alef-madda etc.) share one lookup key. Lookup keys only — document
+  // text is never modified.
   return word
+    .normalize('NFC')
     .trim()
     .toLowerCase()
     .replace(/[\u064B-\u065F\u0670]/g, '') // Strip Aerab
@@ -143,6 +148,30 @@ URDU_LEXICON_RAW.forEach(([word, definition, cat, synonyms, antonyms]) => {
     antonyms,
   });
 });
+
+/**
+ * Vendored open wordlist (tesseract-ocr/langdata, Apache-2.0 — see
+ * urduWordlist.generated.ts header and docs/DEPENDENCIES.md).
+ * Built once at module load: O(1) lookup per word.
+ */
+const BIG_DICTIONARY_SET: Set<string> = new Set(URDU_WORDLIST);
+
+/** True when the normalized lookup key exists in the vendored wordlist. */
+export function isWordInBigDictionary(word: string): boolean {
+  if (!word) return false;
+  return BIG_DICTIONARY_SET.has(normalizeForDictionary(word));
+}
+
+/**
+ * Core dictionaries only (curated lexicon + session custom words).
+ * Excludes the personal dictionary on purpose: the spellcheck hot path keeps
+ * its own in-memory personal-word cache instead of hitting localStorage per word.
+ */
+export function isWordInCoreDictionaries(word: string): boolean {
+  if (!word) return false;
+  const norm = normalizeForDictionary(word);
+  return DICTIONARY_MAP.has(norm) || customDictionaryWords.has(norm) || BIG_DICTIONARY_SET.has(norm);
+}
 
 export function isWordInDictionary(word: string): boolean {
   if (!word || word.trim().length === 0) return true;

@@ -51,7 +51,16 @@ GitHub popularity is supporting evidence, not proof of correctness.
 - UrduHack: linguistic reference; its Python runtime is not automatically suitable for the application.
 - `malisubhani/inpage`: not considered a reusable implementation engine.
 
-## 5. Versioning and supply chain
+## 5. Vendored data assets
+
+| Asset | Source | License | Redistribution basis |
+|---|---|---|---|
+| Urdu spellcheck wordlist (`src/domain/language/urduWordlist.generated.ts`, 30,122 lookup keys) | https://github.com/tesseract-ocr/langdata/blob/main/urd/urd.wordlist | Apache License 2.0 | License verified by reading the upstream LICENSE file; permits reproduction and redistribution with attribution. Attribution notice is embedded in the generated file header: "Urdu wordlist derived from tesseract-ocr/langdata (Apache-2.0), (c) the Tesseract OCR contributors." |
+
+Regeneration: `node scripts/build-urdu-wordlist.mjs` (documents cleaning rules; deterministic output).
+Lookup keys are normalized for matching only; no document text is derived from this asset.
+
+## 6. Versioning and supply chain
 
 - Commit lockfiles.
 - Avoid unpinned CDN runtime dependencies.
@@ -61,6 +70,6 @@ GitHub popularity is supporting evidence, not proof of correctness.
 - Establish vulnerability scanning and a response policy before public release.
 - Do not run install scripts from unknown packages without review.
 
-## 6. Font register requirements
+## 7. Font register requirements
 
 Every packaged font needs its own record with upstream source, artifact hash, version, OFL reserved font names if any, licence file, redistribution permission, document/PDF embedding permission, and QA corpus result.

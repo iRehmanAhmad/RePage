@@ -5,6 +5,8 @@ import { createId } from '../domain/document/ids';
 import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, TextFrameObject, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
+import { isSpellcheckEnabled, setSpellcheckEnabled } from '../domain/language/spellcheckSettings';
+import { broadcastSpellcheckChanged } from '../ui/editor/spellcheckExtension';
 import { getFontFamilyCss } from '../domain/unicode/fontRegistry';
 import { updateCompositeFontRules } from '../ui/editor/compositeFontStyle';
 import { PAGE_PRESETS, millimetresToPoints, pointsToMillimetres } from '../domain/geometry/units';
@@ -1634,6 +1636,21 @@ export function App() {
     }
   }, []);
 
+  const [spellcheckOn, setSpellcheckOn] = useState<boolean>(() => isSpellcheckEnabled());
+  const spellcheckMountedRef = React.useRef(false);
+  const handleToggleSpellcheck = React.useCallback(() => {
+    setSpellcheckOn((prev) => !prev);
+  }, []);
+  // Persist + broadcast *outside* the state updater (updaters must stay pure).
+  React.useEffect(() => {
+    if (!spellcheckMountedRef.current) {
+      spellcheckMountedRef.current = true;
+      return;
+    }
+    setSpellcheckEnabled(spellcheckOn);
+    broadcastSpellcheckChanged(spellcheckOn);
+  }, [spellcheckOn]);
+
   const handleToggleWritingLanguage = React.useCallback(() => {
     setWritingLanguage((prev) => {
       const next = prev === 'urdu' ? 'english' : 'urdu';
@@ -1858,6 +1875,8 @@ export function App() {
             setLanguageToolsInitialTab(targetTab);
             setShowLanguageTools(true);
           }}
+          spellcheckEnabled={spellcheckOn}
+          onToggleSpellcheck={handleToggleSpellcheck}
           onOpenOcr={() => void handleTriggerOcr()}
           onExportPdf={handleBrowserPrint}
           onExportEpub={() => void handleExportEpub()}
@@ -2354,6 +2373,26 @@ export function App() {
               }}
             >
               {writingLanguage === 'urdu' ? 'اردو' : 'EN'}
+            </button>
+            <span className="statusbar-separator">|</span>
+            <button
+              type="button"
+              onClick={handleToggleSpellcheck}
+              title={spellcheckOn ? 'لائیو املا بند کریں' : 'لائیو املا آن کریں'}
+              aria-pressed={spellcheckOn}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '1px 8px',
+                borderRadius: '3px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: spellcheckOn ? '#10b981' : '#64748b',
+                backgroundColor: spellcheckOn ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+              }}
+            >
+              {spellcheckOn ? '✓ املا' : 'املا'}
             </button>
           </div>
 

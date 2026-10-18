@@ -1,6 +1,29 @@
 const PERSONAL_DICT_KEY = 'repage_personal_dictionary';
 
 /**
+ * Change listeners: spellcheck keeps an in-memory cache of personal words so
+ * the per-word hot path never touches localStorage. Listeners invalidate it.
+ */
+const changeListeners = new Set<() => void>();
+
+export function onPersonalDictionaryChanged(listener: () => void): () => void {
+  changeListeners.add(listener);
+  return () => {
+    changeListeners.delete(listener);
+  };
+}
+
+function emitPersonalDictionaryChanged(): void {
+  for (const listener of changeListeners) {
+    try {
+      listener();
+    } catch {
+      // a listener must never break persistence
+    }
+  }
+}
+
+/**
  * Loads user personal dictionary words from local storage.
  */
 export function loadPersonalDictionary(): string[] {
@@ -24,6 +47,7 @@ export function savePersonalDictionary(words: string[]): void {
   } catch {
     // ignore storage quota errors in test environments
   }
+  emitPersonalDictionaryChanged();
 }
 
 /**

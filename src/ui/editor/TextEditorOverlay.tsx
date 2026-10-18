@@ -14,6 +14,8 @@ import { getFontDefinition } from '../../domain/unicode/fontRegistry';
 import { canonicalToTiptapHtml, tiptapHtmlToCanonical } from '../../domain/rich-text/tiptapConverter';
 import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
+import { Spellcheck } from './spellcheckExtension';
+import { SpellcheckMenu } from './SpellcheckMenu';
 
 import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
 import { mapKeyToUrduCharacter } from '../../domain/unicode/keyboardLayouts';
@@ -86,6 +88,7 @@ export function TextEditorOverlay({
       FontFamily,
       SmartDeletePreview,
       BidiVisualCursor,
+      Spellcheck,
     ],
     content: canonicalToTiptapHtml(story.content),
     autofocus: 'end',
@@ -112,6 +115,7 @@ export function TextEditorOverlay({
       },
       attributes: {
         dir: 'rtl',
+        spellcheck: 'false',
         style: `
           font-family: ${fontDef.family};
           font-size: ${fontSize * scale}px;
@@ -210,6 +214,7 @@ export function TextEditorOverlay({
           pointerEvents: 'auto',
         }}
       />
+      <SpellcheckMenu editor={editor} />
     </div>
   );
 }

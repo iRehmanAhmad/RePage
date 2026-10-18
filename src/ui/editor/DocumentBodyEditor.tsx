@@ -185,6 +185,8 @@ import { romanToUrdu } from '../../domain/language/transliteration';
 import { getFontDefinition } from '../../domain/unicode/fontRegistry';
 import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
+import { Spellcheck } from './spellcheckExtension';
+import { SpellcheckMenu } from './SpellcheckMenu';
 import {
   COMPOSITE_FONT_FAMILY,
   updateCompositeFontRules,
@@ -556,6 +558,7 @@ export function DocumentBodyEditor({
       FormattingMarksExtension,
       SmartDeletePreview,
       BidiVisualCursor,
+      Spellcheck,
     ],
     content: initialHtml,
     autofocus: false,
@@ -661,6 +664,7 @@ export function DocumentBodyEditor({
       },
       attributes: {
         dir: rtlColumnOrder ? 'rtl' : 'ltr',
+        spellcheck: 'false',
         class: showFormattingMarks ? 'show-formatting-marks' : '',
         style: `
           font-family: ${compositeFontCss};
@@ -780,6 +784,7 @@ export function DocumentBodyEditor({
           pointerEvents: 'auto',
         }}
       />
+      <SpellcheckMenu editor={editor} />
     </div>
   );
 }
