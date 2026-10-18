@@ -18,7 +18,6 @@ describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize T
         onInsertChar={handleInsert}
         isMinimized={false}
         onToggleMinimize={handleToggleMinimize}
-        lang="ur"
         t={DICTIONARY.ur}
       />,
     );
@@ -44,7 +43,6 @@ describe('VisualKeyboard Component with Compact Single-Row Controls & Minimize T
         onInsertChar={handleInsert}
         isMinimized={true}
         onToggleMinimize={handleToggleMinimize}
-        lang="ur"
         t={DICTIONARY.ur}
       />,
     );
