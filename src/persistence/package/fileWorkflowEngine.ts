@@ -146,15 +146,14 @@ export async function importExternalFileWorkflow(
   }
 
   if (ext === 'txt') {
-    const { importPlainText } = await import('../import/textImporter');
-    return importPlainText(buffer);
+    const { importTextFile } = await import('../import/textImporter');
+    return importTextFile(buffer, filename);
   } else if (ext === 'rtf') {
-    const { importRtf } = await import('../import/rtfImporter');
-    return importRtf(buffer);
+    const { importRtfFile } = await import('../import/rtfImporter');
+    return importRtfFile(buffer, filename);
   } else if (ext === 'html' || ext === 'htm') {
-    const { importHtml } = await import('../import/htmlImporter');
-    const text = new TextDecoder('utf-8').decode(buffer);
-    return importHtml(text);
+    const { importHtmlFile } = await import('../import/htmlImporter');
+    return importHtmlFile(buffer, filename);
   } else if (ext === 'docx') {
     const { importDocxFile } = await import('../import/docxImporter');
     return importDocxFile(buffer, filename);
