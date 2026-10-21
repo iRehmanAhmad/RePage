@@ -24,6 +24,8 @@ export interface FileBackstageOverlayProps {
   onExportDocx: () => void;
   onImportDocxFile: (file: File) => void;
   onPrint: () => void;
+  /** Opens the software update dialog (Tauri updater). Optional: hidden when not provided. */
+  onCheckForUpdates?: () => void;
 }
 
 type BackstageSection = 'home' | 'new' | 'open' | 'import' | 'info' | 'export' | 'options';
@@ -45,6 +47,7 @@ export function FileBackstageOverlay({
   onExportDocx,
   onImportDocxFile,
   onPrint,
+  onCheckForUpdates,
 }: FileBackstageOverlayProps) {
   const [activeSection, setActiveSection] = useState<BackstageSection>('home');
   const [unitPreference, setUnitPreference] = useState<'mm' | 'pt'>('mm');
@@ -470,6 +473,29 @@ export function FileBackstageOverlay({
                   <option value="pt">{lang === 'ur' ? 'پوائنٹس (pt)' : 'Points (pt)'}</option>
                 </select>
               </div>
+              {onCheckForUpdates && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+                    {dict.updTitle}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={onCheckForUpdates}
+                    style={{
+                      backgroundColor: '#0f766e',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {dict.updCheckForUpdates}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

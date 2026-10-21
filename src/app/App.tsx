@@ -133,6 +133,7 @@ import {
 import { HeaderFooterModal } from '../ui/dialogs/HeaderFooterModal';
 import { ExportOutputDialog } from '../ui/dialogs/ExportOutputDialog';
 import { ImportReportDialog } from '../ui/dialogs/ImportReportDialog';
+import { UpdateDialog } from '../ui/dialogs/UpdateDialog';
 import { ExportReportDialog } from '../ui/dialogs/ExportReportDialog';
 import type { ImportReport } from '../persistence/import/docxImporter';
 import type { ExportOptions, ExportPageRange } from '../export/types';
@@ -198,6 +199,7 @@ export function App() {
   const [showHeaderFooterModal, setShowHeaderFooterModal] = useState(false);
   const [showExportOutputDialog, setShowExportOutputDialog] = useState(false);
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [exportReport, setExportReport] = useState<{ report: DocxExportReport; fileName: string } | null>(null);
   const [showGrid, setShowGrid] = useState(false);
 
@@ -2952,6 +2954,17 @@ export function App() {
           onExportDocx={() => void handleExportDocx()}
           onImportDocxFile={(file) => void handleOpenImportFile(file)}
           onPrint={triggerNativePrintDialog}
+          onCheckForUpdates={() => {
+            setIsFileBackstageOpen(false);
+            setShowUpdateDialog(true);
+          }}
+        />
+
+        {/* Software update dialog (real Tauri updater) */}
+        <UpdateDialog
+          isOpen={showUpdateDialog}
+          onClose={() => setShowUpdateDialog(false)}
+          lang={lang}
         />
 
         {/* Import report (shown after a .docx import) */}

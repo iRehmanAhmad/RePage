@@ -31,6 +31,8 @@ GitHub popularity is supporting evidence, not proof of correctness.
 | Zod or JSON Schema validator | Runtime validation | Select during Foundation | Avoid duplicating schema truth manually |
 | Yjs | Optional collaboration | Keep, later phase | Domain remains usable without it |
 | Tauri 2 | Desktop packaging | Add at desktop gate | Least-privilege capability design |
+| @tauri-apps/plugin-updater + tauri-plugin-updater | Signed auto-update (checks GitHub Releases `latest.json`, verifies minisign signatures in Rust against the pubkey pinned in `tauri.conf.json`) | Keep | Endpoint + pubkey live in `tauri.conf.json`, never in JS; capabilities limited to `updater:default` |
+| @tauri-apps/plugin-process + tauri-plugin-process | Relaunch after an update installs | Keep | Only `process:allow-restart` is granted |
 
 ## 3. Prototype dependencies requiring qualification
 

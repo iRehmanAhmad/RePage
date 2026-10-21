@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "RePage",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.repage.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -26,7 +26,13 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "dmg", "deb", "appimage", "rpm"],
+    "targets": [
+      "nsis",
+      "dmg",
+      "deb",
+      "appimage",
+      "rpm"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -51,20 +57,39 @@
     },
     "linux": {
       "deb": {
-        "depends": ["webkit2gtk-4.1", "fontconfig", "libssl3"]
+        "depends": [
+          "webkit2gtk-4.1",
+          "fontconfig",
+          "libssl3"
+        ]
       },
       "rpm": {
-        "depends": ["webkit2gtk4.1", "fontconfig", "openssl"]
+        "depends": [
+          "webkit2gtk4.1",
+          "fontconfig",
+          "openssl"
+        ]
       }
     },
     "fileAssociations": [
       {
-        "ext": ["urdup"],
+        "ext": [
+          "urdup"
+        ],
         "name": "RePage Urdu Document",
         "description": "RePage Urdu Document Package",
         "mimeType": "application/vnd.urdup+zip",
         "role": "Editor"
       }
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU2Mzk1Q0NGMEQyMTc4N0UKUldSK2VDRU56MXc1VnB4UEg1dSttWEo1NEplclBjbU9UcFZTUWtPTTN3QlB4Yzl3M0EzZE9iOXUK",
+      "endpoints": [
+        "https://github.com/iRehmanAhmad/RePage/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

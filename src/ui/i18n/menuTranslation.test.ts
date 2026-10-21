@@ -32,6 +32,7 @@ describe('menuTranslation dictionary completeness', () => {
     const KNOWN_DUPES = new Set([
       'en:Columns', // grpColumns (ribbon group) vs columns (page layout label)
       'ur:املاء تفتیش', // grpProofing (group caption) vs spellcheck (button) — same natural word
+      'ur:بند کریں', // panelClose (panel button) vs updClose (update dialog button) — same natural word
     ]);
     for (const lang of LANGS) {
       const seen = new Map<string, string>();

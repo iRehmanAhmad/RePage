@@ -344,6 +344,24 @@ export interface Translations {
   cmtReply: string;
   cmtWriteComment: string;
   cmtWriteReply: string;
+
+  // Software updates (Tauri updater dialog)
+  updCheckForUpdates: string;
+  updTitle: string;
+  updChecking: string;
+  updUpToDate: string;
+  updAvailable: string;
+  updCurrentVersion: string;
+  updNewVersion: string;
+  updReleaseNotes: string;
+  updDownloadInstall: string;
+  updDownloading: string;
+  updInstalling: string;
+  updError: string;
+  updDesktopOnly: string;
+  updLater: string;
+  updRetry: string;
+  updClose: string;
 }
 
 export const DICTIONARY: Record<UiLanguage, Translations> = {
@@ -666,6 +684,24 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     cmtReply: 'جواب دیں',
     cmtWriteComment: 'نیا تبصرہ لکھیں...',
     cmtWriteReply: 'جواب لکھیں...',
+
+    // Software updates (Tauri updater dialog)
+    updCheckForUpdates: 'اپڈیٹس دیکھیں',
+    updTitle: 'سافٹ ویئر اپڈیٹ',
+    updChecking: 'اپڈیٹس تلاش کی جا رہی ہیں…',
+    updUpToDate: 'آپ تازہ ترین ورژن استعمال کر رہے ہیں۔',
+    updAvailable: 'نیا ورژن دستیاب ہے',
+    updCurrentVersion: 'موجودہ ورژن',
+    updNewVersion: 'نیا ورژن',
+    updReleaseNotes: 'ریلیز نوٹس',
+    updDownloadInstall: 'ڈاؤن لوڈ اور انسٹال کریں',
+    updDownloading: 'اپڈیٹ ڈاؤن لوڈ ہو رہی ہے…',
+    updInstalling: 'انسٹال ہو رہا ہے… ایپ دوبارہ شروع ہوگی۔',
+    updError: 'اپڈیٹ کی جانچ ناکام ہو گئی',
+    updDesktopOnly: 'اپڈیٹس صرف ڈیسک ٹاپ ایپ میں دستیاب ہیں۔',
+    updLater: 'بعد میں',
+    updRetry: 'دوبارہ کوشش کریں',
+    updClose: 'بند کریں',
   },
   en: {
     tabFile: 'File',
@@ -986,6 +1022,24 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     cmtReply: 'Reply',
     cmtWriteComment: 'Write a comment...',
     cmtWriteReply: 'Write a reply...',
+
+    // Software updates (Tauri updater dialog)
+    updCheckForUpdates: 'Check for Updates',
+    updTitle: 'Software Update',
+    updChecking: 'Checking for updates…',
+    updUpToDate: 'You are using the latest version.',
+    updAvailable: 'A new version is available',
+    updCurrentVersion: 'Current version',
+    updNewVersion: 'New version',
+    updReleaseNotes: 'Release notes',
+    updDownloadInstall: 'Download & Install',
+    updDownloading: 'Downloading update…',
+    updInstalling: 'Installing… the app will restart.',
+    updError: 'Update check failed',
+    updDesktopOnly: 'Updates are available in the desktop app only.',
+    updLater: 'Later',
+    updRetry: 'Try Again',
+    updClose: 'Close',
   },
 };
 
