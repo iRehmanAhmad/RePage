@@ -17,6 +17,9 @@ import type {
   RePageDocument,
   RectangleObject,
   StoryId,
+  TableCell,
+  TableObject,
+  TableRow,
   TextFrameObject,
 } from '../domain/document/types';
 import type {
@@ -41,6 +44,7 @@ export interface PageSpec {
 }
 
 export const A4_SPEC: PageSpec = { widthPt: mm(210), heightPt: mm(297), marginPt: mm(15) };
+export const A4_LANDSCAPE_SPEC: PageSpec = { widthPt: mm(297), heightPt: mm(210), marginPt: mm(12) };
 export const A5_SPEC: PageSpec = { widthPt: mm(148), heightPt: mm(210), marginPt: mm(12) };
 export const CARD_5X7_SPEC: PageSpec = { widthPt: inch(5), heightPt: inch(7), marginPt: mm(10) };
 
@@ -289,6 +293,88 @@ export function addHorizontalRule(
     strokeWidth,
     name: 'Horizontal rule',
   });
+}
+
+export interface TableCellSpecObject {
+  text: string;
+  bold?: boolean | undefined;
+  align?: TextAlignment | undefined;
+  size?: number | undefined;
+  backgroundColor?: string | undefined;
+}
+
+/** A table cell: plain text, or text with per-cell formatting. */
+export type TableCellSpec = string | TableCellSpecObject;
+
+export interface AddTableOptions {
+  name?: string | undefined;
+  /** Height of each row in points; frame height = rows × rowHeightPt. Default 30. */
+  rowHeightPt?: number | undefined;
+  /** Default cell font size in points. Default 12. */
+  fontSize?: number | undefined;
+  borderColor?: string | undefined;
+}
+
+/**
+ * Adds a REAL table object — the same model shape the app's own table
+ * commands build (rows of cells carrying rich-text documents), so users
+ * can edit every cell after inserting the template. The rect is given in
+ * millimetres; height is derived from the row count.
+ */
+export function addTable(
+  doc: RePageDocument,
+  pageId: PageId,
+  rect: { x: number; y: number; w: number },
+  rows: TableCellSpec[][],
+  opts: AddTableOptions = {},
+): ObjectId {
+  const page = doc.pages[pageId];
+  if (!page) throw new Error(`Page ${pageId} does not exist.`);
+  const rowHeightPt = opts.rowHeightPt ?? 30;
+  const tableRows: TableRow[] = rows.map((rowSpec) => ({
+    id: createId('row'),
+    cells: rowSpec.map((cellSpec): TableCell => {
+      const spec: TableCellSpecObject = typeof cellSpec === 'string' ? { text: cellSpec } : cellSpec;
+      return {
+        id: createId('cell'),
+        content: {
+          type: 'doc',
+          content: [
+            para(spec.text, {
+              align: spec.align ?? 'center',
+              size: spec.size ?? opts.fontSize ?? 12,
+              bold: spec.bold ?? false,
+            }),
+          ],
+        },
+        backgroundColor: spec.backgroundColor ?? '#ffffff',
+      };
+    }),
+  }));
+  const id = createId('table');
+  const table: TableObject = {
+    id,
+    pageId,
+    name: opts.name ?? 'Template table',
+    frame: {
+      x: mm(rect.x),
+      y: mm(rect.y),
+      width: mm(rect.w),
+      height: tableRows.length * rowHeightPt,
+      rotation: 0,
+    },
+    locked: false,
+    hidden: false,
+    opacity: 1,
+    type: 'table',
+    rows: tableRows,
+    cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+    borderColor: opts.borderColor ?? '#64748b',
+    borderWidth: 1,
+  };
+  doc.objects[id] = table;
+  page.objectOrder.push(id);
+  return id;
 }
 
 /** Counts paragraphs across all stories whose plain text includes `needle`. */
