@@ -118,3 +118,5 @@ export function exportDocumentToSvg(doc: RePageDocument, pageId: PageId): string
 }
 
 export { exportDocumentToEpub } from './epubExporter';
+export { exportDocumentToDocx, getDefaultDocxFileName, DOCX_MIME } from './docxExporter';
+export type { DocxExportReport, DocxExportResult } from './docxExporter';

@@ -18,6 +18,7 @@ export interface FileBackstageOverlayProps {
   onSaveAsDocument: () => void;
   onExportPdf: () => void;
   onExportVectorPdf: () => void;
+  onExportDocx: () => void;
   onImportDocxFile: (file: File) => void;
   onPrint: () => void;
 }
@@ -37,6 +38,7 @@ export function FileBackstageOverlay({
   onSaveAsDocument,
   onExportPdf,
   onExportVectorPdf,
+  onExportDocx,
   onImportDocxFile,
   onPrint,
 }: FileBackstageOverlayProps) {
@@ -550,6 +552,26 @@ export function FileBackstageOverlay({
                 }}
               >
                 <AppIcon name="document-pdf" /> {lang === 'ur' ? 'ویکٹر PDF برآمد' : 'Vector PDF Export'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onExportDocx();
+                  onClose();
+                }}
+                title={lang === 'ur' ? 'اصل .docx فائل بناتا ہے جو مائیکروسافٹ ورڈ، لبری آفس اور گوگل ڈاکس میں کھلتی ہے۔' : 'Generates a real .docx file that opens in Microsoft Word, LibreOffice and Google Docs.'}
+                style={{
+                  padding: '16px 24px',
+                  backgroundColor: '#0f766e',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                <AppIcon name="document-text" /> {lang === 'ur' ? 'ورڈ دستاویز (.docx)' : 'Word Document (.docx)'}
               </button>
             </div>
           </div>

@@ -90,7 +90,7 @@ import { LanguageToolsPanel } from '../ui/language/LanguageToolsPanel';
 import { OcrCorrectionPanel } from '../ui/ocr/OcrCorrectionPanel';
 import { OcrImportDialog } from '../ui/ocr/OcrImportDialog';
 import { OcrPageResult } from '../domain/ocr/ocrEngine';
-import { exportDocumentToEpub } from '../export/exportEngine';
+import { exportDocumentToEpub, exportDocumentToDocx, DOCX_MIME, type DocxExportReport } from '../export/exportEngine';
 
 // Theme, i18n & QAT
 import { ThemeMode, applyThemeToDocument } from '../ui/theme/themeEngine';
@@ -123,6 +123,7 @@ import { applyLanguageChangesCommand } from '../editor/commands/languageCommands
 import { HeaderFooterModal } from '../ui/dialogs/HeaderFooterModal';
 import { ExportOutputDialog } from '../ui/dialogs/ExportOutputDialog';
 import { ImportReportDialog } from '../ui/dialogs/ImportReportDialog';
+import { ExportReportDialog } from '../ui/dialogs/ExportReportDialog';
 import type { ImportReport } from '../persistence/import/docxImporter';
 import type { ExportOptions } from '../export/types';
 import { PrintLayoutView } from '../ui/views/PrintLayoutView';
@@ -187,6 +188,7 @@ export function App() {
   const [showHeaderFooterModal, setShowHeaderFooterModal] = useState(false);
   const [showExportOutputDialog, setShowExportOutputDialog] = useState(false);
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const [exportReport, setExportReport] = useState<{ report: DocxExportReport; fileName: string } | null>(null);
   const [showGrid, setShowGrid] = useState(false);
 
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>('crulp');
@@ -645,6 +647,32 @@ export function App() {
     setMessage(lang === 'ur' ? 'ePUB 3.0 کامیابی سے برآمد ہو گیا' : 'ePUB 3.0 exported successfully');
   }, [lang, document]);
 
+  const handleExportDocx = React.useCallback(async () => {
+    try {
+      const result = await exportDocumentToDocx(document);
+      const platform = getActivePlatform();
+      const saved = await platform.saveFile(result.bytes, result.fileName, DOCX_MIME, [
+        { name: 'Word Document', extensions: ['docx'] },
+      ]);
+      if (saved === null) {
+        setMessage(lang === 'ur' ? 'ورڈ برآمد منسوخ کر دی گئی' : 'Word export cancelled');
+        return;
+      }
+      setExportReport({ report: result.report, fileName: saved });
+      setMessage(
+        lang === 'ur'
+          ? `ورڈ دستاویز برآمد ہو گئی: ${saved}`
+          : `Word document exported: ${saved}`,
+      );
+    } catch (err) {
+      setMessage(
+        lang === 'ur'
+          ? `ورڈ برآمد ناکام: ${err instanceof Error ? err.message : String(err)}`
+          : `Word export failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }, [document, lang]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
@@ -1003,8 +1031,9 @@ export function App() {
     commandRegistry.setHandler('edit.paste', () => void handlePaste('all'));
     commandRegistry.setHandler('edit.pasteUnformatted', () => void handlePaste('text-only'));
     commandRegistry.setHandler('file.exportPdf', () => handleExportVectorPdf());
+    commandRegistry.setHandler('file.exportDocx', () => void handleExportDocx());
     commandRegistry.setHandler('file.newFromTemplate', (id: string) => handleNewFromTemplate(id));
-  }, [handleCut, handleCopy, handlePaste, handleExportVectorPdf, handleNewFromTemplate]);
+  }, [handleCut, handleCopy, handlePaste, handleExportVectorPdf, handleExportDocx, handleNewFromTemplate]);
 
   const handleFormatPainter = React.useCallback(() => {
     if (isFormatPainterActive) {
@@ -1931,6 +1960,7 @@ export function App() {
           onOpenOcr={() => void handleTriggerOcr()}
           onExportPdf={handleBrowserPrint}
           onExportVectorPdf={handleExportVectorPdf}
+          onExportDocx={() => void handleExportDocx()}
           onExportEpub={() => void handleExportEpub()}
           onRunPreflight={() => setShowPreflight(true)}
           onToggleCollab={() => setMessage(lang === 'ur' ? 'لائیو تعاون روم فعال ہے' : 'Live collaboration room active')}
@@ -2608,6 +2638,8 @@ export function App() {
               handleExportVectorPdf();
             } else if (exportOptions.format === 'epub') {
               void handleExportEpub();
+            } else if (exportOptions.format === 'docx') {
+              void handleExportDocx();
             } else {
               setMessage(`Export format '${exportOptions.format}' selected.`);
             }
@@ -2826,6 +2858,7 @@ export function App() {
           onSaveAsDocument={() => void handleSaveAsNative()}
           onExportPdf={handleBrowserPrint}
           onExportVectorPdf={handleExportVectorPdf}
+          onExportDocx={() => void handleExportDocx()}
           onImportDocxFile={(file) => void handleOpenImportFile(file)}
           onPrint={triggerNativePrintDialog}
         />
@@ -2835,6 +2868,15 @@ export function App() {
           isOpen={importReport !== null}
           onClose={() => setImportReport(null)}
           report={importReport}
+          lang={lang}
+        />
+
+        {/* Export report (shown after a .docx export) */}
+        <ExportReportDialog
+          isOpen={exportReport !== null}
+          onClose={() => setExportReport(null)}
+          report={exportReport?.report ?? null}
+          fileName={exportReport?.fileName ?? ''}
           lang={lang}
         />
 

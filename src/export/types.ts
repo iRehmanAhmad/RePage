@@ -1,6 +1,6 @@
 import type { PageId } from '../domain/document/types';
 
-export type ExportFormat = 'browser-print' | 'vector-pdf' | 'epub' | 'svg' | 'png' | 'jpeg' | 'raster-pdf';
+export type ExportFormat = 'browser-print' | 'vector-pdf' | 'docx' | 'epub' | 'svg' | 'png' | 'jpeg' | 'raster-pdf';
 
 export type ExportPageRange =
   | { kind: 'all' }
@@ -49,6 +49,18 @@ export const FORMAT_CAPABILITIES: Record<ExportFormat, FormatCapability> = {
     labelUr: 'ویکٹر پی ڈی ایف (پرنٹ سے)',
     descriptionEn: 'Renders pages as real vector text and opens the system print dialog — choose "Save as PDF" for a genuine PDF file.',
     descriptionUr: 'صفحات کو اصل ویکٹر ٹیکسٹ کے طور پر رینڈر کر کے سسٹم پرنٹ ڈائیلاگ کھولتا ہے — "Save as PDF" منتخب کریں۔',
+    isImplemented: true,
+    supportsDpi: false,
+    supportsBleed: false,
+    supportsCropMarks: false,
+    supportsBackground: true,
+  },
+  docx: {
+    format: 'docx',
+    labelEn: 'Word Document (.docx)',
+    labelUr: 'ورڈ دستاویز (.docx)',
+    descriptionEn: 'Microsoft Word document with text, styles, tables and images — opens in Word, LibreOffice and Google Docs.',
+    descriptionUr: 'متن، اسٹائلز، جدول اور تصاویر کے ساتھ مائیکروسافٹ ورڈ دستاویز — ورڈ، لبری آفس اور گوگل ڈاکس میں کھلتی ہے۔',
     isImplemented: true,
     supportsDpi: false,
     supportsBleed: false,

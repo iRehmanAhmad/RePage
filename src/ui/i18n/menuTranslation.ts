@@ -87,6 +87,9 @@ export interface Translations {
   exportPdf: string;
   browserPrint: string;
   vectorPdfExport: string;
+  exportDocx: string;
+  wordDocxExport: string;
+  exportDocxTooltip: string;
   exportEpub: string;
 
   // Inspector & Status
@@ -399,6 +402,9 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     exportPdf: 'PDF برآمد',
     browserPrint: 'پرنٹ… (براؤزر)',
     vectorPdfExport: 'ویکٹر PDF برآمد',
+    exportDocx: 'DOCX برآمد',
+    wordDocxExport: 'ورڈ دستاویز (.docx)',
+    exportDocxTooltip: 'اصل .docx فائل بناتا ہے جو مائیکروسافٹ ورڈ، لبری آفس اور گوگل ڈاکس میں کھلتی ہے۔',
     exportEpub: 'ePUB 3.0 برآمد',
 
     inspectorProps: 'خواص',
@@ -696,6 +702,9 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     exportPdf: 'Export PDF',
     browserPrint: 'Browser Print…',
     vectorPdfExport: 'Vector PDF Export',
+    exportDocx: 'Export DOCX',
+    wordDocxExport: 'Word Document (.docx)',
+    exportDocxTooltip: 'Generates a real .docx file that opens in Microsoft Word, LibreOffice and Google Docs.',
     exportEpub: 'Export ePUB 3.0',
 
     inspectorProps: 'Properties',

@@ -115,6 +115,15 @@ commandRegistry.register({
   execute: () => {},
 });
 
+commandRegistry.register({
+  id: 'file.exportDocx',
+  label: 'Export Word Document (.docx)',
+  category: 'file',
+  icon: '📘',
+  isUndoable: false,
+  execute: () => {},
+});
+
 // Default Registration of Template Gallery Command
 commandRegistry.register({
   id: 'file.newFromTemplate',

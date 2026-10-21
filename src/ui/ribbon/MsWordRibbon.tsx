@@ -77,6 +77,7 @@ export interface MsWordRibbonProps {
   onOpenOcr: () => void;
   onExportPdf: () => void;
   onExportVectorPdf?: () => void;
+  onExportDocx?: () => void;
   onExportEpub: () => void;
   onRunPreflight: () => void;
   onToggleCollab: () => void;
@@ -265,6 +266,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onOpenOcr,
   onExportPdf,
   onExportVectorPdf,
+  onExportDocx,
   onExportEpub: _onExportEpub,
   onRunPreflight,
   onToggleCollab,
@@ -3245,6 +3247,15 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 >
                   <AppIcon name="document-pdf" />
                   <span>{t.vectorPdfExport}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onExportDocx?.()}
+                  className="ribbon-action-btn"
+                  title={t.exportDocxTooltip}
+                >
+                  <AppIcon name="document-text" />
+                  <span>{t.wordDocxExport}</span>
                 </button>
               </div>
               <div className="ribbon-group-caption">{t.tabExportView}</div>
