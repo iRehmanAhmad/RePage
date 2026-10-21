@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Spellcheck, recheckSpellcheck } from './spellcheckExtension';
 import {
   isSpellcheckEnabled,
+  setDocumentIgnoredWords,
   setSpellcheckEnabled,
 } from '../../domain/language/spellcheckSettings';
 import {
@@ -23,6 +24,7 @@ describe('Spellcheck extension (inline underlines)', () => {
     mount?.remove();
     mount = null;
     setSpellcheckEnabled(settingBefore);
+    setDocumentIgnoredWords([]);
     localStorage.clear();
     notePersonalDictionaryChanged();
   });
@@ -71,5 +73,22 @@ describe('Spellcheck extension (inline underlines)', () => {
     setSpellcheckEnabled(true);
     createEditor('پاکِستان قومی ترانہ ہے');
     expect(mount!.querySelectorAll('.repage-spellcheck-error').length).toBe(0);
+  });
+
+  it('removes the underline when the word is ignored in this document', () => {
+    setSpellcheckEnabled(true);
+    createEditor('پاکستان پکستان ہے');
+    expect(mount!.querySelectorAll('.repage-spellcheck-error').length).toBe(1);
+
+    // The app mirrors the active document's ignore list into the settings;
+    // a recheck then drops the underline for that document only.
+    setDocumentIgnoredWords(['پکستان']);
+    recheckSpellcheck(editor);
+    expect(mount!.querySelectorAll('.repage-spellcheck-error').length).toBe(0);
+
+    // Clearing the list (another document, or list cleared) flags it again.
+    setDocumentIgnoredWords([]);
+    recheckSpellcheck(editor);
+    expect(mount!.querySelectorAll('.repage-spellcheck-error').length).toBe(1);
   });
 });

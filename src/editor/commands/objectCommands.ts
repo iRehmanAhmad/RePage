@@ -1,5 +1,6 @@
 import type { RichTextDocument } from '../../domain/rich-text/types';
-import type { CropBounds, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextWrapMode, AssetReference } from '../../domain/document/types';
+import type { ImageCropInsets, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextWrapMode, AssetReference } from '../../domain/document/types';
+import { clampImageCropInsets, isImageCropEmpty } from '../../domain/geometry/imageCrop';
 import { createId } from '../../domain/document/ids';
 import { paragraph } from '../../domain/rich-text/types';
 import type { OcrPageResult } from '../../domain/ocr/ocrEngine';
@@ -135,15 +136,22 @@ export function setObjectWrapping(
 }
 
 /**
- * Updates crop bounds for an image object.
+ * Sets or clears the non-destructive crop insets of an image frame.
+ * Insets are fractions of the source image per edge, clamped to the
+ * schema range (0–0.45). Passing null — or insets that are all zero —
+ * removes the crop entirely. The stored asset bytes are never touched.
+ * No-op for missing objects and non-image objects.
  */
-export function setObjectCrop(
+export function setImageCropCommand(
   doc: RePageDocument,
   objectId: string,
-  crop: CropBounds,
+  crop: ImageCropInsets | null,
 ): RePageDocument {
   const obj = doc.objects[objectId];
   if (!obj || obj.type !== 'image-frame') return doc;
+
+  const nextCrop = crop && !isImageCropEmpty(crop) ? clampImageCropInsets(crop) : undefined;
+  if (nextCrop === obj.crop) return doc;
 
   return {
     ...doc,
@@ -151,7 +159,7 @@ export function setObjectCrop(
       ...doc.objects,
       [objectId]: {
         ...obj,
-        crop,
+        crop: nextCrop,
       },
     },
   };

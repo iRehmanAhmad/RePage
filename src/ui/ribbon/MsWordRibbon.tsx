@@ -102,6 +102,8 @@ export interface MsWordRibbonProps {
   onReorderObject?: (action: 'forward' | 'backward' | 'front' | 'back') => void;
   onAlignObjects?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   onSetWrapping?: (wrapMode: TextWrapMode) => void;
+  /** Opens the inspector's image-crop controls for the selected image. */
+  onCropImage?: () => void;
   onToggleSelectionPane?: () => void;
   onInsertTable?: (rows?: number, cols?: number) => void;
   onInsertTableRowAbove?: () => void;
@@ -291,6 +293,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onReorderObject,
   onAlignObjects,
   onSetWrapping,
+  onCropImage,
   onToggleSelectionPane,
   onInsertTable,
   onInsertTableRowAbove,
@@ -2636,7 +2639,12 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
           <div className="ribbon-group-row">
             <div className="ribbon-group-box">
               <div className="ribbon-chunk">
-                <button type="button" className="ribbon-action-btn primary">
+                <button
+                  type="button"
+                  className="ribbon-action-btn primary"
+                  onClick={() => onCropImage?.()}
+                  title={t.cropImage}
+                >
                   <AppIcon name="cut" />
                   <span>{lang === 'ur' ? 'کراپ (Crop)' : 'Crop Picture'}</span>
                 </button>

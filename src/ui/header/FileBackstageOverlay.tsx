@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import type { RePageDocument } from '../../domain/document/types';
-import { translateSaveState, type UiLanguage } from '../i18n/menuTranslation';
+import type { PageId, RePageDocument } from '../../domain/document/types';
+import type { ExportPageRange } from '../../export/types';
+import { DICTIONARY, translateSaveState, type UiLanguage } from '../i18n/menuTranslation';
 import { AppIcon } from '../icons/AppIcon';
 import { TEMPLATE_REGISTRY } from '../../templates';
 
@@ -10,14 +11,16 @@ export interface FileBackstageOverlayProps {
   document: RePageDocument;
   lang: UiLanguage;
   saveState: string;
+  /** The page the user is currently editing (for the "Current Page" range). */
+  activePageId?: PageId | undefined;
   onNewDocument: () => void;
   /** Creates a new document from a template gallery id (see src/templates). */
   onNewFromTemplate: (templateId: string) => void;
   onOpenDocument: () => void;
   onSaveDocument: () => void;
   onSaveAsDocument: () => void;
-  onExportPdf: () => void;
-  onExportVectorPdf: () => void;
+  onExportPdf: (pageRange?: ExportPageRange) => void;
+  onExportVectorPdf: (pageRange?: ExportPageRange) => void;
   onExportDocx: () => void;
   onImportDocxFile: (file: File) => void;
   onPrint: () => void;
@@ -31,6 +34,7 @@ export function FileBackstageOverlay({
   document,
   lang,
   saveState,
+  activePageId,
   onNewDocument,
   onNewFromTemplate,
   onOpenDocument,
@@ -44,6 +48,17 @@ export function FileBackstageOverlay({
 }: FileBackstageOverlayProps) {
   const [activeSection, setActiveSection] = useState<BackstageSection>('home');
   const [unitPreference, setUnitPreference] = useState<'mm' | 'pt'>('mm');
+  const [printRangeKind, setPrintRangeKind] = useState<'all' | 'current-page' | 'custom'>('all');
+  const [printRangeFrom, setPrintRangeFrom] = useState<number>(1);
+  const [printRangeTo, setPrintRangeTo] = useState<number>(document.pageOrder.length || 1);
+
+  const dict = DICTIONARY[lang];
+  const selectedPrintRange: ExportPageRange =
+    printRangeKind === 'current-page' && activePageId
+      ? { kind: 'current-page', pageId: activePageId }
+      : printRangeKind === 'custom'
+        ? { kind: 'custom', from: printRangeFrom, to: printRangeTo }
+        : { kind: 'all' };
 
   if (!isOpen) return null;
 
@@ -516,7 +531,7 @@ export function FileBackstageOverlay({
               <button
                 type="button"
                 onClick={() => {
-                  onExportPdf();
+                  onExportPdf(selectedPrintRange);
                   onClose();
                 }}
                 title={lang === 'ur' ? 'سسٹم کا پرنٹ ڈائیلاگ کھولتا ہے۔ یہ RePage PDF فائل نہیں بناتا۔' : 'Opens your browser/system print dialog. It does not generate a RePage PDF file.'}
@@ -536,7 +551,7 @@ export function FileBackstageOverlay({
               <button
                 type="button"
                 onClick={() => {
-                  onExportVectorPdf();
+                  onExportVectorPdf(selectedPrintRange);
                   onClose();
                 }}
                 title={lang === 'ur' ? 'دستاویز سے ویکٹر PDF بناتا ہے (پرنٹ ڈائیلاگ میں "Save as PDF" منتخب کریں)۔' : 'Generates a vector PDF from the document (choose "Save as PDF" in the print dialog).'}
@@ -573,6 +588,71 @@ export function FileBackstageOverlay({
               >
                 <AppIcon name="document-text" /> {lang === 'ur' ? 'ورڈ دستاویز (.docx)' : 'Word Document (.docx)'}
               </button>
+            </div>
+
+            {/* Print page range: applied by RePage itself (the system print
+                dialog cannot be given a range programmatically). */}
+            <div style={{ marginTop: '28px', maxWidth: '560px', backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '16px' }}>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="backstagePrintRange"
+                    aria-label={dict.printRangeAll}
+                    checked={printRangeKind === 'all'}
+                    onChange={() => setPrintRangeKind('all')}
+                    style={{ accentColor: '#0d9488' }}
+                  />
+                  <span>{dict.printRangeAll} ({document.pageOrder.length})</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="backstagePrintRange"
+                    aria-label={dict.printRangeCurrent}
+                    checked={printRangeKind === 'current-page'}
+                    onChange={() => setPrintRangeKind('current-page')}
+                    style={{ accentColor: '#0d9488' }}
+                  />
+                  <span>{dict.printRangeCurrent}</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="backstagePrintRange"
+                    aria-label={dict.printRangeCustom}
+                    checked={printRangeKind === 'custom'}
+                    onChange={() => setPrintRangeKind('custom')}
+                    style={{ accentColor: '#0d9488' }}
+                  />
+                  <span>{dict.printRangeCustom}</span>
+                </label>
+              </div>
+              {printRangeKind === 'custom' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}>
+                  <span>{dict.printRangeFrom}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={document.pageOrder.length}
+                    value={printRangeFrom}
+                    onChange={(e) => setPrintRangeFrom(Number(e.target.value))}
+                    style={{ width: '70px', padding: '6px 8px', backgroundColor: '#020617', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc' }}
+                  />
+                  <span>{dict.printRangeTo}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={document.pageOrder.length}
+                    value={printRangeTo}
+                    onChange={(e) => setPrintRangeTo(Number(e.target.value))}
+                    style={{ width: '70px', padding: '6px 8px', backgroundColor: '#020617', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc' }}
+                  />
+                </div>
+              )}
+              <p style={{ marginTop: '12px', marginBottom: 0, fontSize: '12px', color: '#94a3b8' }}>
+                {dict.printCopiesNote}
+              </p>
             </div>
           </div>
         )}

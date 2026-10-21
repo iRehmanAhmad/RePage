@@ -15,6 +15,7 @@ import type {
 } from '../domain/rich-text/types';
 import { BUILTIN_URDU_PARAGRAPH_STYLES } from '../domain/rich-text/styles';
 import { PRIMARY_STORY_ID } from '../domain/document/createDocument';
+import { cropSrcRectValues } from '../domain/geometry/imageCrop';
 
 /**
  * DOCX (Office Open XML) exporter: canonical RePageDocument -> .docx package.
@@ -525,6 +526,14 @@ function imageParagraphXml(obj: ImageFrameObject, doc: RePageDocument, ctx: Ctx)
   const name = escAttr(asset.originalName || `image${id}`);
   ctx.report.imageCount += 1;
 
+  // Non-destructive crop: DrawingML srcRect trims the same source insets
+  // the canvas/print renderers apply; the stored image bytes are embedded
+  // whole and unaltered.
+  const srcRect = cropSrcRectValues(obj.crop);
+  const srcRectXml = srcRect
+    ? `<a:srcRect l="${srcRect.l}" t="${srcRect.t}" r="${srcRect.r}" b="${srcRect.b}"/>`
+    : '';
+
   return (
     '<w:p><w:r><w:drawing>' +
     `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
@@ -536,7 +545,7 @@ function imageParagraphXml(obj: ImageFrameObject, doc: RePageDocument, ctx: Ctx)
     '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
     '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
     `<pic:nvPicPr><pic:cNvPr id="${id}" name="${name}"/><pic:cNvPicPr/></pic:nvPicPr>` +
-    `<pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
+    `<pic:blipFill><a:blip r:embed="${relId}"/>${srcRectXml}<a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
     `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>` +
     '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
     '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>'

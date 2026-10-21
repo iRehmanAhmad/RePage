@@ -3,6 +3,7 @@ import type { Editor } from '@tiptap/core';
 import {
   broadcastSpellcheckRecheck,
   recheckSpellcheck,
+  requestIgnoreWordInDocument,
   setSpellcheckMenuHandler,
   type SpellcheckMenuInfo,
 } from './spellcheckExtension';
@@ -11,6 +12,7 @@ import {
   ignoreWordForSession,
   notePersonalDictionaryChanged,
 } from '../../domain/language/urduSpellchecker';
+import { DICTIONARY } from '../i18n/menuTranslation';
 
 export interface SpellcheckMenuProps {
   editor: Editor | null;
@@ -72,6 +74,14 @@ export function SpellcheckMenu({ editor, lang = 'ur' }: SpellcheckMenuProps) {
     ignoreWordForSession(info.word);
     recheckSpellcheck(editor);
     broadcastSpellcheckRecheck();
+    close();
+  };
+
+  const ignoreInDocument = () => {
+    // Persisted on the document by the app (it owns the canonical state);
+    // the app also mirrors the list back into the checker settings, which
+    // triggers a recheck everywhere once the document updates.
+    requestIgnoreWordInDocument(info.word);
     close();
   };
 
@@ -200,6 +210,31 @@ export function SpellcheckMenu({ editor, lang = 'ur' }: SpellcheckMenuProps) {
         }}
       >
         {t.ignore}
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={ignoreInDocument}
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'right',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          color: '#94a3b8',
+          fontSize: '13px',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#1e293b';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        {DICTIONARY[lang].spellIgnoreAllInDoc}
       </button>
     </div>
     </>

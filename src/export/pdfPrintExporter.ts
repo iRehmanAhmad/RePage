@@ -29,6 +29,8 @@ import { repaginateDocument } from '../domain/layout/paginationEngine';
 import { resolvePageCompositeObjects } from '../domain/layout/masterPageEngine';
 import { getSectionForPage } from '../domain/layout/sectionEngine';
 import { getSectionPageNumberString } from '../domain/unicode/pageNumbering';
+import { cropFrameLayout, isImageCropEmpty } from '../domain/geometry/imageCrop';
+import type { ExportPageRange } from './types';
 
 export const PRINT_ROOT_CLASS = 'repage-print-root';
 export const PRINTING_BODY_CLASS = 'repage-printing';
@@ -48,6 +50,40 @@ export interface PrintPageSize {
 }
 
 export type PdfPrintResult = { ok: true; fileName: string } | { ok: false; reason: string };
+
+export interface PdfPrintOptions {
+  /**
+   * In-app page-range choice (All / Current page / Pages X–Y). Only the
+   * selected pages enter the print DOM — the system print dialog cannot be
+   * given a range programmatically, so RePage applies it here instead.
+   * Copies are NOT settable this way; they stay in the system dialog.
+   * Default: all pages.
+   */
+  pageRange?: ExportPageRange | undefined;
+}
+
+/**
+ * Resolves a page-range choice to 0-based indices into `doc.pageOrder`.
+ * Out-of-range values are clamped; an inverted custom range is swapped;
+ * an unknown current page falls back to all pages. Always non-empty for a
+ * non-empty document.
+ */
+export function resolvePrintPageIndices(
+  doc: RePageDocument,
+  range: ExportPageRange | undefined,
+): number[] {
+  const count = doc.pageOrder.length;
+  const all = Array.from({ length: count }, (_, i) => i);
+  if (!range || range.kind === 'all' || count === 0) return all;
+  if (range.kind === 'current-page') {
+    const idx = doc.pageOrder.indexOf(range.pageId);
+    return idx >= 0 ? [idx] : all;
+  }
+  const from = Math.min(Math.max(1, Math.floor(range.from) || 1), count);
+  const to = Math.min(Math.max(1, Math.floor(range.to) || 1), count);
+  const [lo, hi] = from <= to ? [from, to] : [to, from];
+  return all.slice(lo - 1, hi);
+}
 
 interface PrintTextRun {
   type?: string | undefined;
@@ -128,12 +164,19 @@ function fontStackFor(doc: RePageDocument): string {
 /**
  * Renders the document's pages as static, read-only DOM (no editors, no
  * canvas interactivity). The returned element is detached; the caller decides
- * where to mount it.
+ * where to mount it. When `pageRange` is given, only the selected pages are
+ * rendered (page numbers still reflect their position in the document).
  */
-export function renderPrintPages(doc: RePageDocument): HTMLElement {
+export function renderPrintPages(
+  doc: RePageDocument,
+  pageRange?: ExportPageRange,
+): HTMLElement {
   const root = document.createElement('div');
   root.className = PRINT_ROOT_CLASS;
   root.setAttribute('dir', doc.metadata.locale === 'ur-PK' ? 'rtl' : 'ltr');
+
+  const selectedPages = new Set(resolvePrintPageIndices(doc, pageRange));
+  const firstSelectedIndex = selectedPages.size > 0 ? Math.min(...selectedPages) : 0;
 
   const pagination = repaginateDocument(doc, PRIMARY_STORY_ID);
   const repaginatedStory = pagination.repaginatedDoc.stories[PRIMARY_STORY_ID];
@@ -143,6 +186,7 @@ export function renderPrintPages(doc: RePageDocument): HTMLElement {
   const isRtl = doc.metadata.locale === 'ur-PK';
 
   doc.pageOrder.forEach((pageId, pageIndex) => {
+    if (!selectedPages.has(pageIndex)) return;
     const page = doc.pages[pageId];
     if (!page) return;
 
@@ -203,7 +247,7 @@ export function renderPrintPages(doc: RePageDocument): HTMLElement {
       (_, pIdx) => (pagination.paragraphPageMap[pIdx] ?? 0) === pageIndex,
     );
     const paragraphsToRender =
-      pageParagraphs.length > 0 ? pageParagraphs : pageIndex === 0 ? storyParagraphs : [];
+      pageParagraphs.length > 0 ? pageParagraphs : pageIndex === firstSelectedIndex ? storyParagraphs : [];
     for (const para of paragraphsToRender) {
       const p = document.createElement('p');
       p.style.margin = '0 0 12pt 0';
@@ -259,15 +303,40 @@ export function renderPrintPages(doc: RePageDocument): HTMLElement {
       } else if (obj.type === 'image-frame') {
         const asset = obj.assetId ? doc.assets[obj.assetId] : undefined;
         if (asset?.dataUrl) {
-          const img = document.createElement('img');
-          img.style.position = 'absolute';
-          img.style.left = `${obj.frame.x}pt`;
-          img.style.top = `${obj.frame.y}pt`;
-          img.style.width = `${obj.frame.width}pt`;
-          img.style.height = `${obj.frame.height}pt`;
-          img.style.objectFit = obj.fit === 'stretch' ? 'fill' : obj.fit;
-          img.setAttribute('src', asset.dataUrl);
-          objectsEl.appendChild(img);
+          if (!isImageCropEmpty(obj.crop)) {
+            // Cropped: clip to the frame and scale the full image so the
+            // visible region (source minus insets) exactly fills it — the
+            // same region the canvas and DOCX export show.
+            const layout = cropFrameLayout(obj.frame.width, obj.frame.height, obj.crop);
+            const clip = document.createElement('div');
+            clip.style.position = 'absolute';
+            clip.style.left = `${obj.frame.x}pt`;
+            clip.style.top = `${obj.frame.y}pt`;
+            clip.style.width = `${obj.frame.width}pt`;
+            clip.style.height = `${obj.frame.height}pt`;
+            clip.style.overflow = 'hidden';
+            const img = document.createElement('img');
+            img.style.position = 'absolute';
+            img.style.left = `${layout.offsetX}pt`;
+            img.style.top = `${layout.offsetY}pt`;
+            img.style.width = `${layout.imageWidth}pt`;
+            img.style.height = `${layout.imageHeight}pt`;
+            img.style.maxWidth = 'none';
+            img.style.objectFit = 'fill';
+            img.setAttribute('src', asset.dataUrl);
+            clip.appendChild(img);
+            objectsEl.appendChild(clip);
+          } else {
+            const img = document.createElement('img');
+            img.style.position = 'absolute';
+            img.style.left = `${obj.frame.x}pt`;
+            img.style.top = `${obj.frame.y}pt`;
+            img.style.width = `${obj.frame.width}pt`;
+            img.style.height = `${obj.frame.height}pt`;
+            img.style.objectFit = obj.fit === 'stretch' ? 'fill' : obj.fit;
+            img.setAttribute('src', asset.dataUrl);
+            objectsEl.appendChild(img);
+          }
         }
       }
       // Tables are skipped: static table print rendering is future work.
@@ -311,7 +380,10 @@ export function renderPrintPages(doc: RePageDocument): HTMLElement {
  * use as the default file name. Cleanup is guaranteed through the afterprint
  * event with a timer fallback.
  */
-export function exportDocumentToPdf(doc: RePageDocument): PdfPrintResult {
+export function exportDocumentToPdf(
+  doc: RePageDocument,
+  options?: PdfPrintOptions,
+): PdfPrintResult {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return { ok: false, reason: 'PDF print export requires a browser or Tauri webview environment.' };
   }
@@ -326,7 +398,7 @@ export function exportDocumentToPdf(doc: RePageDocument): PdfPrintResult {
   styleEl.setAttribute('data-repage-print', 'pdf');
   styleEl.textContent = buildPrintCss(widthPt, heightPt);
 
-  const root = renderPrintPages(doc);
+  const root = renderPrintPages(doc, options?.pageRange);
 
   document.head.appendChild(styleEl);
   document.body.appendChild(root);

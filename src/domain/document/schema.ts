@@ -67,6 +67,15 @@ const imageFrameSchema = baseObjectSchema.extend({
   type: z.literal('image-frame'),
   assetId: z.string().min(1).nullable(),
   fit: z.enum(['contain', 'cover', 'stretch']),
+  // Non-destructive crop insets: fractions of the source image per edge.
+  crop: z
+    .object({
+      left: finiteNumber.min(0).max(0.45),
+      top: finiteNumber.min(0).max(0.45),
+      right: finiteNumber.min(0).max(0.45),
+      bottom: finiteNumber.min(0).max(0.45),
+    })
+    .optional(),
 });
 
 const tableCellSchema = z.object({
@@ -124,6 +133,8 @@ export const documentSchema = z.object({
     createdAt: z.iso.datetime(),
     modifiedAt: z.iso.datetime(),
     locale: z.enum(['ur-PK', 'en']),
+    // Per-document spellcheck ignore list ("Ignore All in this document").
+    spellcheckIgnoredWords: z.array(z.string().min(1)).optional(),
   }),
   settings: z.object({
     measurementUnit: z.enum(['pt', 'mm', 'in']),

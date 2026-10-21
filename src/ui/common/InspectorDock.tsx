@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import type { PageObject, RePageDocument } from '../../domain/document/types';
+import type { ImageCropInsets, PageObject, RePageDocument } from '../../domain/document/types';
+import { MAX_IMAGE_CROP_INSET } from '../../domain/geometry/imageCrop';
 import { pointsToMillimetres } from '../../domain/geometry/units';
 import type { Translations } from '../i18n/menuTranslation';
 import { AppIcon } from '../icons/AppIcon';
@@ -16,6 +17,8 @@ export interface InspectorDockProps {
     objectId: string,
     styleProps: Partial<{ fill: string; stroke: string; strokeWidth: number; cornerRadius: number }>
   ) => void;
+  /** Sets (or clears, with null) the non-destructive crop of an image frame. */
+  onUpdateImageCrop?: (objectId: string, crop: ImageCropInsets | null) => void;
   isOpen?: boolean | undefined;
   onClose?: (() => void) | undefined;
   width?: number | undefined;
@@ -28,6 +31,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   selectedObject,
   onUpdateGeometry,
   onUpdateShapeStyle,
+  onUpdateImageCrop,
   isOpen = true,
   onClose,
   width = 260,
@@ -268,6 +272,63 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                     className="range-slider"
                   />
                 </div>
+              </div>
+            )}
+            {/* Image Crop (non-destructive insets, for Image Frames) */}
+            {selectedObject.type === 'image-frame' && onUpdateImageCrop && (
+              <div className="space-y-card" style={{ marginTop: '12px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+                <div className="flex-between mb-2">
+                  <span className="field-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
+                    {t.inspImageCrop}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateImageCrop(selectedObject.id, null)}
+                    style={{
+                      padding: '2px 8px',
+                      fontSize: '11px',
+                      backgroundColor: '#1e293b',
+                      border: '1px solid #334155',
+                      borderRadius: '4px',
+                      color: '#e2e8f0',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.cropReset}
+                  </button>
+                </div>
+                {(
+                  [
+                    ['left', t.cropInsetLeft],
+                    ['top', t.cropInsetTop],
+                    ['right', t.cropInsetRight],
+                    ['bottom', t.cropInsetBottom],
+                  ] as const
+                ).map(([edge, label]) => {
+                  const crop = selectedObject.crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
+                  const pct = Math.round(crop[edge] * 100);
+                  return (
+                    <div key={edge} style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                      <div className="flex-between">
+                        <label style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</label>
+                        <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{pct}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={Math.round(MAX_IMAGE_CROP_INSET * 100)}
+                        value={pct}
+                        onChange={(e) =>
+                          onUpdateImageCrop(selectedObject.id, {
+                            ...crop,
+                            [edge]: Number(e.target.value) / 100,
+                          })
+                        }
+                        className="range-slider"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

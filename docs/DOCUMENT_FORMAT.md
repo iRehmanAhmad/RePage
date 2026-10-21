@@ -48,6 +48,14 @@ Page records include page size, orientation-derived dimensions, margins, bleed, 
 
 Text is structured rich-text JSON with explicit paragraph direction. Arbitrary HTML is not accepted as canonical content.
 
+### 4.1 Image crop (Phase 4 batch 8)
+
+An `image-frame` object may carry an optional `crop` record of insets — `{ left, top, right, bottom }`, each a finite number in the range 0–0.45 expressing the fraction of the source image trimmed from that edge. The crop is non-destructive: the stored asset bytes are never modified, and every renderer (canvas, print/PDF, DOCX via `a:srcRect`) shows the source region that remains after trimming the insets, stretched into the frame. Absent or all-zero insets mean uncropped. No migration is needed: the field is optional, so older documents remain valid unchanged.
+
+### 4.2 Per-document spellcheck ignore list (Phase 4 batch 8)
+
+Document metadata may carry `spellcheckIgnoredWords`: an optional array of non-empty strings — the words the user chose to "ignore all" in THIS document only. It is distinct from the session ignore (never persisted) and the personal dictionary (global to the user, stored outside the document). Older documents without the field remain valid; clearing the list removes the field.
+
 ## 5. Assets
 
 - Each asset is addressed by SHA-256 digest.

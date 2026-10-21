@@ -4,6 +4,7 @@ import type { PageId, RePageDocument } from '../../domain/document/types';
 import type { ExportFormat, ExportOptions, ExportPageRange } from '../../export/types';
 import { FORMAT_CAPABILITIES } from '../../export/types';
 import { checkExportReadiness } from '../../export/exportReadiness';
+import { DICTIONARY } from '../i18n/menuTranslation';
 
 export interface ExportOutputDialogProps {
   isOpen: boolean;
@@ -233,6 +234,12 @@ export const ExportOutputDialog: React.FC<ExportOutputDialogProps> = ({
                 <span>{isUr ? 'تک' : ''}</span>
               </div>
             )}
+
+            {/* Honest note: the range is applied by RePage; copies cannot be
+                set programmatically and stay in the system print dialog. */}
+            <div style={{ marginTop: '10px', fontSize: '11px', color: '#94a3b8' }}>
+              {DICTIONARY[lang].printCopiesNote}
+            </div>
           </div>
 
           {/* Conditional Options: DPI, Bleed & Crop Marks */}

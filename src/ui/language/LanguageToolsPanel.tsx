@@ -25,6 +25,12 @@ export interface LanguageToolsPanelProps {
   onApplyChanges?: (changes: LanguageChange[]) => void;
   onClose?: () => void;
   t?: Translations;
+  /** Persists a word in the document's own spellcheck ignore list. */
+  onIgnoreWordInDocument?: (word: string) => void;
+  /** Removes one word from the document's spellcheck ignore list. */
+  onRemoveDocumentIgnoredWord?: (word: string) => void;
+  /** Clears the document's whole spellcheck ignore list. */
+  onClearDocumentIgnoredWords?: () => void;
 }
 
 export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
@@ -34,6 +40,9 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
   onApplyChanges,
   onClose,
   t,
+  onIgnoreWordInDocument,
+  onRemoveDocumentIgnoredWord,
+  onClearDocumentIgnoredWords,
 }) => {
   const tt = t ?? DICTIONARY.en;
   const [activeTab, setActiveTab] = useState<'proofread' | 'dictionary' | 'transliterate' | 'normalize'>(
@@ -92,7 +101,13 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
   const [transliteratedOutput, setTransliteratedOutput] = useState('');
 
   // Proofread & Analysis Results on real document text
-  const rawSpellingErrors = useMemo(() => checkUrduText(concatenatedText), [concatenatedText]);
+  const rawSpellingErrors = useMemo(
+    () =>
+      checkUrduText(concatenatedText, {
+        documentIgnoredWords: document.metadata.spellcheckIgnoredWords,
+      }),
+    [concatenatedText, document.metadata.spellcheckIgnoredWords],
+  );
   const proofreadIssues = useMemo(() => proofreadUrduText(concatenatedText), [concatenatedText]);
   const normPreview = useMemo(() => previewNormalization(concatenatedText), [concatenatedText]);
 
@@ -128,7 +143,11 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
   };
 
   const handleIgnoreAll = (word: string) => {
+    // Panel-local hide (instant feedback) PLUS persistence on the document
+    // via the app command, so the word stays ignored in this document after
+    // save/reopen — not just for this panel session.
     setIgnoredTokens((prev) => new Set([...prev, word]));
+    onIgnoreWordInDocument?.(word);
   };
 
   // Helper to build LanguageChange objects relative to exact document stories
@@ -516,6 +535,46 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
                 ))}
               </div>
             )}
+
+            {/* Words ignored in this document (persisted in the document) */}
+            <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600, color: '#f8fafc' }}>
+                  {tt.ltDocIgnoredTitle} ({(document.metadata.spellcheckIgnoredWords ?? []).length})
+                </span>
+                {(document.metadata.spellcheckIgnoredWords ?? []).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onClearDocumentIgnoredWords?.()}
+                    style={{ padding: '4px 10px', backgroundColor: '#7f1d1d', border: '1px solid #991b1b', color: '#fecaca', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {tt.ltClearDocIgnored}
+                  </button>
+                )}
+              </div>
+              {(document.metadata.spellcheckIgnoredWords ?? []).length === 0 ? (
+                <div style={{ color: '#94a3b8' }}>{tt.ltDocIgnoredEmpty}</div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {(document.metadata.spellcheckIgnoredWords ?? []).map((word) => (
+                    <span
+                      key={word}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 8px', backgroundColor: '#020617', border: '1px solid #334155', borderRadius: '999px', color: '#e2e8f0' }}
+                    >
+                      {word}
+                      <button
+                        type="button"
+                        aria-label={word}
+                        onClick={() => onRemoveDocumentIgnoredWord?.(word)}
+                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: 0, fontSize: '12px', lineHeight: 1 }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

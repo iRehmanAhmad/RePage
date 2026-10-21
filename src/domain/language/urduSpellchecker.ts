@@ -146,6 +146,45 @@ onPersonalDictionaryChanged(() => {
   personalCache = null;
 });
 
+// --- Per-document ignore -------------------------------------------------------
+/**
+ * Options accepted by the checking entry points. `documentIgnoredWords` is
+ * the ACTIVE document's own ignore list (stored in document metadata,
+ * persisted in the .urdup package) — distinct from the session ignore
+ * (memory-only) and the personal dictionary (global, localStorage).
+ */
+export interface SpellcheckOptions {
+  documentIgnoredWords?: Iterable<string> | undefined;
+}
+
+/**
+ * Builds the lookup set for a document ignore list. Both normalization
+ * forms are stored (Urdu dictionary key + English key — identical for
+ * ASCII Latin tokens) so a word listed in either spelling stays ignored,
+ * exactly like the session-ignore checks below.
+ */
+function buildDocumentIgnoredSet(
+  words: Iterable<string> | undefined,
+): ReadonlySet<string> | undefined {
+  if (!words) return undefined;
+  const set = new Set<string>();
+  for (const word of words) {
+    const urduKey = normalizeForDictionary(word);
+    if (urduKey) set.add(urduKey);
+    const englishKey = normalizeForEnglish(word);
+    if (englishKey) set.add(englishKey);
+  }
+  return set.size > 0 ? set : undefined;
+}
+
+function isDocumentIgnored(
+  docIgnored: ReadonlySet<string> | undefined,
+  ...keys: string[]
+): boolean {
+  if (!docIgnored) return false;
+  return keys.some((key) => key.length > 0 && docIgnored.has(key));
+}
+
 // --- Session ignore ------------------------------------------------------------
 const sessionIgnored = new Set<string>();
 
@@ -214,7 +253,10 @@ export function isWordInEnglishDictionary(word: string): boolean {
   return false;
 }
 
-function isEnglishCorrect(word: string): boolean {
+function isEnglishCorrect(
+  word: string,
+  docIgnored?: ReadonlySet<string> | undefined,
+): boolean {
   const key = normalizeForEnglish(word);
   if (key.length < 2) return true;
   // Session ignore + personal dictionary apply to English words too. Their
@@ -222,6 +264,7 @@ function isEnglishCorrect(word: string): boolean {
   // normalizeForEnglish on ASCII Latin tokens; check both key forms so a
   // word ignored in either spelling stays ignored.
   const dictKey = normalizeForDictionary(word);
+  if (isDocumentIgnored(docIgnored, key, dictKey)) return true;
   if (sessionIgnored.has(key) || sessionIgnored.has(dictKey)) return true;
   const personal = getPersonalCache();
   if (personal.has(key) || personal.has(dictKey)) return true;
@@ -274,12 +317,26 @@ function getEnglishSuggestions(word: string, maxSuggestions: number): string[] {
  * path only when they contain Arabic-script letters and no Latin letters are
  * present at the token level (see findMisspelledRanges).
  */
-export function isSpellingCorrect(word: string): boolean {
-  if (isLatinWord(word)) return isEnglishCorrect(word);
+export function isSpellingCorrect(
+  word: string,
+  options?: SpellcheckOptions,
+): boolean {
+  return isSpellingCorrectWithIgnores(
+    word,
+    buildDocumentIgnoredSet(options?.documentIgnoredWords),
+  );
+}
+
+function isSpellingCorrectWithIgnores(
+  word: string,
+  docIgnored: ReadonlySet<string> | undefined,
+): boolean {
+  if (isLatinWord(word)) return isEnglishCorrect(word, docIgnored);
   const norm = normalizeForDictionary(word);
   // Too short to judge (single characters, stray marks): never flag.
   if (norm.length < 2) return true;
   return (
+    isDocumentIgnored(docIgnored, norm) ||
     sessionIgnored.has(norm) ||
     getPersonalCache().has(norm) ||
     isWordInCoreDictionaries(norm)
@@ -320,8 +377,12 @@ function findSkipSpans(text: string): Array<[number, number]> {
  * characters. Aerab and other diacritics never cause a flag: comparison is
  * on normalized lookup keys.
  */
-export function findMisspelledRanges(text: string): MisspelledRange[] {
+export function findMisspelledRanges(
+  text: string,
+  options?: SpellcheckOptions,
+): MisspelledRange[] {
   if (!text) return [];
+  const docIgnored = buildDocumentIgnoredSet(options?.documentIgnoredWords);
   const skipSpans = findSkipSpans(text);
   const ranges: MisspelledRange[] = [];
   const inSkipSpan = (start: number, end: number): boolean =>
@@ -349,7 +410,7 @@ export function findMisspelledRanges(text: string): MisspelledRange[] {
       while (lo < hi && (span[lo] === "'" || span[lo] === '’')) lo++;
       while (hi > lo && (span[hi - 1] === "'" || span[hi - 1] === '’')) hi--;
       const word = span.slice(lo, hi);
-      if (word && !isSpellingCorrect(word)) {
+      if (word && !isSpellingCorrectWithIgnores(word, docIgnored)) {
         ranges.push({ word, start: spanStart + lo, end: spanStart + hi });
       }
       continue;
@@ -367,7 +428,7 @@ export function findMisspelledRanges(text: string): MisspelledRange[] {
       const end = start + word.length;
       if (inSkipSpan(start, end)) continue;
       if (NUMBER_LIKE_RE.test(word)) continue;
-      if (!isSpellingCorrect(word)) ranges.push({ word, start, end });
+      if (!isSpellingCorrectWithIgnores(word, docIgnored)) ranges.push({ word, start, end });
     }
   }
   return ranges;
@@ -377,8 +438,8 @@ export function findMisspelledRanges(text: string): MisspelledRange[] {
  * Back-compat panel API: same signature and shape as before, now powered by
  * the vendored wordlist engine (no second dictionary).
  */
-export function checkUrduText(text: string): SpellingError[] {
-  return findMisspelledRanges(text).map((r) => ({
+export function checkUrduText(text: string, options?: SpellcheckOptions): SpellingError[] {
+  return findMisspelledRanges(text, options).map((r) => ({
     word: r.word,
     index: r.start,
     length: r.word.length,

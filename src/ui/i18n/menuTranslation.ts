@@ -122,6 +122,29 @@ export interface Translations {
   nativeOsPassthrough: string;
   nativeOsKeyboardHelp: string;
 
+  // Image crop (Picture Format + inspector)
+  cropImage: string;
+  inspImageCrop: string;
+  cropInsetLeft: string;
+  cropInsetTop: string;
+  cropInsetRight: string;
+  cropInsetBottom: string;
+  cropReset: string;
+
+  // Print page range (Export dialog + backstage)
+  printRangeAll: string;
+  printRangeCurrent: string;
+  printRangeCustom: string;
+  printRangeFrom: string;
+  printRangeTo: string;
+  printCopiesNote: string;
+
+  // Per-document spellcheck ignores
+  spellIgnoreAllInDoc: string;
+  ltDocIgnoredTitle: string;
+  ltDocIgnoredEmpty: string;
+  ltClearDocIgnored: string;
+
   // Header chrome
   tipMenuLanguage: string;
   tipThemeMode: string;
@@ -435,6 +458,26 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     nativeOsPassthrough: 'آپریٹنگ سسٹم کی بورڈ',
     nativeOsKeyboardHelp: 'آپریٹنگ سسٹم کی بورڈ موڈ فعال — کی میپنگ گرڈ غیر فعال ہے۔ اپنے آپریٹنگ سسٹم کے کی بورڈ سے براہ راست لکھیں۔',
 
+    cropImage: 'تراشیں',
+    inspImageCrop: 'تصویر کی تراش',
+    cropInsetLeft: 'بائیں طرف سے',
+    cropInsetTop: 'اوپر سے',
+    cropInsetRight: 'دائیں طرف سے',
+    cropInsetBottom: 'نیچے سے',
+    cropReset: 'تراش ختم کریں',
+
+    printRangeAll: 'تمام صفحات',
+    printRangeCurrent: 'موجودہ صفحہ',
+    printRangeCustom: 'حسب ضرورت دائرہ',
+    printRangeFrom: 'صفحہ سے',
+    printRangeTo: 'صفحہ تک',
+    printCopiesNote: 'نوٹ: صفحات کا انتخاب RePage یہیں کرتا ہے۔ کاپیوں کی تعداد اور پرنٹر کی دیگر ترتیبات سسٹم پرنٹ ڈائیلاگ میں منتخب کریں۔',
+
+    spellIgnoreAllInDoc: 'اس دستاویز میں ہمیشہ نظر انداز کریں',
+    ltDocIgnoredTitle: 'اس دستاویز میں نظر انداز الفاظ',
+    ltDocIgnoredEmpty: 'اس دستاویز میں ابھی کوئی لفظ نظر انداز نہیں ہے۔',
+    ltClearDocIgnored: 'فہرست ختم کریں',
+
     tipMenuLanguage: 'سافٹ ویئر مینیو کی زبان',
     tipThemeMode: 'رنگوں کی تھیم',
     phDocumentName: 'دستاویز کا نام...',
@@ -734,6 +777,26 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     stopPlayback: 'Stop',
     nativeOsPassthrough: 'Native OS Pass-through',
     nativeOsKeyboardHelp: 'Native OS Keyboard Mode Active — Key mapping grid is disabled. Type directly using your operating system keyboard.',
+
+    cropImage: 'Crop',
+    inspImageCrop: 'Image Crop',
+    cropInsetLeft: 'Left Edge',
+    cropInsetTop: 'Top Edge',
+    cropInsetRight: 'Right Edge',
+    cropInsetBottom: 'Bottom Edge',
+    cropReset: 'Reset Crop',
+
+    printRangeAll: 'All Pages',
+    printRangeCurrent: 'Current Page',
+    printRangeCustom: 'Custom Range',
+    printRangeFrom: 'From Page',
+    printRangeTo: 'To Page',
+    printCopiesNote: 'Note: RePage applies the page range here. The number of copies and other printer options are chosen in the system print dialog.',
+
+    spellIgnoreAllInDoc: 'Ignore All in This Document',
+    ltDocIgnoredTitle: 'Ignored in This Document',
+    ltDocIgnoredEmpty: 'No words are ignored in this document yet.',
+    ltClearDocIgnored: 'Clear List',
 
     tipMenuLanguage: 'Software Menu Language',
     tipThemeMode: 'Color Theme Mode',

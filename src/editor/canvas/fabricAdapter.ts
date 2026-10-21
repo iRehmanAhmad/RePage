@@ -1,5 +1,6 @@
 import * as fabric from 'fabric';
 import type { PageObject, Rect } from '../../domain/document/types';
+import { cropSourceRectPx } from '../../domain/geometry/imageCrop';
 import { getFontDefinition } from '../../domain/unicode/fontRegistry';
 
 export interface AdapterCallbacks {
@@ -392,17 +393,29 @@ export class FabricCanvasAdapter {
           const imgElement = new Image();
           imgElement.src = asset.dataUrl;
 
-          const imgWidth = imgElement.naturalWidth || obj.frame.width || 100;
-          const imgHeight = imgElement.naturalHeight || obj.frame.height || 100;
+          // Crop geometry: Fabric shows the source sub-rectangle left after
+          // trimming the stored insets (cropX/cropY + width/height are in
+          // source pixels), scaled so the visible region fills the frame —
+          // the same visible region the print and DOCX exporters produce.
+          const cropGeometry = (naturalWidth: number, naturalHeight: number) => {
+            const rect = cropSourceRectPx(naturalWidth, naturalHeight, obj.crop);
+            return {
+              cropX: rect.x,
+              cropY: rect.y,
+              width: rect.width,
+              height: rect.height,
+              scaleX: obj.frame.width / rect.width,
+              scaleY: obj.frame.height / rect.height,
+            };
+          };
 
-          const scaleX = obj.frame.width / imgWidth;
-          const scaleY = obj.frame.height / imgHeight;
+          const initialWidth = imgElement.naturalWidth || obj.frame.width || 100;
+          const initialHeight = imgElement.naturalHeight || obj.frame.height || 100;
 
           const fabricImg = new fabric.Image(imgElement, {
             left: obj.frame.x,
             top: obj.frame.y,
-            scaleX,
-            scaleY,
+            ...cropGeometry(initialWidth, initialHeight),
             angle: obj.frame.rotation,
             opacity: obj.opacity,
             selectable: !obj.locked,
@@ -412,10 +425,7 @@ export class FabricCanvasAdapter {
 
           imgElement.onload = () => {
             if (this.canvas && fabricImg && imgElement.naturalWidth) {
-              fabricImg.set({
-                scaleX: obj.frame.width / imgElement.naturalWidth,
-                scaleY: obj.frame.height / imgElement.naturalHeight,
-              });
+              fabricImg.set(cropGeometry(imgElement.naturalWidth, imgElement.naturalHeight));
               this.canvas.renderAll();
             }
           };

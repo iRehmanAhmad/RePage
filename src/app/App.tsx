@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { AppIcon } from '../ui/icons/AppIcon';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { createId } from '../domain/document/ids';
-import type { AssetReference, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, TextFrameObject, ViewMode } from '../domain/document/types';
+import type { AssetReference, ImageCropInsets, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, TextFrameObject, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
-import { isSpellcheckEnabled, setSpellcheckEnabled } from '../domain/language/spellcheckSettings';
+import { isSpellcheckEnabled, setDocumentIgnoredWords, setSpellcheckEnabled } from '../domain/language/spellcheckSettings';
 import { getTemplate } from '../templates';
-import { broadcastSpellcheckChanged } from '../ui/editor/spellcheckExtension';
+import {
+  broadcastSpellcheckChanged,
+  broadcastSpellcheckRecheck,
+  SPELLCHECK_IGNORE_IN_DOCUMENT_EVENT,
+} from '../ui/editor/spellcheckExtension';
 import { getFontFamilyCss } from '../domain/unicode/fontRegistry';
 import { updateCompositeFontRules } from '../ui/editor/compositeFontStyle';
 import { PAGE_PRESETS, millimetresToPoints, pointsToMillimetres } from '../domain/geometry/units';
@@ -22,6 +26,7 @@ import {
   insertTableColumn,
   insertTableRow,
   reorderPageObject,
+  setImageCropCommand,
   setObjectWrapping,
   updateTableCell,
 } from '../editor/commands/objectCommands';
@@ -119,13 +124,18 @@ import type { EditMode } from '../domain/document/trackChangesEngine';
 import { addBookmarkCommand, insertTocCommand, addFootnoteCommand, addEndnoteCommand } from '../editor/commands/longDocumentCommands';
 import { addCaptionToObject } from '../domain/document/captionEngine';
 import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/document/indexEngine';
-import { applyLanguageChangesCommand } from '../editor/commands/languageCommands';
+import {
+  addDocumentIgnoredWordCommand,
+  applyLanguageChangesCommand,
+  clearDocumentIgnoredWordsCommand,
+  removeDocumentIgnoredWordCommand,
+} from '../editor/commands/languageCommands';
 import { HeaderFooterModal } from '../ui/dialogs/HeaderFooterModal';
 import { ExportOutputDialog } from '../ui/dialogs/ExportOutputDialog';
 import { ImportReportDialog } from '../ui/dialogs/ImportReportDialog';
 import { ExportReportDialog } from '../ui/dialogs/ExportReportDialog';
 import type { ImportReport } from '../persistence/import/docxImporter';
-import type { ExportOptions } from '../export/types';
+import type { ExportOptions, ExportPageRange } from '../export/types';
 import { PrintLayoutView } from '../ui/views/PrintLayoutView';
 import { WebReadingView } from '../ui/views/WebReadingView';
 import { DraftEditingView } from '../ui/views/DraftEditingView';
@@ -592,27 +602,102 @@ export function App() {
     }
   }, []);
 
-  const handleBrowserPrint = React.useCallback(() => {
-    triggerNativePrintDialog();
-    setMessage(lang === 'ur' ? 'براؤزر پرنٹ ڈائیلاگ کھولا گیا' : 'Opened browser print dialog');
-  }, [lang]);
+  const handleBrowserPrint = React.useCallback(
+    (pageRange?: ExportPageRange) => {
+      // A non-"all" range cannot be handed to the plain window.print() of
+      // the app view, so route it through the print renderer, which mounts
+      // exactly the selected pages and opens the same system dialog.
+      if (pageRange && pageRange.kind !== 'all') {
+        const result = exportDocumentToPdf(document, { pageRange });
+        setMessage(
+          result.ok
+            ? lang === 'ur'
+              ? 'پرنٹ ڈائیلاگ کھولا گیا — منتخب صفحات شامل ہیں'
+              : 'Print dialog opened — selected pages only'
+            : lang === 'ur'
+              ? `پرنٹ ناکام: ${result.reason}`
+              : `Print failed: ${result.reason}`,
+        );
+        return;
+      }
+      triggerNativePrintDialog();
+      setMessage(lang === 'ur' ? 'براؤزر پرنٹ ڈائیلاگ کھولا گیا' : 'Opened browser print dialog');
+    },
+    [document, lang],
+  );
 
-  const handleExportVectorPdf = React.useCallback(() => {
-    const result = exportDocumentToPdf(document);
-    if (result.ok) {
-      setMessage(
-        lang === 'ur'
-          ? `پرنٹ ڈائیلاگ کھولا گیا — PDF محفوظ کرنے کے لیے "Save as PDF" منتخب کریں`
-          : `Print dialog opened — choose "Save as PDF" to save ${result.fileName}`,
-      );
-    } else {
-      setMessage(
-        lang === 'ur'
-          ? `پی ڈی ایف ایکسپورٹ ناکام: ${result.reason}`
-          : `PDF export failed: ${result.reason}`,
-      );
-    }
-  }, [document, lang]);
+  const handleExportVectorPdf = React.useCallback(
+    (pageRange?: ExportPageRange) => {
+      const result = exportDocumentToPdf(document, { pageRange });
+      if (result.ok) {
+        setMessage(
+          lang === 'ur'
+            ? `پرنٹ ڈائیلاگ کھولا گیا — PDF محفوظ کرنے کے لیے "Save as PDF" منتخب کریں`
+            : `Print dialog opened — choose "Save as PDF" to save ${result.fileName}`,
+        );
+      } else {
+        setMessage(
+          lang === 'ur'
+            ? `پی ڈی ایف ایکسپورٹ ناکام: ${result.reason}`
+            : `PDF export failed: ${result.reason}`,
+        );
+      }
+    },
+    [document, lang],
+  );
+
+  // --- Image crop (non-destructive; mutation only via the command) -----------
+  const handleUpdateImageCrop = React.useCallback(
+    (objectId: string, crop: ImageCropInsets | null) => {
+      const next = setImageCropCommand(document, objectId, crop);
+      if (next !== document) {
+        updateDocument(next, crop ? 'Crop image' : 'Reset image crop');
+      }
+    },
+    [document, updateDocument],
+  );
+
+  // --- Per-document spellcheck ignores -----------------------------------------
+  // The list lives in document metadata. Mirror it into the checker settings
+  // (the editor extension has no document handle) and re-run checks whenever
+  // it changes — including document load/switch, which resets it correctly.
+  const docIgnoredWords = document.metadata.spellcheckIgnoredWords;
+  React.useEffect(() => {
+    setDocumentIgnoredWords(docIgnoredWords ?? []);
+    broadcastSpellcheckRecheck();
+  }, [docIgnoredWords]);
+
+  const handleIgnoreWordInDocument = React.useCallback(
+    (word: string) => {
+      const next = addDocumentIgnoredWordCommand(document, word);
+      if (next !== document) updateDocument(next, 'Ignore word in document');
+    },
+    [document, updateDocument],
+  );
+
+  const handleRemoveDocumentIgnoredWord = React.useCallback(
+    (word: string) => {
+      const next = removeDocumentIgnoredWordCommand(document, word);
+      if (next !== document) updateDocument(next, 'Stop ignoring word in document');
+    },
+    [document, updateDocument],
+  );
+
+  const handleClearDocumentIgnoredWords = React.useCallback(() => {
+    const next = clearDocumentIgnoredWordsCommand(document);
+    if (next !== document) updateDocument(next, 'Clear document ignore list');
+  }, [document, updateDocument]);
+
+  // The editor context menu dispatches this event (it cannot mutate the
+  // document itself); persist the word through the metadata command here.
+  React.useEffect(() => {
+    const listener = (event: Event) => {
+      const word = (event as CustomEvent<{ word?: unknown }>).detail?.word;
+      if (typeof word === 'string' && word) handleIgnoreWordInDocument(word);
+    };
+    window.addEventListener(SPELLCHECK_IGNORE_IN_DOCUMENT_EVENT, listener);
+    return () => window.removeEventListener(SPELLCHECK_IGNORE_IN_DOCUMENT_EVENT, listener);
+  }, [handleIgnoreWordInDocument]);
 
   const handleNewFromTemplate = React.useCallback(
     (templateId: string) => {
@@ -2093,6 +2178,7 @@ export function App() {
               updateDocument(setObjectWrapping(document, selectedObjectId, wrapMode), 'Set text wrapping');
             }
           }}
+          onCropImage={() => setIsInspectorOpen(true)}
           onToggleSelectionPane={() => setIsSelectionPaneOpen((prev) => !prev)}
           onInsertTable={(rows, cols) => handleAddTable(rows, cols)}
           onInsertTableRowAbove={() => {
@@ -2408,6 +2494,7 @@ export function App() {
             selectedObject={selectedObject ?? null}
             onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}
             onUpdateShapeStyle={handleUpdateShapeStyle}
+            onUpdateImageCrop={handleUpdateImageCrop}
             isOpen={isInspectorOpen}
             onClose={() => setIsInspectorOpen(false)}
             width={inspectorWidth}
@@ -2569,6 +2656,9 @@ export function App() {
                   setMessage(lang === 'ur' ? `${changes.length} لسانی تبدیلیاں لاگو کر دی گئیں` : `Applied ${changes.length} language change(s) cleanly`);
                 }}
                 onClose={() => setShowLanguageTools(false)}
+                onIgnoreWordInDocument={handleIgnoreWordInDocument}
+                onRemoveDocumentIgnoredWord={handleRemoveDocumentIgnoredWord}
+                onClearDocumentIgnoredWords={handleClearDocumentIgnoredWords}
                 t={t}
               />
             </div>
@@ -2633,9 +2723,9 @@ export function App() {
           activePageId={activePageId}
           onConfirmExport={(exportOptions: ExportOptions) => {
             if (exportOptions.format === 'browser-print') {
-              handleBrowserPrint();
+              handleBrowserPrint(exportOptions.pageRange);
             } else if (exportOptions.format === 'vector-pdf') {
-              handleExportVectorPdf();
+              handleExportVectorPdf(exportOptions.pageRange);
             } else if (exportOptions.format === 'epub') {
               void handleExportEpub();
             } else if (exportOptions.format === 'docx') {
@@ -2844,6 +2934,7 @@ export function App() {
           document={document}
           lang={lang}
           saveState={saveState}
+          activePageId={activePageId}
           onNewDocument={() => {
             const starter = createStarterDocument();
             setDocumentState(starter);

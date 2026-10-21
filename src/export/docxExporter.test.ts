@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { exportDocumentToDocx, getDefaultDocxFileName } from './docxExporter';
 import { createDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { addImageFrame } from '../editor/commands/documentCommands';
-import { addImportedTable } from '../editor/commands/objectCommands';
+import { addImportedTable, setImageCropCommand } from '../editor/commands/objectCommands';
 import { parseDocxFile, type DocxBlock } from '../persistence/import/docxParser';
 import { importDocxFile } from '../persistence/import/docxImporter';
 import type { ParagraphNode } from '../domain/rich-text/types';
@@ -280,5 +280,36 @@ describe('exportDocumentToDocx', () => {
   it('sanitizes the default file name', () => {
     const doc = createDocument('My / Weird: Title');
     expect(getDefaultDocxFileName(doc)).toBe('My Weird Title.docx');
+  });
+});
+
+describe('exportDocumentToDocx image crop', () => {
+  function docWithCroppedImage(crop: boolean): RePageDocument {
+    const doc = createDocument('Crop Test');
+    const pageId = doc.pageOrder[0]!;
+    const imgRes = addImageFrame(doc, pageId, 'pixel.png', PNG_DATA_URL, 120, 90);
+    if (!crop) return imgRes.document;
+    return setImageCropCommand(imgRes.document, imgRes.objectId, {
+      left: 0.1,
+      top: 0.05,
+      right: 0.2,
+      bottom: 0,
+    });
+  }
+
+  it('emits a:srcRect with the stored insets for a cropped image', async () => {
+    const { bytes } = await exportDocumentToDocx(docWithCroppedImage(true));
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file('word/document.xml')!.async('string');
+    expect(xml).toContain('<a:srcRect l="10000" t="5000" r="20000" b="0"/>');
+    // The image bytes are embedded whole (crop is metadata, not a re-encode).
+    expect(zip.file('word/media/image1.png')).not.toBeNull();
+  });
+
+  it('omits srcRect for an uncropped image', async () => {
+    const { bytes } = await exportDocumentToDocx(docWithCroppedImage(false));
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file('word/document.xml')!.async('string');
+    expect(xml).not.toContain('srcRect');
   });
 });

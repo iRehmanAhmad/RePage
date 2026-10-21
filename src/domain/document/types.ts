@@ -26,6 +26,13 @@ export interface DocumentMetadata {
   createdAt: string;
   modifiedAt: string;
   locale: 'ur-PK' | 'en';
+  /**
+   * Words the user chose to ignore for THIS document only (spellcheck
+   * "Ignore All in this document"). Persisted in the .urdup package; unlike
+   * the session ignore (memory-only) and the personal dictionary (global).
+   * Absent = nothing ignored.
+   */
+  spellcheckIgnoredWords?: string[] | undefined;
 }
 
 export type MasterPageId = string;
@@ -71,11 +78,17 @@ export interface ObjectAnchor {
   offsetPercent: number;
 }
 
-export interface CropBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+/**
+ * Non-destructive image crop insets, stored as fractions of the source
+ * image's own width/height (each 0–0.45). The visible region is the source
+ * minus the insets; rendering stretches that region into the frame. The
+ * stored asset bytes are never altered. Absent = uncropped.
+ */
+export interface ImageCropInsets {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
 }
 
 interface BasePageObject {
@@ -141,7 +154,7 @@ export interface ImageFrameObject extends BasePageObject {
   type: 'image-frame';
   assetId: AssetId | null;
   fit: 'contain' | 'cover' | 'stretch';
-  crop?: CropBounds | undefined;
+  crop?: ImageCropInsets | undefined;
 }
 
 export interface TableCell {

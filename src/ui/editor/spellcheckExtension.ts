@@ -7,12 +7,28 @@ import {
   findMisspelledRanges,
   getSpellingSuggestions,
 } from '../../domain/language/urduSpellchecker';
-import { isSpellcheckEnabled } from '../../domain/language/spellcheckSettings';
+import {
+  getDocumentIgnoredWords,
+  isSpellcheckEnabled,
+} from '../../domain/language/spellcheckSettings';
 
 /** Broadcast when the user toggles spellcheck (detail: { enabled: boolean }). */
 export const SPELLCHECK_CHANGED_EVENT = 'repage:spellcheck-changed';
 /** Broadcast to force every mounted editor to re-run spellcheck. */
 export const SPELLCHECK_RECHECK_EVENT = 'repage:spellcheck-recheck';
+/**
+ * Request from the context menu: persist a word in the ACTIVE document's
+ * own ignore list (detail: { word: string }). The app owns the document, so
+ * it listens for this event and runs the metadata command; the editors
+ * themselves never mutate the canonical document.
+ */
+export const SPELLCHECK_IGNORE_IN_DOCUMENT_EVENT = 'repage:spellcheck-ignore-in-document';
+
+export function requestIgnoreWordInDocument(word: string): void {
+  window.dispatchEvent(
+    new CustomEvent(SPELLCHECK_IGNORE_IN_DOCUMENT_EVENT, { detail: { word } }),
+  );
+}
 
 export function broadcastSpellcheckChanged(enabled: boolean): void {
   window.dispatchEvent(new CustomEvent(SPELLCHECK_CHANGED_EVENT, { detail: { enabled } }));
@@ -52,9 +68,10 @@ const RECHECK_DEBOUNCE_MS = 350;
 
 function computeDecorations(doc: PMNode): DecorationSet {
   const decos: Decoration[] = [];
+  const documentIgnoredWords = getDocumentIgnoredWords();
   doc.descendants((node, pos) => {
     if (!node.isTextblock || !node.textContent) return true;
-    for (const r of findMisspelledRanges(node.textContent)) {
+    for (const r of findMisspelledRanges(node.textContent, { documentIgnoredWords })) {
       decos.push(
         Decoration.inline(pos + r.start + 1, pos + r.end + 1, { class: DECORATION_CLASS }),
       );

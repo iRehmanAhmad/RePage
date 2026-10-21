@@ -1,6 +1,7 @@
 import type { RePageDocument, TextStory } from '../../domain/document/types';
 import type { InlineNode, ParagraphNode, TextRun } from '../../domain/rich-text/types';
 import { validateLanguageChange } from '../../domain/language/languageToolScope';
+import { normalizeForDictionary } from '../../domain/language/urduDictionary';
 import type { LanguageChange } from '../../domain/language/types';
 
 /**
@@ -133,4 +134,62 @@ export function applyLanguageChangesCommand(
     ...doc,
     stories: updatedStories,
   };
+}
+
+// --- Per-document spellcheck ignore list ---------------------------------------
+// Stored in document metadata (schema-validated, persisted in the .urdup
+// package). Distinct from the session ignore (memory-only) and the personal
+// dictionary (global): these words are ignored in THIS document only.
+
+function withIgnoredWords(
+  doc: RePageDocument,
+  words: string[] | undefined,
+): RePageDocument {
+  return {
+    ...doc,
+    metadata: {
+      ...doc.metadata,
+      spellcheckIgnoredWords: words,
+      modifiedAt: new Date().toISOString(),
+    },
+  };
+}
+
+/** Adds a word to the document's spellcheck ignore list (deduplicated). */
+export function addDocumentIgnoredWordCommand(
+  doc: RePageDocument,
+  word: string,
+): RePageDocument {
+  const trimmed = word.trim();
+  if (!trimmed) return doc;
+  const current = doc.metadata.spellcheckIgnoredWords ?? [];
+  // Dedupe on the engine's lookup keys so "Teh" after "teh" (or an aerab
+  // variant) does not create a second entry for the same word.
+  const key = normalizeForDictionary(trimmed);
+  const latinKey = trimmed.toLowerCase();
+  const exists = current.some(
+    (w) => normalizeForDictionary(w) === key || w.toLowerCase() === latinKey,
+  );
+  if (exists) return doc;
+  return withIgnoredWords(doc, [...current, trimmed]);
+}
+
+/** Removes one word from the document's spellcheck ignore list. */
+export function removeDocumentIgnoredWordCommand(
+  doc: RePageDocument,
+  word: string,
+): RePageDocument {
+  const current = doc.metadata.spellcheckIgnoredWords;
+  if (!current || current.length === 0) return doc;
+  const next = current.filter((w) => w !== word);
+  if (next.length === current.length) return doc;
+  return withIgnoredWords(doc, next.length > 0 ? next : undefined);
+}
+
+/** Clears the document's whole spellcheck ignore list (flagging resumes). */
+export function clearDocumentIgnoredWordsCommand(
+  doc: RePageDocument,
+): RePageDocument {
+  if (!doc.metadata.spellcheckIgnoredWords) return doc;
+  return withIgnoredWords(doc, undefined);
 }
