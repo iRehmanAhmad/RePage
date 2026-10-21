@@ -104,4 +104,44 @@ describe('Tiptap HTML & Canonical Converter (Phase UX-2)', () => {
       { type: 'text', text: 'second half' },
     ]);
   });
+
+  it('round-trips characterStyleId without baking style properties into marks', () => {
+    const originalDoc: RichTextDocument = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          direction: 'rtl',
+          content: [
+            { type: 'text', text: 'عام ' },
+            {
+              type: 'text',
+              text: 'خاص',
+              characterStyleId: 'emphasis',
+              marks: [{ type: 'color', color: '#ff0000' }],
+            },
+            { type: 'text', text: ' متن' },
+          ],
+        },
+      ],
+    };
+
+    const html = canonicalToTiptapHtml(originalDoc);
+    // The style travels as a data attribute on the OUTERMOST span; the
+    // direct color mark nests inside it.
+    expect(html).toContain('<span data-character-style="emphasis"><span style="color: #ff0000">خاص</span></span>');
+
+    const roundtrip = tiptapHtmlToCanonical(html);
+    const runs = roundtrip.content[0]!.content;
+    const styled = runs.find((r) => r.type === 'text' && r.text === 'خاص');
+    expect(styled).toMatchObject({ characterStyleId: 'emphasis' });
+    // Direct marks survive (the DOM round-trip normalizes hex colors to
+    // rgb(), as it does for every color mark) — and the style contributed
+    // NO marks of its own: its props live in the registry, not the run.
+    expect(styled?.type === 'text' ? styled.marks : undefined).toEqual([
+      { type: 'color', color: 'rgb(255, 0, 0)' },
+    ]);
+    const plain = runs.find((r) => r.type === 'text' && r.text === 'عام ');
+    expect(plain?.type === 'text' ? plain.characterStyleId : 'x').toBeUndefined();
+  });
 });

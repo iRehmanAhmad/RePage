@@ -165,6 +165,12 @@ export interface Translations {
   ltDocIgnoredEmpty: string;
   ltClearDocIgnored: string;
 
+  // Text assist (batch 12): auto-correct + word completion toggles
+  ltAutoCorrect: string;
+  ltAutoCorrectHint: string;
+  ltWordCompletion: string;
+  ltWordCompletionHint: string;
+
   // Header chrome
   tipMenuLanguage: string;
   tipThemeMode: string;
@@ -541,6 +547,10 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     ltDocIgnoredTitle: 'اس دستاویز میں نظر انداز الفاظ',
     ltDocIgnoredEmpty: 'اس دستاویز میں ابھی کوئی لفظ نظر انداز نہیں ہے۔',
     ltClearDocIgnored: 'فہرست ختم کریں',
+    ltAutoCorrect: 'خودکار درستی (Auto-Correct)',
+    ltAutoCorrectHint: 'لفظ مکمل ہونے پر معروف غلطیاں خود درست ہو جاتی ہیں — ایک Ctrl+Z سے واپس۔',
+    ltWordCompletion: 'لفظ کی تکمیل (Word Completion)',
+    ltWordCompletionHint: 'لکھتے ہوئے تجاویز آتی ہیں — Tab یا Enter سے قبول کریں، Esc سے بند کریں۔',
 
     tipMenuLanguage: 'سافٹ ویئر مینیو کی زبان',
     tipThemeMode: 'رنگوں کی تھیم',
@@ -902,6 +912,10 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     ltDocIgnoredTitle: 'Ignored in This Document',
     ltDocIgnoredEmpty: 'No words are ignored in this document yet.',
     ltClearDocIgnored: 'Clear List',
+    ltAutoCorrect: 'Auto-Correct',
+    ltAutoCorrectHint: 'Known typos are fixed as you finish a word — one Ctrl+Z undoes it.',
+    ltWordCompletion: 'Word Completion',
+    ltWordCompletionHint: 'Suggestions appear while you type — Tab or Enter accepts, Esc dismisses.',
 
     tipMenuLanguage: 'Software Menu Language',
     tipThemeMode: 'Color Theme Mode',

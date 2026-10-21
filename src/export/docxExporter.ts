@@ -15,7 +15,8 @@ import type {
   TextMark,
 } from '../domain/rich-text/types';
 import { resolveJustificationMode } from '../domain/layout/kashida';
-import { BUILTIN_URDU_PARAGRAPH_STYLES } from '../domain/rich-text/styles';
+import { BUILTIN_URDU_PARAGRAPH_STYLES, type CharacterStyle } from '../domain/rich-text/styles';
+import { getCharacterStyles } from '../domain/rich-text/characterStyles';
 import { PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { cropSrcRectValues } from '../domain/geometry/imageCrop';
 
@@ -156,6 +157,10 @@ interface Ctx {
   borderedParagraphs: number;
   /** Images whose brightness/contrast could not be carried into DOCX. */
   imagesWithToneAdjustments: number;
+  /** The document's character-style registry (batch 12). */
+  charStyles: Record<string, CharacterStyle>;
+  /** Character style ids actually referenced by exported runs. */
+  usedCharStyleIds: Set<string>;
 }
 
 interface FrameDefaults {
@@ -186,6 +191,7 @@ function runPropertiesXml(
   marks: TextMark[],
   defaults: FrameDefaults,
   arabic: boolean,
+  style?: CharacterStyle | undefined,
 ): string {
   const byType = new Map<string, TextMark>();
   for (const m of marks) if (!byType.has(m.type)) byType.set(m.type, m);
@@ -194,16 +200,23 @@ function runPropertiesXml(
   const sizeMark = byType.get('fontSize') as { size: number } | undefined;
   const colorMark = byType.get('color') as { color: string } | undefined;
 
-  const family = familyMark?.family ?? defaults.fontFamily;
-  const size = sizeMark?.size ?? defaults.fontSize;
-  const color = hexColor(colorMark?.color) ?? hexColor(defaults.color);
+  // Character style (batch 12): the run references the style via w:rStyle
+  // and Word applies the style's own rPr UNDER this direct rPr — the same
+  // precedence as the canonical model (style < direct marks). Frame
+  // defaults, however, are OUR baseline, not Word's: for any property the
+  // style defines we must NOT bake the frame default here, or it would
+  // override the style in Word. Direct marks always win and are emitted.
+  const family = familyMark?.family ?? (style?.fontFamily !== undefined ? undefined : defaults.fontFamily);
+  const size = sizeMark?.size ?? (style?.fontSize !== undefined ? undefined : defaults.fontSize);
+  const color = hexColor(colorMark?.color) ?? (style?.color !== undefined ? undefined : hexColor(defaults.color));
 
   let out = '';
+  if (style) out += `<w:rStyle w:val="${escAttr(style.id)}"/>`;
 
   // rFonts: complex-script font is what shapes Nastaliq; set all slots to the
   // effective family. Arabic runs without any family fall back to the
   // document's standard Urdu font so Word does not substitute a Latin face.
-  const csFamily = family ?? (arabic ? 'Noto Nastaliq Urdu' : undefined);
+  const csFamily = family ?? (style?.fontFamily !== undefined ? undefined : arabic ? 'Noto Nastaliq Urdu' : undefined);
   if (family || csFamily) {
     const attrs: string[] = [];
     if (family) attrs.push(`w:ascii="${escAttr(family)}"`, `w:hAnsi="${escAttr(family)}"`);
@@ -212,7 +225,9 @@ function runPropertiesXml(
   }
 
   if (byType.has('bold')) out += '<w:b/><w:bCs/>';
+  else if (style?.bold === false) out += '<w:b w:val="0"/><w:bCs w:val="0"/>';
   if (byType.has('italic')) out += '<w:i/><w:iCs/>';
+  else if (style?.italic === false) out += '<w:i w:val="0"/><w:iCs w:val="0"/>';
 
   const effect = byType.get('textEffect') as { shadow?: boolean } | undefined;
   if (effect?.shadow) out += '<w:shadow/>';
@@ -241,6 +256,7 @@ function runPropertiesXml(
   }
 
   const underline = byType.get('underline') as { style?: string; color?: string } | undefined;
+  if (!underline && style?.underline === false) out += '<w:u w:val="none"/>';
   if (underline) {
     const styleMap: Record<string, string> = {
       single: 'single',
@@ -265,9 +281,15 @@ function runPropertiesXml(
   return out ? `<w:rPr>${out}</w:rPr>` : '';
 }
 
-function runXml(run: { text: string; marks?: TextMark[] | undefined }, defaults: FrameDefaults): string {
+function runXml(
+  run: { text: string; marks?: TextMark[] | undefined; characterStyleId?: string | undefined },
+  defaults: FrameDefaults,
+  ctx?: Ctx,
+): string {
   const arabic = containsArabic(run.text);
-  const rPr = runPropertiesXml(run.marks ?? [], defaults, arabic);
+  const style = run.characterStyleId ? ctx?.charStyles[run.characterStyleId] : undefined;
+  if (style && ctx) ctx.usedCharStyleIds.add(style.id);
+  const rPr = runPropertiesXml(run.marks ?? [], defaults, arabic, style);
   // Split control characters into OOXML equivalents: newline -> break,
   // tab -> tab. Text itself is copied byte-for-byte.
   const parts = run.text.split(/(\n|\t)/);
@@ -379,7 +401,7 @@ function paragraphXml(node: ParagraphNode, defaults: FrameDefaults, ctx: Ctx): s
       // Explicit page/column break: OOXML carries it as a typed break run.
       runs += `<w:r><w:br w:type="${inline.breakType}"/></w:r>`;
     } else {
-      runs += runXml(inline, defaults);
+      runs += runXml(inline, defaults, ctx);
     }
   }
 
@@ -618,7 +640,38 @@ function styleDefXml(
   );
 }
 
-function buildStylesXml(): string {
+function characterStyleDefXml(style: CharacterStyle): string {
+  let rPr = '';
+  if (style.fontFamily) {
+    rPr += `<w:rFonts w:ascii="${escAttr(style.fontFamily)}" w:hAnsi="${escAttr(style.fontFamily)}" w:cs="${escAttr(style.fontFamily)}"/>`;
+  }
+  if (style.bold !== undefined) {
+    rPr += style.bold ? '<w:b/><w:bCs/>' : '<w:b w:val="0"/><w:bCs w:val="0"/>';
+  }
+  if (style.italic !== undefined) {
+    rPr += style.italic ? '<w:i/><w:iCs/>' : '<w:i w:val="0"/><w:iCs w:val="0"/>';
+  }
+  if (style.underline !== undefined) {
+    rPr += style.underline ? '<w:u w:val="single"/>' : '<w:u w:val="none"/>';
+  }
+  const color = hexColor(style.color);
+  if (color) rPr += `<w:color w:val="${color}"/>`;
+  if (style.fontSize !== undefined && Number.isFinite(style.fontSize) && style.fontSize > 0) {
+    const hp = ptToHalfPoints(style.fontSize);
+    rPr += `<w:sz w:val="${hp}"/><w:szCs w:val="${hp}"/>`;
+  }
+  if (style.language === 'ur') rPr += '<w:lang w:bidi="ur-PK"/>';
+  else if (style.language === 'en') rPr += '<w:lang w:val="en-US"/>';
+  return (
+    `<w:style w:type="character" w:styleId="${escAttr(style.id)}">` +
+    `<w:name w:val="${escAttr(style.name)}"/>` +
+    '<w:basedOn w:val="Normal"/><w:qFormat/>' +
+    (rPr ? `<w:rPr>${rPr}</w:rPr>` : '') +
+    '</w:style>'
+  );
+}
+
+function buildStylesXml(ctx?: Ctx): string {
   const normal = BUILTIN_URDU_PARAGRAPH_STYLES.normal!;
   const styles =
     '<w:docDefaults><w:rPrDefault><w:rPr>' +
@@ -635,10 +688,21 @@ function buildStylesXml(): string {
     styleDefXml('BodyText', 'Body Text', 'body') +
     styleDefXml('Poetry', 'Poetry', 'poetry', { jc: 'center' });
 
+  // Character styles (batch 12): definitions for every style the exported
+  // runs actually reference, so Word can resolve w:rStyle.
+  let characterDefs = '';
+  if (ctx) {
+    for (const id of ctx.usedCharStyleIds) {
+      const style = ctx.charStyles[id];
+      if (style) characterDefs += characterStyleDefXml(style);
+    }
+  }
+
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
     '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
     styles +
+    characterDefs +
     '</w:styles>'
   );
 }
@@ -715,6 +779,8 @@ export async function exportDocumentToDocx(
     shapesSkipped: 0,
     listParagraphsFlattened: 0,
     borderedParagraphs: 0,
+    charStyles: getCharacterStyles(doc),
+    usedCharStyleIds: new Set(),
   };
 
   const bodyParts: string[] = [];
@@ -902,7 +968,7 @@ export async function exportDocumentToDocx(
   zip.file('_rels/.rels', rootRels);
   zip.file('docProps/core.xml', coreXml);
   zip.file('word/document.xml', documentXml);
-  zip.file('word/styles.xml', buildStylesXml());
+  zip.file('word/styles.xml', buildStylesXml(ctx));
   zip.file('word/_rels/document.xml.rels', docRels);
   for (const m of ctx.media) zip.file(m.path, m.bytes);
 

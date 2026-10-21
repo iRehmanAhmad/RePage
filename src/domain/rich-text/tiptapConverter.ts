@@ -80,6 +80,16 @@ export function canonicalToTiptapHtml(doc: RichTextDocument): string {
               if (mark.type === 'color') text = `<span style="color: ${mark.color}">${text}</span>`;
             }
           }
+          if (inline.characterStyleId) {
+            // Outermost wrapper: the editor renders this span via the
+            // CharacterStyleMark and the injected registry CSS (see
+            // characterStylesCss). Direct-mark elements nest INSIDE it so
+            // direct formatting overrides the style, mirroring the
+            // canonical resolution rule. On the way back the converter
+            // reads ONLY the data attribute — the style's properties are
+            // never baked into the run as direct marks.
+            text = `<span data-character-style="${inline.characterStyleId}">${text}</span>`;
+          }
           return text;
         })
         .join('');
@@ -123,7 +133,7 @@ export function tiptapHtmlToCanonical(
     const dir: TextDirection = dirAttr === 'ltr' ? 'ltr' : 'rtl';
 
     const runs: InlineNode[] = [];
-    const walk = (node: Node, currentMarks: TextMark[]) => {
+    const walk = (node: Node, currentMarks: TextMark[], currentCharStyle: string | undefined) => {
       if (node.nodeType === Node.TEXT_NODE) {
         const txt = node.textContent || '';
         if (txt) {
@@ -131,6 +141,7 @@ export function tiptapHtmlToCanonical(
             type: 'text',
             text: txt,
             marks: currentMarks.length > 0 ? [...currentMarks] : undefined,
+            characterStyleId: currentCharStyle,
           });
         }
       } else if (node.nodeType === Node.ELEMENT_NODE) {
@@ -146,6 +157,7 @@ export function tiptapHtmlToCanonical(
         }
 
         const nextMarks = [...currentMarks];
+        let nextCharStyle = currentCharStyle;
 
         if (tag === 'strong' || tag === 'b') {
           if (!nextMarks.some((m) => m.type === 'bold')) nextMarks.push({ type: 'bold' });
@@ -170,6 +182,8 @@ export function tiptapHtmlToCanonical(
           if (!nextMarks.some((m) => m.type === 'highlight')) nextMarks.push({ type: 'highlight', color: bg });
         }
         if (tag === 'span') {
+          const charStyleAttr = el.getAttribute('data-character-style');
+          if (charStyleAttr) nextCharStyle = charStyleAttr;
           if (el.style.fontFamily) {
             nextMarks.push({ type: 'fontFamily', family: el.style.fontFamily });
           }
@@ -182,11 +196,11 @@ export function tiptapHtmlToCanonical(
           }
         }
 
-        Array.from(el.childNodes).forEach((child) => walk(child, nextMarks));
+        Array.from(el.childNodes).forEach((child) => walk(child, nextMarks, nextCharStyle));
       }
     };
 
-    Array.from(pEl.childNodes).forEach((child) => walk(child, []));
+    Array.from(pEl.childNodes).forEach((child) => walk(child, [], undefined));
 
     return {
       fragment: pEl.getAttribute('data-repage-fragment'),

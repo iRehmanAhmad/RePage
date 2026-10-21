@@ -7,6 +7,7 @@ import type {
   TextDirection,
   TextMark,
 } from '../../domain/rich-text/types';
+import type { CharacterStyle } from '../../domain/rich-text/styles';
 import { detectTextDirection } from './textImporter';
 import { DEFAULT_RESOURCE_LIMITS, ImportOptions } from './importEngine';
 
@@ -73,6 +74,13 @@ export interface ParsedDocx {
   footnotes: DocxFootnoteData[];
   warnings: string[];
   stats: DocxParseStats;
+  /**
+   * Character styles defined in word/styles.xml (batch 12), keyed by
+   * styleId. Runs referencing one via w:rStyle carry its id as
+   * characterStyleId — but ONLY when the id is defined here, so an
+   * undefined reference never enters the document.
+   */
+  characterStyles: Record<string, CharacterStyle>;
 }
 
 // ---------------------------------------------------------------------------
@@ -235,6 +243,7 @@ function parseRels(xml: string | undefined): Map<string, string> {
 // ---------------------------------------------------------------------------
 
 interface Ctx {
+  characterStyles: Record<string, CharacterStyle>;
   numbering: NumberingMap;
   rels: Map<string, string>;
   imageTargets: { name: string; target: string }[];
@@ -347,10 +356,79 @@ interface RunAcc {
   imageAnchors: { relId: string }[];
 }
 
+/**
+ * Parses character style definitions out of word/styles.xml (batch 12).
+ * Only w:style elements with type="character" are read; run properties
+ * are interpreted with their explicit on/off values honoured (a
+ * <w:b w:val="0"/> in a style means NOT bold — unlike run-level marks,
+ * style definitions genuinely use off-states). Anything malformed is
+ * skipped, never guessed.
+ */
+function parseCharacterStyles(stylesXml: string | undefined): Record<string, CharacterStyle> {
+  const out: Record<string, CharacterStyle> = {};
+  if (!stylesXml) return out;
+  let doc: Document;
+  try {
+    doc = parseXml(stylesXml, 'word/styles.xml');
+  } catch {
+    return out;
+  }
+  const styleEls = Array.from(doc.getElementsByTagNameNS(W_NS, 'style'));
+  for (const el of styleEls) {
+    if (attr(el, 'type') !== 'character') continue;
+    const styleId = attr(el, 'styleId');
+    if (!styleId) continue;
+    const nameEl = kid(el, 'name');
+    const name = (nameEl ? attr(nameEl, 'val') : undefined) || styleId;
+    const style: CharacterStyle = { id: styleId, name };
+    const rPr = kid(el, 'rPr');
+    if (rPr) {
+      const fonts = kid(rPr, 'rFonts');
+      const family = fonts ? attr(fonts, 'ascii') ?? attr(fonts, 'hAnsi') ?? attr(fonts, 'cs') : undefined;
+      if (family) style.fontFamily = family;
+      const onOff = (local: string): boolean | undefined => {
+        const elx = kid(rPr, local);
+        if (!elx) return undefined;
+        const val = attr(elx, 'val');
+        return !(val === '0' || val === 'false' || val === 'off' || val === 'none');
+      };
+      const bold = onOff('b') ?? onOff('bCs');
+      if (bold !== undefined) style.bold = bold;
+      const italic = onOff('i') ?? onOff('iCs');
+      if (italic !== undefined) style.italic = italic;
+      const u = kid(rPr, 'u');
+      if (u) style.underline = attr(u, 'val') !== 'none';
+      const colorEl = kid(rPr, 'color');
+      const colorVal = colorEl ? attr(colorEl, 'val') : undefined;
+      if (colorVal && colorVal !== 'auto' && /^[0-9a-fA-F]{6}$/.test(colorVal)) {
+        style.color = `#${colorVal.toLowerCase()}`;
+      }
+      const sz = kid(rPr, 'sz') ?? kid(rPr, 'szCs');
+      const szVal = sz ? Number(attr(sz, 'val')) : NaN;
+      if (Number.isFinite(szVal) && szVal > 0) style.fontSize = szVal / 2;
+      const lang = kid(rPr, 'lang');
+      if (lang) {
+        const bidi = attr(lang, 'bidi');
+        const val = attr(lang, 'val');
+        if (bidi) style.language = 'ur';
+        else if (val && val.toLowerCase().startsWith('en')) style.language = 'en';
+      }
+    }
+    out[styleId] = style;
+  }
+  return out;
+}
+
 /** Parse one w:r (or accepted wrapper) into inline nodes. */
 function parseRun(r: Element, ctx: Ctx, acc: RunAcc): void {
   const rPr = kid(r, 'rPr');
   const marks = marksFromRPr(rPr, ctx.warnings);
+  // Character style reference (batch 12): honoured only when the file
+  // itself defines the style in word/styles.xml.
+  const rStyleEl = rPr ? kid(rPr, 'rStyle') : undefined;
+  const rStyleId = rStyleEl ? attr(rStyleEl, 'val') : undefined;
+  const characterStyleId =
+    rStyleId && ctx.characterStyles[rStyleId] ? rStyleId : undefined;
 
   for (const child of Array.from(r.childNodes)) {
     if (!isEl(child)) continue;
@@ -358,7 +436,12 @@ function parseRun(r: Element, ctx: Ctx, acc: RunAcc): void {
       case 't': {
         const text = child.textContent ?? '';
         if (text) {
-          acc.inlines.push({ type: 'text', text, marks: marks.length > 0 ? marks : undefined });
+          acc.inlines.push({
+            type: 'text',
+            text,
+            marks: marks.length > 0 ? marks : undefined,
+            characterStyleId,
+          });
         }
         break;
       }
@@ -376,10 +459,10 @@ function parseRun(r: Element, ctx: Ctx, acc: RunAcc): void {
       }
       case 'tab':
         // Tabs have no reliable canvas metric; four spaces is the honest, visible mapping.
-        acc.inlines.push({ type: 'text', text: '    ', marks: marks.length > 0 ? marks : undefined });
+        acc.inlines.push({ type: 'text', text: '    ', marks: marks.length > 0 ? marks : undefined, characterStyleId });
         break;
       case 'noBreakHyphen':
-        acc.inlines.push({ type: 'text', text: '‑', marks: marks.length > 0 ? marks : undefined });
+        acc.inlines.push({ type: 'text', text: '‑', marks: marks.length > 0 ? marks : undefined, characterStyleId });
         break;
       case 'drawing':
       case 'pict': {
@@ -940,6 +1023,7 @@ export async function parseDocxFile(
   }
 
   const ctx: Ctx = {
+    characterStyles: parseCharacterStyles(await readText('word/styles.xml')),
     numbering: new Map(),
     rels: parseRels(await readText('word/_rels/document.xml.rels')),
     imageTargets: [],
@@ -1076,7 +1160,7 @@ export async function parseDocxFile(
   if (s.altChunks > 0) ctx.warnings.push(`${s.altChunks} alternative-content chunk(s) were skipped.`);
   if (s.textBoxes > 0) ctx.warnings.push(`${s.textBoxes} text box(es) were skipped (floating text boxes are not imported).`);
 
-  return { blocks, images, footnotes, warnings: ctx.warnings, stats: s };
+  return { blocks, images, footnotes, warnings: ctx.warnings, stats: s, characterStyles: ctx.characterStyles };
 }
 
 function validateSize(sizeBytes: number, maxBytes: number): void {

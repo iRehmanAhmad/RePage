@@ -9,6 +9,8 @@ export interface CharacterStyle {
   bold?: boolean | undefined;
   italic?: boolean | undefined;
   underline?: boolean | undefined;
+  /** Language the style is meant for (drives font choice in mixed text). */
+  language?: 'ur' | 'en' | undefined;
 }
 
 export interface ParagraphStyle {
@@ -32,6 +34,7 @@ export const characterStyleSchema = z.object({
   bold: z.boolean().optional(),
   italic: z.boolean().optional(),
   underline: z.boolean().optional(),
+  language: z.enum(['ur', 'en']).optional(),
 });
 
 export const paragraphStyleSchema = z.object({

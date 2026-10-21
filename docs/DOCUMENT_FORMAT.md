@@ -78,6 +78,14 @@ A `text-frame` object may carry an optional **`textOnPath`** record: `{ kind: "c
 
 Section `pageNumbering.style` accepts `"urdu"` (Urdu digits), `"western"` (Latin digits), `"abjad"`, `"roman"`, `"roman-upper"` and `"urdu-letters"`. **Abjad** is the proper additive Arabic abjad system (ا=1 … غ=1000; thousands are a coefficient letter followed by غ, e.g. 2024 = بغکد) — it replaces an earlier modulo placeholder that produced wrong values above 9. **Roman** covers 1–3999 (out-of-range values fall back to western digits). **Urdu-letters** is a bijective base-38 sequence over the Urdu alphabet (ا ب پ … ے, then اا, اب, …), like spreadsheet column letters. The styles apply everywhere a page number is rendered: section headers/footers, `{page}`/`{pages}` tokens (totals are formatted in the same style), and computed parity-blank pages.
 
+### 4.8 Character styles (Phase 4 batch 12)
+
+A text run may carry an optional **`characterStyleId`**: the id of a named character style in the document's style library, `styles.characterStyles` (a record of `{ id, name, fontFamily?, fontSize?, color?, bold?, italic?, underline?, language? }`, where `language` is `"ur"` or `"en"`). The reference is live: **effective formatting = the style's properties, overridden per-property by the run's own marks (direct formatting wins)** — the same precedence Word applies between a character style and direct run properties. Editing the style updates every run that references it; nothing about the style is ever copied into the run. Deleting a style is appearance-preserving: before the registry entry is removed, every referencing run's effective formatting is baked in as direct marks (only the properties a character style can carry).
+
+Registry rule: a document whose `styles` has no `characterStyles` key reads as if it held the built-in set (`emphasis`, `title_lead`); the first mutating command materializes the full set into the document, after which the document's own registry is authoritative — including deletions of built-ins. Older documents therefore remain valid unchanged, and no migration is needed (both fields are optional).
+
+Interchange: DOCX export emits a `w:style` definition of `w:type="character"` for every style the exported runs reference and points each run at it with `<w:rStyle>`; for style-covered properties the exporter does NOT bake frame defaults into the run's direct `w:rPr` (Word applies direct properties over the style, which would hide it). DOCX import parses character style definitions from `word/styles.xml` into the registry (the file's definition wins on id conflicts with the built-ins, since its runs were written against it) and restores `characterStyleId` on runs whose `w:rStyle` names a style the file actually defines. References to undefined styles are dropped on import rather than stored dangling.
+
 ## 5. Assets
 
 - Each asset is addressed by SHA-256 digest.

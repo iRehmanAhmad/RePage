@@ -207,6 +207,15 @@ import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
 import { Spellcheck } from './spellcheckExtension';
 import { SpellcheckMenu } from './SpellcheckMenu';
+import {
+  CharacterStyleMark,
+  TextAssist,
+  handleCompletionKeyDown,
+  tryAutoCorrectAtDelimiter,
+} from './textAssistExtension';
+import { isWordDelimiter } from '../../domain/language/autoCorrect';
+import { characterStylesCss } from '../../domain/rich-text/characterStyles';
+import type { CharacterStyle } from '../../domain/rich-text/styles';
 import { RepageBreak } from './repageBreakExtension';
 import {
   COMPOSITE_FONT_FAMILY,
@@ -499,6 +508,8 @@ export interface DocumentBodyEditorProps {
   keyboardMode?: KeyboardMode;
   numeralSystem?: 'urdu' | 'western';
   pendingChar?: string | null;
+  /** The document's character-style registry (renders styled runs). */
+  characterStyles?: Record<string, CharacterStyle> | undefined;
   /** Increment to focus the editor after a click on unoccupied page space. */
   focusRequest?: number;
   pageLayout?: PagedEditorLayout | undefined;
@@ -539,6 +550,7 @@ export function DocumentBodyEditor({
   keyboardMode = 'crulp',
   numeralSystem = 'urdu',
   pendingChar,
+  characterStyles,
   focusRequest = 0,
   pageLayout,
   onCommit,
@@ -633,6 +645,8 @@ export function DocumentBodyEditor({
       SmartDeletePreview,
       BidiVisualCursor,
       Spellcheck,
+      CharacterStyleMark,
+      TextAssist,
     ],
     content: initialHtml,
     autofocus: false,
@@ -663,8 +677,20 @@ export function DocumentBodyEditor({
           }
         }
         if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+          // Word completion gets first claim on Tab / Enter / Esc /
+          // arrows whenever its popup is open (this editorProps handler
+          // runs before the extension's own plugin props).
+          if (handleCompletionKeyDown(view, event)) {
+            event.preventDefault();
+            return true;
+          }
           if (event.key === 'Tab') {
             event.preventDefault();
+            // Tab completes a word too: auto-correct first claim (it
+            // inserts the tab itself when it corrects).
+            if (tryAutoCorrectAtDelimiter(view, '\t')) {
+              return true;
+            }
             const { from, to } = view.state.selection;
             view.dispatch(view.state.tr.insertText('\t', from, to));
             return true;
@@ -746,6 +772,11 @@ export function DocumentBodyEditor({
               const mapped = mapKeyToUrduCharacter(event.key, mode, event.shiftKey, numSys);
               if (mapped) {
                 event.preventDefault();
+                // A mapped delimiter completes the word: auto-correct
+                // gets first claim (it inserts the delimiter itself).
+                if (isWordDelimiter(mapped) && tryAutoCorrectAtDelimiter(view, mapped)) {
+                  return true;
+                }
                 const { from, to } = view.state.selection;
                 view.dispatch(view.state.tr.insertText(mapped, from, to));
                 return true;
@@ -806,6 +837,10 @@ export function DocumentBodyEditor({
   // Handle pending character insertion from VisualKeyboard
   useEffect(() => {
     if (editor && pendingChar) {
+      // Virtual-keyboard delimiters complete a word just like typed ones.
+      if (isWordDelimiter(pendingChar) && tryAutoCorrectAtDelimiter(editor.view, pendingChar)) {
+        return;
+      }
       editor.commands.insertContent(pendingChar);
     }
   }, [editor, pendingChar]);
@@ -867,6 +902,7 @@ export function DocumentBodyEditor({
         pointerEvents: 'auto',
       }}
     >
+      {characterStyles ? <style>{characterStylesCss(characterStyles)}</style> : null}
       <EditorContent
         editor={editor}
         style={{

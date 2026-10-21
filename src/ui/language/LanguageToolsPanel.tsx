@@ -10,6 +10,12 @@ import { proofreadUrduText } from '../../domain/language/urduProofreader';
 import { romanToUrdu, urduToRoman } from '../../domain/language/transliteration';
 import { previewNormalization } from '../../domain/language/characterNormalization';
 import { DICTIONARY, type Translations } from '../i18n/menuTranslation';
+import {
+  isAutoCorrectEnabled,
+  isWordCompletionEnabled,
+  setAutoCorrectEnabled,
+  setWordCompletionEnabled,
+} from '../../domain/language/textAssistSettings';
 
 export interface SelectionInfo {
   storyId: string;
@@ -45,6 +51,10 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
   onClearDocumentIgnoredWords,
 }) => {
   const tt = t ?? DICTIONARY.en;
+  // Text assist toggles (batch 12): persisted by textAssistSettings and
+  // read live by the editors, so flipping them here applies immediately.
+  const [autoCorrectOn, setAutoCorrectOn] = useState<boolean>(() => isAutoCorrectEnabled());
+  const [wordCompletionOn, setWordCompletionOn] = useState<boolean>(() => isWordCompletionEnabled());
   const [activeTab, setActiveTab] = useState<'proofread' | 'dictionary' | 'transliterate' | 'normalize'>(
     initialTab === 'dictionary'
       ? 'dictionary'
@@ -455,6 +465,40 @@ export const LanguageToolsPanel: React.FC<LanguageToolsPanelProps> = ({
         {/* Tab 1: Proofread & Spelling */}
         {activeTab === 'proofread' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Text assist toggles (batch 12) */}
+            <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={autoCorrectOn}
+                  onChange={(e) => {
+                    setAutoCorrectOn(e.target.checked);
+                    setAutoCorrectEnabled(e.target.checked);
+                  }}
+                  style={{ marginTop: '2px' }}
+                />
+                <span>
+                  <span style={{ fontWeight: 600, color: '#f8fafc' }}>{tt.ltAutoCorrect}</span>
+                  <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{tt.ltAutoCorrectHint}</span>
+                </span>
+              </label>
+              <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={wordCompletionOn}
+                  onChange={(e) => {
+                    setWordCompletionOn(e.target.checked);
+                    setWordCompletionEnabled(e.target.checked);
+                  }}
+                  style={{ marginTop: '2px' }}
+                />
+                <span>
+                  <span style={{ fontWeight: 600, color: '#f8fafc' }}>{tt.ltWordCompletion}</span>
+                  <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{tt.ltWordCompletionHint}</span>
+                </span>
+              </label>
+            </div>
+
             <div style={{ padding: '10px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#cbd5e1' }}>
               مطلوبہ دائرہ کار کا متن ({concatenatedText.length} حروف):
               <div style={{ marginTop: '6px', padding: '8px 12px', backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '6px', fontSize: '13px', color: '#34d399', maxHeight: '96px', overflowY: 'auto', direction: 'rtl' }}>

@@ -102,6 +102,10 @@ export interface MsWordRibbonProps {
   selectedObjectType?: 'text-frame' | 'rectangle' | 'image-frame' | 'table' | null;
   onReorderObject?: (action: 'forward' | 'backward' | 'front' | 'back') => void;
   onAlignObjects?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  /** Batch 12: duplicate the selected object once (offset copy). */
+  onDuplicateObject?: () => void;
+  /** Batch 12: open the step-and-repeat grid dialog for the selected object. */
+  onStepAndRepeat?: () => void;
   onSetWrapping?: (wrapMode: TextWrapMode) => void;
   /** Opens the inspector's image-crop controls for the selected image. */
   onCropImage?: () => void;
@@ -294,6 +298,8 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   selectedObjectType,
   onReorderObject,
   onAlignObjects,
+  onDuplicateObject,
+  onStepAndRepeat,
   onSetWrapping,
   onCropImage,
   onToggleSelectionPane,
@@ -2407,6 +2413,26 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 <button onClick={onToggleSelectionPane} className="ribbon-action-btn highlight">
                   <AppIcon name="panel-right" />
                   <span>{lang === 'ur' ? 'انتخابی پینل' : 'Selection Pane'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDuplicateObject && onDuplicateObject()}
+                  className="ribbon-action-btn"
+                  disabled={!selectedObjectType}
+                  title={lang === 'ur' ? 'منتخب چیز کی نقل بنائیں' : 'Duplicate the selected object'}
+                >
+                  <AppIcon name="copy" />
+                  <span>{lang === 'ur' ? 'نقل' : 'Duplicate'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onStepAndRepeat && onStepAndRepeat()}
+                  className="ribbon-action-btn"
+                  disabled={!selectedObjectType}
+                  title={lang === 'ur' ? 'قطاروں اور کالموں میں مرحلہ وار نقلیں بنائیں' : 'Repeat the selected object in a grid'}
+                >
+                  <AppIcon name="grid" />
+                  <span>{lang === 'ur' ? 'مرحلہ وار نقل' : 'Step and Repeat'}</span>
                 </button>
               </div>
               <div className="ribbon-group-caption">{lang === 'ur' ? 'ترتیب' : 'Arrange'}</div>

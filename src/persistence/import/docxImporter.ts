@@ -20,6 +20,8 @@ import type {
   TextStory,
 } from '../../domain/document/types';
 import { computeSha256Hash } from './pdfImporter';
+import { importStylesIntoDocument } from '../../domain/rich-text/styleLibrary';
+import { getCharacterStyles } from '../../domain/rich-text/characterStyles';
 import {
   parseDocxFile,
   type DocxBlock,
@@ -396,6 +398,32 @@ export async function importDocxFile(
       };
     }
     imageY += boxHeight + 24;
+  }
+
+  // ---- 6b. Character styles defined by the Word file (batch 12) ----
+  // Runs already carry characterStyleId references; the definitions land
+  // in the document's registry so they resolve. The registry is first
+  // seeded with the effective (built-in) set, then the file's definitions
+  // overwrite by id: the file's meaning of a style id is what its runs
+  // were written against.
+  const importedCharStyles = parsed.characterStyles;
+  const importedCharStyleCount = Object.keys(importedCharStyles).length;
+  if (importedCharStyleCount > 0) {
+    const seeded: RePageDocument = {
+      ...doc,
+      styles: {
+        ...((doc.styles ?? {}) as Record<string, unknown>),
+        characterStyles: getCharacterStyles(doc),
+      },
+    };
+    doc = importStylesIntoDocument(
+      seeded,
+      { characterStyles: importedCharStyles },
+      'overwrite',
+    );
+    warnings.push(
+      `Imported ${importedCharStyleCount} character style(s) from the Word file.`,
+    );
   }
 
   // ---- 7. Schema validation: invalid input must never produce an invalid document ----

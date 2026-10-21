@@ -412,3 +412,101 @@ describe('exportDocumentToDocx batch 11 (kashida + image adjustments)', () => {
     expect(report.notes.some((n) => n.includes('brightness/contrast'))).toBe(false);
   });
 });
+
+describe('DOCX character styles (batch 12)', () => {
+  function buildStyledDocument(): RePageDocument {
+    let doc = createDocument('Char Styles');
+    const story = doc.stories[PRIMARY_STORY_ID]!;
+    const custom = {
+      id: 'school_name',
+      name: 'اسکول کا نام',
+      fontFamily: 'Noto Nastaliq Urdu',
+      fontSize: 20,
+      bold: true,
+      color: '#1d4ed8',
+      language: 'ur' as const,
+    };
+    doc = {
+      ...doc,
+      styles: {
+        characterStyles: {
+          school_name: custom,
+          emphasis: { id: 'emphasis', name: 'تاکید (Emphasis)', bold: true, color: '#0f766e' },
+        },
+      },
+      stories: {
+        ...doc.stories,
+        [PRIMARY_STORY_ID]: {
+          ...story,
+          content: {
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                direction: 'rtl',
+                content: [
+                  { type: 'text', text: 'GPS ' },
+                  { type: 'text', text: '117 DB', characterStyleId: 'school_name' },
+                  {
+                    type: 'text',
+                    text: ' emphasized',
+                    characterStyleId: 'emphasis',
+                    marks: [{ type: 'color', color: '#ff0000' }],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    };
+    return doc;
+  }
+
+  it('emits w:style character definitions + w:rStyle, without baking frame defaults over style props', async () => {
+    const { bytes } = await exportDocumentToDocx(buildStyledDocument());
+    const zip = await JSZip.loadAsync(bytes);
+    const stylesXml = await zip.file('word/styles.xml')!.async('string');
+    const documentXml = await zip.file('word/document.xml')!.async('string');
+
+    expect(stylesXml).toContain('w:type="character"');
+    expect(stylesXml).toContain('w:styleId="school_name"');
+    // The document's own registry is authoritative (it holds both styles).
+    expect(stylesXml).toContain('w:styleId="emphasis"');
+    expect(documentXml).toContain('<w:rStyle w:val="school_name"/>');
+    expect(documentXml).toContain('<w:rStyle w:val="emphasis"/>');
+    // The direct color mark on the emphasized run is preserved as direct
+    // rPr (direct formatting beats the style in Word, as in the model).
+    expect(documentXml).toContain('<w:color w:val="FF0000"/>');
+  });
+
+  it('round-trips: registry definitions and run references survive export -> import', async () => {
+    const { bytes } = await exportDocumentToDocx(buildStyledDocument());
+
+    const parsed = await parseDocxFile(bytes);
+    expect(parsed.characterStyles['school_name']).toMatchObject({
+      name: 'اسکول کا نام',
+      fontSize: 20,
+      bold: true,
+      color: '#1d4ed8',
+      language: 'ur',
+    });
+    const paras = parsed.blocks.filter((b) => b.kind === 'paragraph');
+    const styledRun = paras
+      .flatMap((b) => (b.kind === 'paragraph' ? b.node.content : []))
+      .find((n) => n.type === 'text' && n.text === '117 DB');
+    expect(styledRun?.type === 'text' ? styledRun.characterStyleId : undefined).toBe('school_name');
+
+    const { document: imported, report } = await importDocxFile(bytes, 'styled.docx');
+    const registry = (imported.styles as { characterStyles?: Record<string, unknown> }).characterStyles;
+    expect(registry?.['school_name']).toBeDefined();
+    expect(report.warnings.some((w) => w.includes('character style'))).toBe(true);
+    const importedStory = Object.values(imported.stories).find((s) =>
+      JSON.stringify(s.content).includes('117 DB'),
+    );
+    const run = importedStory?.content.content
+      .flatMap((p) => p.content ?? [])
+      .find((n) => n.type === 'text' && n.text === '117 DB');
+    expect(run?.type === 'text' ? run.characterStyleId : undefined).toBe('school_name');
+  });
+});

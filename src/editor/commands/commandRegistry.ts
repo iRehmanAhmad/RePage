@@ -232,3 +232,51 @@ commandRegistry.register({
   execute: () => {},
 });
 
+
+commandRegistry.register({
+  id: 'edit.duplicateObject',
+  label: 'Duplicate Object',
+  category: 'edit',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'layout.stepAndRepeat',
+  label: 'Step and Repeat',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'format.applyCharacterStyle',
+  label: 'Apply Character Style',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'format.createCharacterStyle',
+  label: 'Create Character Style from Selection',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'format.updateCharacterStyle',
+  label: 'Edit Character Style',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'format.deleteCharacterStyle',
+  label: 'Delete Character Style',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});

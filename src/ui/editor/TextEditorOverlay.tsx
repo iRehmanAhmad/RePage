@@ -16,6 +16,14 @@ import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
 import { Spellcheck } from './spellcheckExtension';
 import { SpellcheckMenu } from './SpellcheckMenu';
+import {
+  CharacterStyleMark,
+  TextAssist,
+  tryAutoCorrectAtDelimiter,
+} from './textAssistExtension';
+import { isWordDelimiter } from '../../domain/language/autoCorrect';
+import { characterStylesCss } from '../../domain/rich-text/characterStyles';
+import type { CharacterStyle } from '../../domain/rich-text/styles';
 import { RepageBreak } from './repageBreakExtension';
 
 import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
@@ -44,6 +52,8 @@ export interface TextEditorOverlayProps {
   keyboardMode?: KeyboardMode;
   numeralSystem?: 'urdu' | 'western';
   pendingChar?: string | null;
+  /** The document's character-style registry (renders styled runs). */
+  characterStyles?: Record<string, CharacterStyle> | undefined;
   onCommit: (updatedContent: RichTextDocument) => void;
   onClose: () => void;
   onEditorReady?: ((editor: Editor | null) => void) | undefined;
@@ -61,6 +71,7 @@ export function TextEditorOverlay({
   keyboardMode = 'crulp',
   numeralSystem = 'urdu',
   pendingChar,
+  characterStyles,
   onCommit,
   onClose,
   onEditorReady,
@@ -91,6 +102,8 @@ export function TextEditorOverlay({
       SmartDeletePreview,
       BidiVisualCursor,
       Spellcheck,
+      CharacterStyleMark,
+      TextAssist,
     ],
     content: canonicalToTiptapHtml(story.content),
     autofocus: 'end',
@@ -124,6 +137,11 @@ export function TextEditorOverlay({
             const mapped = mapKeyToUrduCharacter(event.key, mode, event.shiftKey, numSys);
             if (mapped) {
               event.preventDefault();
+              // A mapped delimiter completes the word: auto-correct gets
+              // first claim (it inserts the delimiter itself).
+              if (isWordDelimiter(mapped) && tryAutoCorrectAtDelimiter(view, mapped)) {
+                return true;
+              }
               const { from, to } = view.state.selection;
               view.dispatch(view.state.tr.insertText(mapped, from, to));
               return true;
@@ -180,8 +198,12 @@ export function TextEditorOverlay({
   // Handle pending character insertion from VisualKeyboard or virtual inputs
   useEffect(() => {
     if (editor && pendingChar && pendingChar !== lastPendingCharacter.current) {
-      editor.commands.insertContent(pendingChar);
       lastPendingCharacter.current = pendingChar;
+      // Virtual-keyboard delimiters complete a word just like typed ones.
+      if (isWordDelimiter(pendingChar) && tryAutoCorrectAtDelimiter(editor.view, pendingChar)) {
+        return;
+      }
+      editor.commands.insertContent(pendingChar);
     } else if (!pendingChar) {
       lastPendingCharacter.current = null;
     }
@@ -189,7 +211,10 @@ export function TextEditorOverlay({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
+      // When the completion popup consumed Escape (ProseMirror marks the
+      // event defaultPrevented), it dismissed the popup — do not also
+      // close the overlay.
+      if (e.key === 'Escape' && !e.defaultPrevented) {
         onClose();
       }
     }
@@ -223,6 +248,7 @@ export function TextEditorOverlay({
         pointerEvents: 'auto',
       }}
     >
+      {characterStyles ? <style>{characterStylesCss(characterStyles)}</style> : null}
       <EditorContent
         editor={editor}
         style={{

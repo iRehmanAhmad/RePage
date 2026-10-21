@@ -29,9 +29,22 @@ import {
   setImageAdjustmentsCommand,
   setImageCropCommand,
   setObjectWrapping,
+  duplicateObjectCommand,
   setTextOnPathCommand,
+  stepAndRepeatObjectCommand,
   updateTableCell,
 } from '../editor/commands/objectCommands';
+import {
+  applyCharacterStyleToStoryCommand,
+  createCharacterStyleCommand,
+  deleteCharacterStyleCommand,
+  updateCharacterStyleCommand,
+} from '../editor/commands/characterStyleCommands';
+import type { CharacterStyle } from '../domain/rich-text/styles';
+import {
+  buildDocumentVocabulary,
+  setDocumentVocabulary,
+} from '../domain/language/textAssistSettings';
 import {
   applyPageSetupCommand,
   insertSectionBreakCommand,
@@ -112,6 +125,7 @@ import { FileBackstageOverlay } from '../ui/header/FileBackstageOverlay';
 import { NavigationPane } from '../ui/navigation/NavigationPane';
 import { DocumentStatsModal } from '../ui/dialogs/DocumentStatsModal';
 import { StylesManagerModal } from '../ui/dialogs/StylesManagerModal';
+import { StepAndRepeatDialog } from '../ui/dialogs/StepAndRepeatDialog';
 import { CharacterSubstitutionModal } from '../ui/dialogs/CharacterSubstitutionModal';
 import { KeyboardLayoutEditorModal } from '../ui/dialogs/KeyboardLayoutEditorModal';
 import { ReviewingPane } from '../ui/collaboration/ReviewingPane';
@@ -278,6 +292,7 @@ export function App() {
   const [isSelectionPaneOpen, setIsSelectionPaneOpen] = useState(false);
   const [showDocStats, setShowDocStats] = useState(false);
   const [showStylesManager, setShowStylesManager] = useState(false);
+  const [stepAndRepeatObjectId, setStepAndRepeatObjectId] = useState<string | null>(null);
   const [activeStyleId, setActiveStyleId] = useState<string>('normal');
   const [showCharSub, setShowCharSub] = useState(false);
   const [showKeyboardEditor, setShowKeyboardEditor] = useState(false);
@@ -693,6 +708,12 @@ export function App() {
     setDocumentIgnoredWords(docIgnoredWords ?? []);
     broadcastSpellcheckRecheck();
   }, [docIgnoredWords]);
+
+  // Word completion reads the active document's vocabulary from the same
+  // kind of mirror (the editor extension has no document handle).
+  React.useEffect(() => {
+    setDocumentVocabulary(buildDocumentVocabulary(document));
+  }, [document]);
 
   const handleIgnoreWordInDocument = React.useCallback(
     (word: string) => {
@@ -1167,9 +1188,61 @@ export function App() {
   const [isSuperscript, setIsSuperscript] = useState(false);
   const [highlightColor, setHighlightColor] = useState<string | null>(null);
   const [fontColor, setFontColor] = useState('#172119');
+
   const [showFontDialog, setShowFontDialog] = useState(false);
   const [detectedScript, setDetectedScript] = useState<'urdu' | 'latin'>('urdu');
   const [activeUrduFont, setActiveUrduFont] = useState<string>('Noto Nastaliq Urdu');
+
+  // --- Character styles (batch 12) -------------------------------------------
+  const handleApplyCharacterStyle = React.useCallback(
+    (styleId: string | undefined) => {
+      if (!activeSelectionRange || activeSelectionRange.from >= activeSelectionRange.to) return;
+      const next = applyCharacterStyleToStoryCommand(
+        document,
+        activeSelectionRange.storyId,
+        activeSelectionRange.from,
+        activeSelectionRange.to,
+        styleId,
+      );
+      if (next !== document) updateDocument(next, 'Apply character style');
+    },
+    [document, updateDocument, activeSelectionRange],
+  );
+
+  const handleCreateCharacterStyleFromSelection = React.useCallback(
+    (name: string) => {
+      const { document: next, style } = createCharacterStyleCommand(document, {
+        name,
+        fontFamily: activeFontFamily,
+        fontSize: activeFontSize,
+        color: fontColor,
+        bold: isBold || undefined,
+        italic: isItalic || undefined,
+        underline: isUnderline || undefined,
+        language: detectedScript === 'urdu' ? 'ur' : 'en',
+      });
+      updateDocument(next, 'Create character style');
+      return style;
+    },
+    [document, updateDocument, activeFontFamily, activeFontSize, fontColor, isBold, isItalic, isUnderline, detectedScript],
+  );
+
+  const handleUpdateCharacterStyle = React.useCallback(
+    (styleId: string, patch: Partial<Omit<CharacterStyle, 'id'>>) => {
+      const next = updateCharacterStyleCommand(document, styleId, patch);
+      if (next !== document) updateDocument(next, 'Edit character style');
+    },
+    [document, updateDocument],
+  );
+
+  const handleDeleteCharacterStyle = React.useCallback(
+    (styleId: string) => {
+      const next = deleteCharacterStyleCommand(document, styleId);
+      if (next !== document) updateDocument(next, 'Delete character style');
+    },
+    [document, updateDocument],
+  );
+
   const [activeEnglishFont, setActiveEnglishFont] = useState<string>('Calibri');
 
   const [recentUrduFonts, setRecentUrduFonts] = useState<string[]>(() => {
@@ -2263,6 +2336,18 @@ export function App() {
               updateDocument(alignPageObjects(document, activePageId, [selectedObjectId], alignment), 'Align object');
             }
           }}
+          onDuplicateObject={() => {
+            if (selectedObjectId) {
+              const result = duplicateObjectCommand(document, selectedObjectId);
+              if (result.newObjectId) {
+                updateDocument(result.document, 'Duplicate object');
+                setSelectedObjectId(result.newObjectId);
+              }
+            }
+          }}
+          onStepAndRepeat={() => {
+            if (selectedObjectId) setStepAndRepeatObjectId(selectedObjectId);
+          }}
           onSetWrapping={(wrapMode) => {
             if (selectedObjectId) {
               updateDocument(setObjectWrapping(document, selectedObjectId, wrapMode), 'Set text wrapping');
@@ -2889,6 +2974,28 @@ export function App() {
             styleNameOverrides={styleNameOverrides}
             hiddenStyleIds={hiddenGalleryStyleIds}
             onToggleGalleryVisibility={handleToggleGalleryVisibility}
+            hasTextSelection={!!activeSelectionRange && activeSelectionRange.from < activeSelectionRange.to}
+            onApplyCharacterStyle={handleApplyCharacterStyle}
+            onCreateCharacterStyle={handleCreateCharacterStyleFromSelection}
+            onUpdateCharacterStyle={handleUpdateCharacterStyle}
+            onDeleteCharacterStyle={handleDeleteCharacterStyle}
+          />
+        )}
+
+        {stepAndRepeatObjectId && document.objects[stepAndRepeatObjectId] && (
+          <StepAndRepeatDialog
+            isOpen={true}
+            onClose={() => setStepAndRepeatObjectId(null)}
+            lang={lang}
+            unit={document.settings.measurementUnit}
+            objectName={document.objects[stepAndRepeatObjectId]!.name}
+            onConfirm={(spec) => {
+              const result = stepAndRepeatObjectCommand(document, stepAndRepeatObjectId, spec);
+              if (result.newObjectIds.length > 0) {
+                updateDocument(result.document, 'Step and repeat');
+              }
+              setStepAndRepeatObjectId(null);
+            }}
           />
         )}
 

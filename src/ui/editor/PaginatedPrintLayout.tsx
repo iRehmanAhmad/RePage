@@ -10,6 +10,7 @@ import {
 } from '../../domain/unicode/pageNumbering';
 import { repaginateDocument, getPrintableHeight } from '../../domain/layout/paginationEngine';
 import { computeChainTextSlices, getTextFrameChain } from '../../domain/document/textFlow';
+import { getCharacterStyles } from '../../domain/rich-text/characterStyles';
 import { createCanvasTextMeasurer } from '../../editor/canvas/canvasTextMeasurer';
 import { FabricCanvas } from '../canvas/FabricCanvas';
 import { DocumentBodyEditor } from './DocumentBodyEditor';
@@ -138,6 +139,7 @@ export function PaginatedPrintLayout({
   // Uses measured shaping when a live text engine exists (browser/Tauri WebView);
   // headless/test environments fall back to the deterministic heuristic.
   const textMeasurer = React.useMemo(() => createCanvasTextMeasurer(), []);
+  const characterStyles = React.useMemo(() => getCharacterStyles(document), [document]);
   const storySlices = React.useMemo(() => {
     const result: Record<string, string> = {};
     const visited = new Set<string>();
@@ -171,6 +173,7 @@ export function PaginatedPrintLayout({
         >
           <DocumentBodyEditor
             story={primaryStory}
+            characterStyles={characterStyles}
             fontFamily={activeFontFamily}
             pairedLatinFont={pairedLatinFont}
             disableUrduKeyMapping={disableUrduKeyMapping}
@@ -636,6 +639,7 @@ export function PaginatedPrintLayout({
               {isActive ? (
                 <DocumentBodyEditor
                   story={pageStory}
+            characterStyles={characterStyles}
                   fontFamily={activeFontFamily}
                   pairedLatinFont={pairedLatinFont}
                   disableUrduKeyMapping={disableUrduKeyMapping}
@@ -736,6 +740,7 @@ export function PaginatedPrintLayout({
                 <TextEditorOverlay
                   frame={editingTextBox.frame}
                   story={editingStory}
+                  characterStyles={characterStyles}
                   fontFamily={'fontFamily' in editingTextBox ? editingTextBox.fontFamily : activeFontFamily}
                   fontSize={'fontSize' in editingTextBox ? editingTextBox.fontSize : 20}
                   color={'color' in editingTextBox ? editingTextBox.color : '#1e293b'}

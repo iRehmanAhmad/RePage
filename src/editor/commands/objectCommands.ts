@@ -1,7 +1,11 @@
 import type { RichTextDocument } from '../../domain/rich-text/types';
-import type { ImageAdjustments, ImageCropInsets, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextOnPathConfig, TextWrapMode, AssetReference } from '../../domain/document/types';
+import type { ImageAdjustments, ImageCropInsets, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextOnPathConfig, TextStory, TextWrapMode, AssetReference } from '../../domain/document/types';
 import { clampImageCropInsets, isImageCropEmpty } from '../../domain/geometry/imageCrop';
 import { clampImageAdjustments, isImageAdjustmentsNeutral } from '../../domain/geometry/imageAdjustments';
+import {
+  stepAndRepeatCells,
+  type StepAndRepeatSpec,
+} from '../../domain/geometry/stepAndRepeat';
 import { createId } from '../../domain/document/ids';
 import { paragraph } from '../../domain/rich-text/types';
 import type { OcrPageResult } from '../../domain/ocr/ocrEngine';
@@ -605,4 +609,135 @@ export function addImportedTable(
     },
   };
   return { document, objectId: tableId };
+}
+
+// --- Duplicate / step-and-repeat (Phase 4 batch 12) ---------------------------
+
+interface CloneResult {
+  object: PageObject;
+  /** Fresh story for the copy, when the source carried one. */
+  story: TextStory | null;
+}
+
+/**
+ * Deep-clones an object for duplication. The document model is JSON-safe
+ * (it persists as JSON in the .urdup package), so a JSON round-trip is a
+ * faithful clone. Identity rules:
+ *  - the copy gets a FRESH object id;
+ *  - an object carrying a story (text frames; shapes with text) gets a
+ *    FRESH story id and a deep copy of the story's content — copies are
+ *    independent documents of text, never aliases;
+ *  - a text-frame copy is NOT linked into the original's flow chain:
+ *    nextFrameId/previousFrameId are cleared and sequenceIndex dropped,
+ *    and the ORIGINAL's chain fields are untouched, so text never starts
+ *    flowing into (or out of) a copy;
+ *  - table row/cell ids are positional within their table (row_0,
+ *    cell_0_0), so they are safe to keep as-is.
+ */
+function cloneObjectForDuplication(
+  doc: RePageDocument,
+  source: PageObject,
+  dx: number,
+  dy: number,
+): CloneResult {
+  const clone = JSON.parse(JSON.stringify(source)) as PageObject;
+  clone.id = createId('object');
+  clone.frame = { ...clone.frame, x: source.frame.x + dx, y: source.frame.y + dy };
+  clone.name = `${source.name} (copy)`;
+
+  let story: TextStory | null = null;
+  const storyCarrier = clone as { storyId?: string | undefined };
+  if (storyCarrier.storyId) {
+    const sourceStory = doc.stories[storyCarrier.storyId];
+    if (sourceStory) {
+      const storyId = createId('story');
+      story = {
+        ...(JSON.parse(JSON.stringify(sourceStory)) as TextStory),
+        id: storyId,
+        name: `${sourceStory.name} (copy)`,
+      };
+      storyCarrier.storyId = storyId;
+    } else {
+      storyCarrier.storyId = undefined;
+    }
+  }
+  if (clone.type === 'text-frame') {
+    clone.nextFrameId = null;
+    clone.previousFrameId = null;
+    clone.sequenceIndex = undefined;
+    clone.overflow = undefined;
+  }
+  return { object: clone, story };
+}
+
+/**
+ * Plain Duplicate: one copy of the object, offset by (+18, +18) points so
+ * it doesn't hide the original. One command = one undo step in App.
+ */
+export function duplicateObjectCommand(
+  doc: RePageDocument,
+  objectId: string,
+): { document: RePageDocument; newObjectId: string | null } {
+  const source = doc.objects[objectId];
+  if (!source) return { document: doc, newObjectId: null };
+  const page = doc.pages[source.pageId];
+  if (!page) return { document: doc, newObjectId: null };
+
+  const { object, story } = cloneObjectForDuplication(doc, source, 18, 18);
+  const order = [...page.objectOrder];
+  order.splice(order.indexOf(objectId) + 1, 0, object.id);
+  return {
+    document: {
+      ...doc,
+      pages: { ...doc.pages, [page.id]: { ...page, objectOrder: order } },
+      objects: { ...doc.objects, [object.id]: object },
+      stories: story ? { ...doc.stories, [story.id]: story } : doc.stories,
+    },
+    newObjectId: object.id,
+  };
+}
+
+/**
+ * Step-and-repeat: fills a rows × columns grid with copies of the object
+ * (see domain/geometry/stepAndRepeat for the math + clamps). Copies are
+ * inserted into the page's objectOrder immediately after the original,
+ * in row-major order. Copies that fall outside the page are still
+ * created. One command = one undo step in App.
+ */
+export function stepAndRepeatObjectCommand(
+  doc: RePageDocument,
+  objectId: string,
+  spec: StepAndRepeatSpec,
+): { document: RePageDocument; newObjectIds: string[] } {
+  const source = doc.objects[objectId];
+  if (!source) return { document: doc, newObjectIds: [] };
+  const page = doc.pages[source.pageId];
+  if (!page) return { document: doc, newObjectIds: [] };
+
+  const cells = stepAndRepeatCells(source.frame.width, source.frame.height, spec);
+  if (cells.length === 0) return { document: doc, newObjectIds: [] };
+
+  const objects = { ...doc.objects };
+  const stories = { ...doc.stories };
+  const newObjectIds: string[] = [];
+  for (const cell of cells) {
+    const { object, story } = cloneObjectForDuplication(doc, source, cell.dx, cell.dy);
+    objects[object.id] = object;
+    if (story) stories[story.id] = story;
+    newObjectIds.push(object.id);
+  }
+
+  const order = [...page.objectOrder];
+  const sourceIndex = order.indexOf(objectId);
+  order.splice(sourceIndex + 1, 0, ...newObjectIds);
+
+  return {
+    document: {
+      ...doc,
+      pages: { ...doc.pages, [page.id]: { ...page, objectOrder: order } },
+      objects,
+      stories,
+    },
+    newObjectIds,
+  };
 }

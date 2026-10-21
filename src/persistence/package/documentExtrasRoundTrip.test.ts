@@ -96,3 +96,60 @@ describe('.urdup package — batch 11 fields', () => {
     expect(reopened.sections![0]!.pageNumbering.style).toBe('abjad');
   });
 });
+
+/**
+ * Phase 4 batch 12: character styles — a run's characterStyleId reference
+ * and the document's character-style registry (including the language
+ * field) must survive the .urdup round-trip exactly.
+ */
+describe('.urdup package — batch 12 character styles', () => {
+  it('round-trips characterStyleId runs and the style registry unchanged', async () => {
+    const starter = createStarterDocument();
+    const story = starter.stories[PRIMARY_STORY_ID]!;
+    const doc = {
+      ...starter,
+      styles: {
+        characterStyles: {
+          school_name: {
+            id: 'school_name',
+            name: 'اسکول کا نام',
+            fontFamily: 'Noto Nastaliq Urdu',
+            fontSize: 20,
+            bold: true,
+            color: '#1d4ed8',
+            language: 'ur',
+          },
+        },
+      },
+      stories: {
+        ...starter.stories,
+        [PRIMARY_STORY_ID]: {
+          ...story,
+          content: {
+            type: 'doc' as const,
+            content: [
+              {
+                type: 'paragraph' as const,
+                direction: 'rtl' as const,
+                content: [
+                  { type: 'text' as const, text: 'GPS ', characterStyleId: 'school_name' },
+                  { type: 'text' as const, text: 'plain' },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const bytes = await createUrdupPackage(doc);
+    const reopened = await readUrdupPackage(bytes);
+
+    expect(reopened).toEqual(doc);
+    const registry = (reopened.styles as { characterStyles: Record<string, { language?: string }> })
+      .characterStyles;
+    expect(registry['school_name']?.language).toBe('ur');
+    const firstRun = reopened.stories[PRIMARY_STORY_ID]!.content.content[0]!.content[0]!;
+    expect(firstRun.type === 'text' ? firstRun.characterStyleId : undefined).toBe('school_name');
+  });
+});

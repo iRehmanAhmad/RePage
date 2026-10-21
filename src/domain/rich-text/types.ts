@@ -79,6 +79,15 @@ export interface TextRun {
   type: 'text';
   text: string;
   marks?: TextMark[] | undefined;
+  /**
+   * Id of a named character style in the document's style library
+   * (doc.styles.characterStyles). The style supplies DEFAULT formatting
+   * for this run; the run's own marks are direct formatting and override
+   * the style property-by-property (see domain/rich-text/characterStyles.ts
+   * for the resolution rule). The id is a reference, never a copy: editing
+   * the style updates every run that uses it.
+   */
+  characterStyleId?: string | undefined;
 }
 
 export interface HardBreakNode {
@@ -185,6 +194,7 @@ export const textRunSchema = z.object({
   type: z.literal('text'),
   text: z.string(),
   marks: z.array(textMarkSchema).optional(),
+  characterStyleId: z.string().min(1).optional(),
 });
 
 export const hardBreakNodeSchema = z.object({

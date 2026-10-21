@@ -3,6 +3,7 @@ import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
 import type { TextAlignment } from '../../domain/rich-text/types';
 import { DocumentBodyEditor } from '../editor/DocumentBodyEditor';
+import { getCharacterStyles } from '../../domain/rich-text/characterStyles';
 
 import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
 
@@ -44,6 +45,7 @@ export const DraftEditingView: React.FC<DraftEditingViewProps> = ({
   onEditorReady,
   lang = 'ur',
 }) => {
+  const characterStyles = React.useMemo(() => getCharacterStyles(document), [document]);
   const primaryStory = document.stories['primary-body-story'] || Object.values(document.stories)[0];
   const sections = document.sections || [];
 
@@ -120,6 +122,7 @@ export const DraftEditingView: React.FC<DraftEditingViewProps> = ({
             {primaryStory && (
               <DocumentBodyEditor
                 story={primaryStory}
+                characterStyles={characterStyles}
                 fontFamily={activeFontFamily ?? 'Noto Nastaliq Urdu'}
                 pairedLatinFont={pairedLatinFont}
                 disableUrduKeyMapping={disableUrduKeyMapping}
