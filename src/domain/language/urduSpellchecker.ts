@@ -1,6 +1,7 @@
 import { isWordInCoreDictionaries, normalizeForDictionary } from './urduDictionary';
 import { loadPersonalDictionary, onPersonalDictionaryChanged } from './personalDictionary';
 import { URDU_WORDLIST } from './urduWordlist.generated';
+import { ENGLISH_COMMON_WORDS, ENGLISH_WORDLIST } from './englishWordlist.generated';
 
 export interface SpellingError {
   word: string;
@@ -95,6 +96,8 @@ for (const w of URDU_WORDLIST) {
 
 export function getSpellingSuggestions(word: string, maxSuggestions = 5): string[] {
   if (!word) return [];
+  // Latin tokens are served by the English wordlist path below.
+  if (isLatinWord(word)) return getEnglishSuggestions(word, maxSuggestions);
   const norm = normalizeForDictionary(word);
   if (!norm || isSpellingCorrect(word)) return [];
 
@@ -156,12 +159,123 @@ export function clearSessionIgnores(): void {
   sessionIgnored.clear();
 }
 
+// --- English (Latin-script) checking -------------------------------------------
+// Vendored English wordlist (tesseract-ocr/langdata, Apache-2.0 — see
+// englishWordlist.generated.ts header and docs/DEPENDENCIES.md). Built once at
+// module load: O(1) lookup per word, length buckets for suggestions.
+const ENGLISH_SET: Set<string> = new Set(ENGLISH_WORDLIST);
+const ENGLISH_WORDS_BY_LENGTH: Map<number, string[]> = new Map();
+for (const w of ENGLISH_WORDLIST) {
+  const bucket = ENGLISH_WORDS_BY_LENGTH.get(w.length);
+  if (bucket) bucket.push(w);
+  else ENGLISH_WORDS_BY_LENGTH.set(w.length, [w]);
+}
+// Frequency rank of the most common words (upstream list order); used only
+// to rank suggestions so common corrections beat obscure same-distance words.
+const ENGLISH_COMMON_RANK: Map<string, number> = new Map(
+  ENGLISH_COMMON_WORDS.map((w, i) => [w, i] as const),
+);
+const NOT_COMMON = Number.MAX_SAFE_INTEGER;
+
+/** Single-letter English words filtered out of the generated list (length >= 2). */
+const ENGLISH_CORE_WORDS: ReadonlySet<string> = new Set(['a', 'i']);
+
+// eslint-disable-next-line no-misleading-character-class
+const ARABIC_SCRIPT_RE = /[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06FA-\u06FC]/;
+const LATIN_LETTER_RE = /[A-Za-z]/;
+
+/** True for tokens written purely in Latin letters (+ apostrophes). */
+export function isLatinWord(word: string): boolean {
+  return LATIN_LETTER_RE.test(word) && !ARABIC_SCRIPT_RE.test(word);
+}
+
+/**
+ * Lookup key for English matching: lowercase, curly apostrophe unified.
+ * Applied to a copy of the token only — document text is never modified.
+ */
+export function normalizeForEnglish(word: string): string {
+  if (!word) return '';
+  return word.trim().toLowerCase().replace(/’/g, "'");
+}
+
+/** Membership test against the English core set + vendored list. */
+export function isWordInEnglishDictionary(word: string): boolean {
+  const key = normalizeForEnglish(word);
+  if (!key) return false;
+  if (ENGLISH_CORE_WORDS.has(key) || ENGLISH_SET.has(key)) return true;
+  if (key.includes("'")) {
+    // Contractions: the vendored list carries apostrophe-stripped forms
+    // ("dont", "isnt", "couldnt"), so the stripped key is authoritative.
+    if (ENGLISH_SET.has(key.replace(/'/g, ''))) return true;
+    // Possessives: "teacher's" -> "teacher", "students'" -> "students".
+    if (key.endsWith("'s") && ENGLISH_SET.has(key.slice(0, -2))) return true;
+    if (key.endsWith("'") && ENGLISH_SET.has(key.slice(0, -1))) return true;
+  }
+  return false;
+}
+
+function isEnglishCorrect(word: string): boolean {
+  const key = normalizeForEnglish(word);
+  if (key.length < 2) return true;
+  // Session ignore + personal dictionary apply to English words too. Their
+  // caches are keyed by normalizeForDictionary, which agrees with
+  // normalizeForEnglish on ASCII Latin tokens; check both key forms so a
+  // word ignored in either spelling stays ignored.
+  const dictKey = normalizeForDictionary(word);
+  if (sessionIgnored.has(key) || sessionIgnored.has(dictKey)) return true;
+  const personal = getPersonalCache();
+  if (personal.has(key) || personal.has(dictKey)) return true;
+  return isWordInEnglishDictionary(word);
+}
+
+function sortedLetters(s: string): string {
+  return [...s].sort().join('');
+}
+
+function getEnglishSuggestions(word: string, maxSuggestions: number): string[] {
+  // Suggestions are computed on the apostrophe-stripped key: list entries
+  // carry no apostrophes, so "teh" and "don't"-style typos share one path.
+  const key = normalizeForEnglish(word).replace(/'/g, '');
+  if (!key || isEnglishCorrect(word)) return [];
+
+  const candidates: string[] = [];
+  for (let len = Math.max(2, key.length - 2); len <= key.length + 2; len++) {
+    const bucket = ENGLISH_WORDS_BY_LENGTH.get(len);
+    if (bucket) candidates.push(...bucket);
+  }
+
+  const keyLetters = sortedLetters(key);
+  const scored: Array<{ candidate: string; distance: number; rank: number; sameLetters: number }> = [];
+  for (const candidate of candidates) {
+    if (candidate === key) continue;
+    const distance = damerauLevenshteinBounded(key, candidate, 2);
+    if (distance <= 2) {
+      scored.push({
+        candidate,
+        distance,
+        rank: ENGLISH_COMMON_RANK.get(candidate) ?? NOT_COMMON,
+        // Transposition typos ("teh" -> "the") reuse exactly the same
+        // letters; among equal distance + frequency, rank those first.
+        sameLetters: candidate.length === key.length && sortedLetters(candidate) === keyLetters ? 0 : 1,
+      });
+    }
+  }
+  // Stable sort: remaining ties keep wordlist (alphabetical) order.
+  scored.sort((a, b) => a.distance - b.distance || a.rank - b.rank || a.sameLetters - b.sameLetters);
+  return scored.slice(0, maxSuggestions).map((s) => s.candidate);
+}
+
 // --- Core verdict ---------------------------------------------------------------
 /**
  * Fast O(1)-per-word correctness check used by the inline highlighter.
  * Normalization is for the lookup key only — document text is never modified.
+ * Latin words are checked against the English wordlist; Arabic-script words
+ * against the Urdu dictionaries. Mixed-script words are judged by the Urdu
+ * path only when they contain Arabic-script letters and no Latin letters are
+ * present at the token level (see findMisspelledRanges).
  */
 export function isSpellingCorrect(word: string): boolean {
+  if (isLatinWord(word)) return isEnglishCorrect(word);
   const norm = normalizeForDictionary(word);
   // Too short to judge (single characters, stray marks): never flag.
   if (norm.length < 2) return true;
@@ -174,10 +288,18 @@ export function isSpellingCorrect(word: string): boolean {
 
 // --- Tokenizer -------------------------------------------------------------------
 // Matches Urdu-script runs (letters + ZWNJ so joined words stay one token).
-// Latin-script tokens never match and are therefore always skipped: this batch
-// vendors no English wordlist, so Latin checking is future work (see report).
 // eslint-disable-next-line no-misleading-character-class
 const URDU_TOKEN_RE = /[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06FA-\u06FC\u200C]+/g;
+// Matches word-character runs of either script (Arabic-script letters + ZWNJ,
+// Latin letters, apostrophes for English contractions/possessives). Each run
+// is classified by the scripts it contains:
+//   - Latin only   -> English wordlist check
+//   - Arabic only  -> Urdu dictionary check (via URDU_TOKEN_RE sub-runs,
+//                     exactly the tokens the old Urdu-only scan produced)
+//   - both scripts -> skipped (conservative: no dictionary covers hybrid
+//                     tokens, and guessing a split could corrupt offsets)
+// eslint-disable-next-line no-misleading-character-class
+const WORD_TOKEN_RE = /[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06FA-\u06FC\u200CA-Za-z'\u2019]+/g;
 const URL_SPAN_RE = /https?:\/\/[^\s]+/g;
 const EMAIL_SPAN_RE = /[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}/g;
 const NUMBER_LIKE_RE = /^[\d\s.,:/$€£¥₹روپےRs]+$/;
@@ -193,23 +315,60 @@ function findSkipSpans(text: string): Array<[number, number]> {
 }
 
 /**
- * Finds misspelled Urdu tokens with their text offsets. Skips numbers, dates,
- * currency, URLs, emails, Latin-script tokens and single characters. Aerab and
- * other diacritics never cause a flag: comparison is on normalized lookup keys.
+ * Finds misspelled Urdu and English tokens with their text offsets. Skips
+ * numbers, dates, currency, URLs, emails, mixed-script tokens and single
+ * characters. Aerab and other diacritics never cause a flag: comparison is
+ * on normalized lookup keys.
  */
 export function findMisspelledRanges(text: string): MisspelledRange[] {
   if (!text) return [];
   const skipSpans = findSkipSpans(text);
   const ranges: MisspelledRange[] = [];
-  URDU_TOKEN_RE.lastIndex = 0;
+  const inSkipSpan = (start: number, end: number): boolean =>
+    skipSpans.some(([s, e]) => start >= s && end <= e);
+
+  WORD_TOKEN_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = URDU_TOKEN_RE.exec(text)) !== null) {
-    const word = m[0];
-    const start = m.index;
-    const end = start + word.length;
-    if (skipSpans.some(([s, e]) => start >= s && end <= e)) continue;
-    if (NUMBER_LIKE_RE.test(word)) continue;
-    if (!isSpellingCorrect(word)) ranges.push({ word, start, end });
+  while ((m = WORD_TOKEN_RE.exec(text)) !== null) {
+    const span = m[0];
+    const spanStart = m.index;
+    const spanEnd = spanStart + span.length;
+    if (inSkipSpan(spanStart, spanEnd)) continue;
+
+    const hasArabic = ARABIC_SCRIPT_RE.test(span);
+    const hasLatin = LATIN_LETTER_RE.test(span);
+    // Mixed-script token: no reliable dictionary — skip conservatively.
+    if (hasArabic && hasLatin) continue;
+
+    if (hasLatin) {
+      // Pure Latin run: English wordlist check. Apostrophes at the edges are
+      // quotation marks, not part of the word — trim them (with offsets);
+      // internal ones belong to contractions/possessives and stay.
+      let lo = 0;
+      let hi = span.length;
+      while (lo < hi && (span[lo] === "'" || span[lo] === '’')) lo++;
+      while (hi > lo && (span[hi - 1] === "'" || span[hi - 1] === '’')) hi--;
+      const word = span.slice(lo, hi);
+      if (word && !isSpellingCorrect(word)) {
+        ranges.push({ word, start: spanStart + lo, end: spanStart + hi });
+      }
+      continue;
+    }
+    if (!hasArabic) continue; // stray apostrophes / ZWNJ only
+
+    // Arabic-script run: re-tokenize with the Urdu pattern so offsets and
+    // verdicts are identical to the original Urdu-only scan (an apostrophe
+    // wedged between Urdu letters splits the run, as before).
+    URDU_TOKEN_RE.lastIndex = 0;
+    let um: RegExpExecArray | null;
+    while ((um = URDU_TOKEN_RE.exec(span)) !== null) {
+      const word = um[0];
+      const start = spanStart + um.index;
+      const end = start + word.length;
+      if (inSkipSpan(start, end)) continue;
+      if (NUMBER_LIKE_RE.test(word)) continue;
+      if (!isSpellingCorrect(word)) ranges.push({ word, start, end });
+    }
   }
   return ranges;
 }

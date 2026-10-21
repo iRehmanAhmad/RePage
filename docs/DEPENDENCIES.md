@@ -56,8 +56,10 @@ GitHub popularity is supporting evidence, not proof of correctness.
 | Asset | Source | License | Redistribution basis |
 |---|---|---|---|
 | Urdu spellcheck wordlist (`src/domain/language/urduWordlist.generated.ts`, 30,122 lookup keys) | https://github.com/tesseract-ocr/langdata/blob/main/urd/urd.wordlist | Apache License 2.0 | License verified by reading the upstream LICENSE file; permits reproduction and redistribution with attribution. Attribution notice is embedded in the generated file header: "Urdu wordlist derived from tesseract-ocr/langdata (Apache-2.0), (c) the Tesseract OCR contributors." |
+| English spellcheck wordlist (`src/domain/language/englishWordlist.generated.ts`, 148,588 lookup keys + 5,000-word frequency head) | https://github.com/tesseract-ocr/langdata/blob/main/eng/eng.wordlist | Apache License 2.0 | Same repository and LICENSE as the Urdu list (verified by reading the upstream LICENSE file). Attribution notice is embedded in the generated file header: "English wordlist derived from tesseract-ocr/langdata (Apache-2.0), (c) the Tesseract OCR contributors." The build script applies 15 documented known-typo exclusions (misspellings present in the frequency-derived upstream data). |
 
 Regeneration: `node scripts/build-urdu-wordlist.mjs` (documents cleaning rules; deterministic output).
+Regeneration (English): `node scripts/build-english-wordlist.mjs` (same discipline; deterministic output).
 Lookup keys are normalized for matching only; no document text is derived from this asset.
 
 ## 6. Versioning and supply chain
