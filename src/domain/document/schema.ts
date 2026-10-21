@@ -110,7 +110,7 @@ const pageNumberingSchema = z.object({
 export const sectionSchema = z.object({
   id: z.string().min(1),
   startPageId: z.string().min(1),
-  breakType: z.enum(['next-page', 'continuous']),
+  breakType: z.enum(['next-page', 'continuous', 'odd-page', 'even-page']),
   columns: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   columnGap: nonNegativeNumber,
   rtlColumnOrder: z.boolean(),

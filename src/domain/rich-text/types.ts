@@ -85,7 +85,27 @@ export interface HardBreakNode {
   type: 'hardBreak';
 }
 
-export type InlineNode = TextRun | HardBreakNode;
+/**
+ * An explicit layout break inside a story: a point where layout must leave
+ * the current column ('column') or page ('page') while staying in the SAME
+ * section — unlike a section break, it changes no page setup, headers, or
+ * numbering.
+ *
+ * Model choice: an inline atom node, sibling of HardBreakNode. The story
+ * model already represents special in-text content as zero-width inline
+ * nodes (hardBreak), every layout path (pagination, frame-chain slicing,
+ * split/merge helpers) already walks inline nodes generically, and the
+ * Tiptap editor has a direct analogue (an inline atom node, like its own
+ * hardBreak). A paragraph property could only express "break at paragraph
+ * start" and a Tiptap-only node would not survive the canonical round-trip,
+ * so the inline node is the one representation all paths share.
+ */
+export interface BreakNode {
+  type: 'break';
+  breakType: 'page' | 'column';
+}
+
+export type InlineNode = TextRun | HardBreakNode | BreakNode;
 
 export interface ParagraphBorder {
   side: 'bottom' | 'top' | 'left' | 'right' | 'box' | 'all';
@@ -108,6 +128,13 @@ export interface ParagraphNode {
   firstLineIndent?: number | undefined;
   backgroundColor?: string | undefined;
   border?: ParagraphBorder | undefined;
+  /**
+   * When true, layout starts this paragraph at the top of the next PAGE
+   * (never merely the next column — page-break-before means page, matching
+   * Word's "Page break before" paragraph option). Absent = false, so
+   * documents written before this field existed stay valid unchanged.
+   */
+  pageBreakBefore?: boolean | undefined;
   content: InlineNode[];
 }
 
@@ -151,7 +178,16 @@ export const hardBreakNodeSchema = z.object({
   type: z.literal('hardBreak'),
 });
 
-export const inlineNodeSchema = z.discriminatedUnion('type', [textRunSchema, hardBreakNodeSchema]);
+export const breakNodeSchema = z.object({
+  type: z.literal('break'),
+  breakType: z.enum(['page', 'column']),
+});
+
+export const inlineNodeSchema = z.discriminatedUnion('type', [
+  textRunSchema,
+  hardBreakNodeSchema,
+  breakNodeSchema,
+]);
 
 export const paragraphBorderSchema = z.object({
   side: z.enum(['bottom', 'top', 'left', 'right', 'box', 'all']),
@@ -173,6 +209,7 @@ export const paragraphNodeSchema = z.object({
   firstLineIndent: z.number().optional(),
   backgroundColor: z.string().optional(),
   border: paragraphBorderSchema.optional(),
+  pageBreakBefore: z.boolean().optional(),
   content: z.array(inlineNodeSchema),
 });
 

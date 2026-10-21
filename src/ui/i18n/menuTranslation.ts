@@ -22,6 +22,14 @@ export interface Translations {
   grpConversion: string;
   grpPageSetup: string;
   grpBreaks: string;
+  pageBreak: string;
+  pageBreakTooltip: string;
+  columnBreak: string;
+  columnBreakTooltip: string;
+  sectionBreakOddPage: string;
+  sectionBreakOddPageTooltip: string;
+  sectionBreakEvenPage: string;
+  sectionBreakEvenPageTooltip: string;
   grpColumns: string;
   grpLayoutAids: string;
   grpPrintSafety: string;
@@ -237,6 +245,7 @@ export interface Translations {
   dlgParaPagination: string;
   dlgParaWidowOrphan: string;
   dlgParaKeepWithNext: string;
+  dlgParaPageBreakBefore: string;
 
   // Borders menu
   mnuBorderBottom: string;
@@ -385,6 +394,14 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     grpConversion: 'تبدیلی',
     grpPageSetup: 'صفحہ کی ترتیبات',
     grpBreaks: 'سیکشن بریکس',
+    pageBreak: 'صفحہ بریک',
+    pageBreakTooltip: 'صفحہ بریک درج کریں (Ctrl+Enter)',
+    columnBreak: 'کالم بریک',
+    columnBreakTooltip: 'کالم بریک درج کریں (Ctrl+Shift+Enter)',
+    sectionBreakOddPage: 'طاق صفحہ سیکشن',
+    sectionBreakOddPageTooltip: 'نیا سیکشن اگلے طاق صفحے سے شروع کریں',
+    sectionBreakEvenPage: 'جفت صفحہ سیکشن',
+    sectionBreakEvenPageTooltip: 'نیا سیکشن اگلے جفت صفحے سے شروع کریں',
     grpColumns: 'کالمز نگاری',
     grpLayoutAids: 'منظر نامہ و سائز',
     grpPrintSafety: 'پرنٹ حفاظت',
@@ -584,6 +601,7 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     dlgParaPagination: 'صفحہ بندی:',
     dlgParaWidowOrphan: 'اکیلی سطر کا کنٹرول',
     dlgParaKeepWithNext: 'اگلے پیراگراف کے ساتھ رکھیں',
+    dlgParaPageBreakBefore: 'اس پیراگراف سے پہلے صفحہ بریک',
 
     mnuBorderBottom: 'نچلا کنارہ',
     mnuBorderTop: 'اوپری کنارہ',
@@ -723,6 +741,14 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     grpConversion: 'Conversion',
     grpPageSetup: 'Page Setup',
     grpBreaks: 'Breaks',
+    pageBreak: 'Page Break',
+    pageBreakTooltip: 'Insert Page Break (Ctrl+Enter)',
+    columnBreak: 'Column Break',
+    columnBreakTooltip: 'Insert Column Break (Ctrl+Shift+Enter)',
+    sectionBreakOddPage: 'Odd Page Section',
+    sectionBreakOddPageTooltip: 'Start new section on the next odd page',
+    sectionBreakEvenPage: 'Even Page Section',
+    sectionBreakEvenPageTooltip: 'Start new section on the next even page',
     grpColumns: 'Columns',
     grpLayoutAids: 'Layout Aids',
     grpPrintSafety: 'Print Safety',
@@ -922,6 +948,7 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     dlgParaPagination: 'Pagination:',
     dlgParaWidowOrphan: 'Widow/Orphan control',
     dlgParaKeepWithNext: 'Keep with next paragraph',
+    dlgParaPageBreakBefore: 'Page break before',
 
     mnuBorderBottom: 'Bottom Border',
     mnuBorderTop: 'Top Border',

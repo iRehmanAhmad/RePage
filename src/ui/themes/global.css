@@ -1010,6 +1010,45 @@ select.ribbon-font-urdu option {
   margin: 0 !important;
 }
 
+/* Explicit page/column break marker (RePageBreak atom node).
+   A non-printing divider line inside the editor only: the print DOM is
+   built separately from the canonical model and never contains it, and
+   the rule below is a second line of defence. The label is CSS-generated
+   from data attributes — Urdu in an RTL context, English otherwise — so
+   no label text ever becomes document content. */
+.ProseMirror .repage-break-marker {
+  display: block;
+  height: 1.1em;
+  margin: 0.35em 0;
+  border-top: 1px dashed var(--text-muted, #888888);
+  position: relative;
+  user-select: none;
+}
+.ProseMirror .repage-break-marker::after {
+  content: attr(data-label-en);
+  position: absolute;
+  top: -0.72em;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 0.6em;
+  font-size: 0.68em;
+  font-family: sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #888888);
+  background: var(--editor-bg, #ffffff);
+  white-space: nowrap;
+  pointer-events: none;
+}
+[dir='rtl'] .ProseMirror .repage-break-marker::after,
+.ProseMirror[dir='rtl'] .repage-break-marker::after {
+  content: attr(data-label-ur);
+}
+@media print {
+  .repage-break-marker {
+    display: none !important;
+  }
+}
+
 /* Show/Hide Non-Printing Formatting Marks (¶ pilcrow, · space, ↵ break, → tab) */
 .ProseMirror:not(.show-formatting-marks) .formatting-mark-paragraph {
   display: none !important;

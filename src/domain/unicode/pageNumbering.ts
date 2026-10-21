@@ -1,4 +1,9 @@
-import { getPagesForSection, getSectionForPage } from '../layout/sectionEngine';
+import {
+  computeParityBlanks,
+  getPagesForSection,
+  getPhysicalPageIndex,
+  getSectionForPage,
+} from '../layout/sectionEngine';
 
 export type PageNumberStyle = 'urdu' | 'western' | 'abjad';
 
@@ -98,7 +103,51 @@ export function getSectionPageNumberString(
 
   const pageIndexToUse = numbering.restartAtSection
     ? Math.max(0, pageIndexInSection)
-    : Math.max(0, doc.pageOrder.indexOf(pageId));
+    : // Continuous numbering counts PHYSICAL pages, so parity blanks
+      // inserted by odd/even section breaks consume a number and the
+      // pages after them shift accordingly.
+      Math.max(0, getPhysicalPageIndex(doc, pageId));
+
+  return formatPageNumber(pageIndexToUse, {
+    style: numbering.style,
+    startNumber: numbering.startAt,
+    prefix: numbering.prefix,
+    suffix: numbering.suffix,
+  });
+}
+
+/**
+ * Page-number string for a parity blank page (see
+ * sectionEngine.computeParityBlanks), identified by the user page it
+ * precedes. The blank carries the PREVIOUS section's headers/footers, so
+ * its number is formatted with that section's numbering settings: with
+ * restart-at-section it is the number just past the previous section's
+ * last page; otherwise it is the blank's physical position. Returns ''
+ * when no blank precedes the page.
+ */
+export function getParityBlankPageNumberString(
+  doc: import('../document/types').RePageDocument,
+  beforePageId: import('../document/types').PageId,
+): string {
+  const blank = computeParityBlanks(doc).find((b) => b.beforePageId === beforePageId);
+  if (!blank) return '';
+
+  const userIndex = doc.pageOrder.indexOf(beforePageId);
+  const prevPageId = userIndex > 0 ? doc.pageOrder[userIndex - 1] : undefined;
+  if (!prevPageId) return '';
+
+  const prevSection = getSectionForPage(doc, prevPageId);
+  const numbering = prevSection.pageNumbering || {
+    style: 'urdu',
+    startAt: 1,
+    restartAtSection: true,
+    prefix: '',
+    suffix: '',
+  };
+
+  const pageIndexToUse = numbering.restartAtSection
+    ? getPagesForSection(doc, prevSection.id).length
+    : blank.physicalIndex;
 
   return formatPageNumber(pageIndexToUse, {
     style: numbering.style,

@@ -51,6 +51,15 @@ const CustomParagraph = Paragraph.extend({
           return { 'data-repage-fragment': attributes.pageFragment };
         },
       },
+      pageBreakBefore: {
+        default: null,
+        parseHTML: (element) =>
+          element.getAttribute('data-page-break-before') === 'true' ? true : null,
+        renderHTML: (attributes) => {
+          if (!attributes.pageBreakBefore) return {};
+          return { 'data-page-break-before': 'true' };
+        },
+      },
     };
   },
 });
@@ -187,6 +196,7 @@ import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
 import { Spellcheck } from './spellcheckExtension';
 import { SpellcheckMenu } from './SpellcheckMenu';
+import { RepageBreak } from './repageBreakExtension';
 import {
   COMPOSITE_FONT_FAMILY,
   updateCompositeFontRules,
@@ -310,7 +320,28 @@ function pageBreakOffset(text: string, proposed: number): number {
   return target;
 }
 
-function paginateForEditor(
+/**
+ * Splits a paragraph at its explicit break nodes. The break node stays as
+ * the LAST node of the pre-break segment, so its marker renders on the page
+ * where the break was inserted and fragment merging restores it in place.
+ * A break-free paragraph yields itself as the only segment.
+ */
+function splitParagraphAtBreakNodes(paragraph: ParagraphNode): ParagraphNode[] {
+  if (!paragraph.content.some((node) => node.type === 'break')) return [paragraph];
+  const segments: ParagraphNode[] = [];
+  let current: InlineNode[] = [];
+  for (const node of paragraph.content) {
+    current.push(node);
+    if (node.type === 'break') {
+      segments.push({ ...paragraph, content: current });
+      current = [];
+    }
+  }
+  segments.push({ ...paragraph, content: current });
+  return segments;
+}
+
+export function paginateForEditor(
   content: RichTextDocument,
   layout: PagedEditorLayout,
   fontSize: number,
@@ -324,45 +355,76 @@ function paginateForEditor(
   const pages: PaginatedParagraph[][] = [[]];
   let usedHeight = 0;
 
+  const startNewPage = () => {
+    pages.push([]);
+    usedHeight = 0;
+  };
+
   for (const sourceParagraph of content.content) {
-    let remainingParagraph = sourceParagraph;
-    let hasSplit = false;
-
-    while (true) {
-      const text = paragraphText(remainingParagraph);
-      const lineCount = Math.max(1, Math.ceil(text.length / charsPerLine));
-      const neededHeight = lineCount * renderedLineHeight + paragraphGap;
-      const availableHeight = printableHeight - usedHeight;
-
-      if (neededHeight <= availableHeight || (usedHeight === 0 && neededHeight <= printableHeight)) {
-        pages[pages.length - 1]!.push({
-          paragraph: remainingParagraph,
-          fragment: hasSplit ? 'end' : 'single',
-        });
-        usedHeight += neededHeight;
-        break;
-      }
-
-      const linesThatFit = Math.floor((Math.max(0, availableHeight) - paragraphGap) / renderedLineHeight);
-      const splitAt = text.length > 1 && linesThatFit >= 1
-        ? pageBreakOffset(text, linesThatFit * charsPerLine)
-        : 0;
-
-      if (splitAt > 0) {
-        const [currentPagePart, nextPagePart] = splitParagraph(remainingParagraph, splitAt);
-        pages[pages.length - 1]!.push({
-          paragraph: currentPagePart,
-          fragment: hasSplit ? 'middle' : 'start',
-        });
-        pages.push([]);
-        usedHeight = 0;
-        remainingParagraph = nextPagePart;
-        hasSplit = true;
-      } else {
-        pages.push([]);
-        usedHeight = 0;
-      }
+    // Page-break-before: the paragraph opens a fresh page, unless the
+    // current page is still empty (the flag never makes a blank page).
+    if (sourceParagraph.pageBreakBefore && pages[pages.length - 1]!.length > 0) {
+      startNewPage();
     }
+
+    // Fragments of this paragraph are collected first and flushed with
+    // their fragment roles once the paragraph is fully placed (a break
+    // split and a height split look identical to the fragment merger).
+    const placed: Array<{ pageIndex: number; paragraph: ParagraphNode }> = [];
+    const segments = splitParagraphAtBreakNodes(sourceParagraph);
+
+    segments.forEach((segment, segmentIndex) => {
+      let remainingParagraph = segment;
+
+      while (true) {
+        const text = paragraphText(remainingParagraph);
+        const lineCount = Math.max(1, Math.ceil(text.length / charsPerLine));
+        const neededHeight = lineCount * renderedLineHeight + paragraphGap;
+        const availableHeight = printableHeight - usedHeight;
+
+        if (neededHeight <= availableHeight || (usedHeight === 0 && neededHeight <= printableHeight)) {
+          placed.push({ pageIndex: pages.length - 1, paragraph: remainingParagraph });
+          usedHeight += neededHeight;
+          break;
+        }
+
+        const linesThatFit = Math.floor((Math.max(0, availableHeight) - paragraphGap) / renderedLineHeight);
+        const splitAt = text.length > 1 && linesThatFit >= 1
+          ? pageBreakOffset(text, linesThatFit * charsPerLine)
+          : 0;
+
+        if (splitAt > 0) {
+          const [currentPagePart, nextPagePart] = splitParagraph(remainingParagraph, splitAt);
+          placed.push({ pageIndex: pages.length - 1, paragraph: currentPagePart });
+          pages.push([]);
+          usedHeight = 0;
+          remainingParagraph = nextPagePart;
+        } else {
+          pages.push([]);
+          usedHeight = 0;
+        }
+      }
+
+      if (segmentIndex < segments.length - 1) {
+        // An explicit break follows this segment. Page and column breaks
+        // both advance to the next page in the paged editor: it renders
+        // one column per page, and a column break in the last (only)
+        // column behaves as a page break.
+        startNewPage();
+      }
+    });
+
+    placed.forEach((entry, index) => {
+      const fragment: PageFragment =
+        placed.length === 1
+          ? 'single'
+          : index === 0
+            ? 'start'
+            : index === placed.length - 1
+              ? 'end'
+              : 'middle';
+      pages[entry.pageIndex]!.push({ paragraph: entry.paragraph, fragment });
+    });
   }
 
   return pages;
@@ -547,6 +609,7 @@ export function DocumentBodyEditor({
       CustomHeading,
       CustomBulletList,
       CustomOrderedList,
+      RepageBreak,
       Underline,
       Subscript,
       Superscript,
@@ -568,6 +631,25 @@ export function DocumentBodyEditor({
           event.preventDefault();
           view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1, view.state.doc.content.size - 1)));
           return true;
+        }
+        // Explicit breaks: Ctrl+Enter = page break, Ctrl+Shift+Enter =
+        // column break. Intercepted here (before the extension keymap and
+        // StarterKit's HardBreak Mod-Enter binding) so the shortcut is
+        // deterministic in this editor.
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key === 'Enter') {
+          const breakNodeType = view.state.schema.nodes.repageBreak;
+          if (breakNodeType) {
+            event.preventDefault();
+            const { from, to } = view.state.selection;
+            view.dispatch(
+              view.state.tr.replaceWith(
+                from,
+                to,
+                breakNodeType.create({ breakType: event.shiftKey ? 'column' : 'page' }),
+              ),
+            );
+            return true;
+          }
         }
         if (!event.ctrlKey && !event.altKey && !event.metaKey) {
           if (event.key === 'Tab') {

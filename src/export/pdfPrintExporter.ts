@@ -27,8 +27,11 @@ import type { RePageDocument, TextStory } from '../domain/document/types';
 import { PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { repaginateDocument } from '../domain/layout/paginationEngine';
 import { resolvePageCompositeObjects } from '../domain/layout/masterPageEngine';
-import { getSectionForPage } from '../domain/layout/sectionEngine';
-import { getSectionPageNumberString } from '../domain/unicode/pageNumbering';
+import { getParityBlankBefore, getSectionForPage } from '../domain/layout/sectionEngine';
+import {
+  getParityBlankPageNumberString,
+  getSectionPageNumberString,
+} from '../domain/unicode/pageNumbering';
 import { cropFrameLayout, isImageCropEmpty } from '../domain/geometry/imageCrop';
 import type { ExportPageRange } from './types';
 
@@ -162,6 +165,78 @@ function fontStackFor(doc: RePageDocument): string {
 }
 
 /**
+ * Builds the print element for a parity blank page (odd/even section
+ * break): a genuinely blank sheet — no body content — carrying the
+ * PREVIOUS section's header/footer and the physical page number the
+ * blank consumes, so printed numbering stays continuous. Sized like the
+ * page it follows. Returns null when the previous page is unknown.
+ */
+function buildParityBlankPageEl(doc: RePageDocument, beforePageId: string): HTMLElement | null {
+  const userIndex = doc.pageOrder.indexOf(beforePageId);
+  const prevPageId = userIndex > 0 ? doc.pageOrder[userIndex - 1] : undefined;
+  const prevPage = prevPageId ? doc.pages[prevPageId] : undefined;
+  if (!prevPageId || !prevPage) return null;
+
+  const section = getSectionForPage(doc, prevPageId);
+  const headerStory = section.headerStoryId ? doc.stories[section.headerStoryId] : undefined;
+  const footerStory = section.footerStoryId ? doc.stories[section.footerStoryId] : undefined;
+  const headerText =
+    extractStoryText(headerStory) || headerStory?.name || doc.metadata.title || '';
+  const footerText = extractStoryText(footerStory) || footerStory?.name || '';
+  const pageNumberText = getParityBlankPageNumberString(doc, beforePageId);
+  const fontStack = fontStackFor(doc);
+  const margins = prevPage.margins;
+
+  const pageEl = document.createElement('div');
+  pageEl.className = PRINT_PAGE_CLASS;
+  pageEl.setAttribute('data-repage-parity-blank', 'true');
+  pageEl.style.position = 'relative';
+  pageEl.style.width = `${prevPage.width}pt`;
+  pageEl.style.height = `${prevPage.height}pt`;
+  pageEl.style.overflow = 'hidden';
+  pageEl.style.backgroundColor = prevPage.background || '#ffffff';
+  pageEl.style.color = '#172119';
+  pageEl.style.fontFamily = fontStack;
+  pageEl.style.printColorAdjust = 'exact';
+
+  const headerEl = document.createElement('div');
+  headerEl.style.position = 'absolute';
+  headerEl.style.top = `${Math.max(8, margins.top / 2)}pt`;
+  headerEl.style.left = `${margins.left}pt`;
+  headerEl.style.right = `${margins.right}pt`;
+  headerEl.style.display = 'flex';
+  headerEl.style.justifyContent = 'space-between';
+  headerEl.style.fontSize = '10pt';
+  headerEl.style.color = '#64748b';
+  const headerTitle = document.createElement('span');
+  headerTitle.textContent = headerText;
+  const headerPage = document.createElement('span');
+  headerPage.textContent = pageNumberText;
+  headerEl.appendChild(headerTitle);
+  headerEl.appendChild(headerPage);
+  pageEl.appendChild(headerEl);
+
+  const footerEl = document.createElement('div');
+  footerEl.style.position = 'absolute';
+  footerEl.style.bottom = `${Math.max(8, margins.bottom / 2)}pt`;
+  footerEl.style.left = `${margins.left}pt`;
+  footerEl.style.right = `${margins.right}pt`;
+  footerEl.style.display = 'flex';
+  footerEl.style.justifyContent = 'space-between';
+  footerEl.style.fontSize = '10pt';
+  footerEl.style.color = '#64748b';
+  const footerLabel = document.createElement('span');
+  footerLabel.textContent = footerText;
+  const footerNum = document.createElement('span');
+  footerNum.textContent = pageNumberText;
+  footerEl.appendChild(footerLabel);
+  footerEl.appendChild(footerNum);
+  pageEl.appendChild(footerEl);
+
+  return pageEl;
+}
+
+/**
  * Renders the document's pages as static, read-only DOM (no editors, no
  * canvas interactivity). The returned element is detached; the caller decides
  * where to mount it. When `pageRange` is given, only the selected pages are
@@ -189,6 +264,14 @@ export function renderPrintPages(
     if (!selectedPages.has(pageIndex)) return;
     const page = doc.pages[pageId];
     if (!page) return;
+
+    // Parity blank (odd/even section break): emitted with the page it
+    // precedes, so a selected range that includes the section start also
+    // prints the blank and the parity survives the range choice.
+    if (getParityBlankBefore(doc, pageId)) {
+      const blankEl = buildParityBlankPageEl(doc, pageId);
+      if (blankEl) root.appendChild(blankEl);
+    }
 
     const section = getSectionForPage(doc, pageId);
     const headerStory = section.headerStoryId ? doc.stories[section.headerStoryId] : undefined;

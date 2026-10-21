@@ -152,6 +152,23 @@ commandRegistry.register({
 });
 
 commandRegistry.register({
+  id: 'layout.insertStoryBreak',
+  label: 'Insert Page/Column Break',
+  category: 'insert',
+  shortcut: 'Ctrl+Enter',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'layout.setParagraphPageBreakBefore',
+  label: 'Paragraph Page Break Before',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
   id: 'layout.updateSectionColumns',
   label: 'Section Columns',
   category: 'format',

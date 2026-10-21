@@ -1343,6 +1343,7 @@ export function App() {
   const [lineHeight, setLineHeight] = useState(1.5);
   const [paragraphShading, setParagraphShading] = useState<string | null>(null);
   const [showParagraphDialog, setShowParagraphDialog] = useState(false);
+  const [paragraphPageBreakBefore, setParagraphPageBreakBefore] = useState(false);
 
   const handleToggleBulletList = React.useCallback(() => {
     if (activeEditorRef.current) {
@@ -2002,7 +2003,13 @@ export function App() {
           paragraphShading={paragraphShading}
           onParagraphShadingChange={setParagraphShading}
           onSelectParagraphBorder={handleSelectParagraphBorder}
-          onOpenParagraphDialog={() => setShowParagraphDialog(true)}
+          onOpenParagraphDialog={() => {
+            // Read the flag off the caret's paragraph so the dialog opens
+            // with the current value.
+            const attrs = activeEditorRef.current?.getAttributes('paragraph');
+            setParagraphPageBreakBefore(attrs?.pageBreakBefore === true);
+            setShowParagraphDialog(true);
+          }}
           activeStyleId={activeStyleId}
           onApplyStyle={handleApplyStyle}
           onUpdateStyleToMatchSelection={handleUpdateStyleToMatchSelection}
@@ -2073,6 +2080,27 @@ export function App() {
           onInsertSectionBreak={(type) => {
             const nextDoc = insertSectionBreakCommand(document, activePageId, type);
             updateDocument(nextDoc, `Insert ${type} section break`);
+          }}
+          onInsertStoryBreak={(breakType) => {
+            const editor = activeEditorRef.current;
+            if (editor) {
+              editor.chain().focus().insertRepageBreak(breakType).run();
+              setMessage(
+                breakType === 'page'
+                  ? lang === 'ur'
+                    ? 'صفحہ بریک درج کر دیا گیا'
+                    : 'Page break inserted'
+                  : lang === 'ur'
+                    ? 'کالم بریک درج کر دیا گیا'
+                    : 'Column break inserted',
+              );
+            } else {
+              setMessage(
+                lang === 'ur'
+                  ? 'بریک کے لیے پہلے متن میں کرسر رکھیں'
+                  : 'Place the cursor in the text first to insert a break',
+              );
+            }
           }}
           onOpenPageSetupModal={() => setShowPageSetupModal(true)}
           onOpenHeaderFooterModal={() => setShowHeaderFooterModal(true)}
@@ -3030,11 +3058,13 @@ export function App() {
             indentLevel: 0,
             firstLineIndent: 0,
             backgroundColor: paragraphShading || undefined,
+            pageBreakBefore: paragraphPageBreakBefore,
           }}
           onApply={(props) => {
             setActiveAlignment(props.alignment);
             setActiveDirection(props.direction);
             setLineHeight(props.lineHeight);
+            setParagraphPageBreakBefore(props.pageBreakBefore ?? false);
             if (activeEditorRef.current) {
               const editor = activeEditorRef.current;
               const attrs: Record<string, any> = {
@@ -3043,7 +3073,14 @@ export function App() {
                 spaceBefore: props.spaceBefore,
                 spaceAfter: props.spaceAfter,
               };
-              editor.chain().focus().updateAttributes('paragraph', attrs).run();
+              editor
+                .chain()
+                .focus()
+                .updateAttributes('paragraph', {
+                  ...attrs,
+                  pageBreakBefore: props.pageBreakBefore ? true : null,
+                })
+                .run();
               editor.chain().focus().updateAttributes('heading', attrs).run();
             }
             setMessage(lang === 'ur' ? 'پیراگراف فارمیٹنگ لاگو کر دی گئی' : 'Applied paragraph formatting');

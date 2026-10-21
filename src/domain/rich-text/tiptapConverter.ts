@@ -6,7 +6,13 @@
  * 2. Full preservation of bold, italic, underline, paragraph direction (RTL/LTR), and text runs.
  */
 
-import type { ParagraphNode, RichTextDocument, TextDirection, TextMark, TextRun } from './types';
+import type {
+  InlineNode,
+  ParagraphNode,
+  RichTextDocument,
+  TextDirection,
+  TextMark,
+} from './types';
 import { paragraph } from './types';
 
 /**
@@ -36,11 +42,18 @@ export function canonicalToTiptapHtml(doc: RichTextDocument): string {
     .map((para) => {
       const dirAttr = para.direction ? ` dir="${para.direction}"` : ' dir="rtl"';
       const alignAttr = para.alignment ? ` style="text-align: ${para.alignment};"` : '';
+      const breakBeforeAttr = para.pageBreakBefore ? ' data-page-break-before="true"' : '';
 
       const inlineHtml = para.content
         .map((inline) => {
           if (inline.type === 'hardBreak') {
             return '<br />';
+          }
+          if (inline.type === 'break') {
+            // Inline atom in the editor (RePageBreak extension); the
+            // visible marker label is rendered by CSS, never by content,
+            // so the label text can never leak into the story as text.
+            return `<span data-repage-break="${inline.breakType}"></span>`;
           }
           let text = inline.text
             .replace(/&/g, '&amp;')
@@ -68,7 +81,7 @@ export function canonicalToTiptapHtml(doc: RichTextDocument): string {
         })
         .join('');
 
-      return `<p${dirAttr}${alignAttr}>${inlineHtml}</p>`;
+      return `<p${dirAttr}${alignAttr}${breakBeforeAttr}>${inlineHtml}</p>`;
     })
     .join('');
 }
@@ -106,7 +119,7 @@ export function tiptapHtmlToCanonical(
     const dirAttr = pEl.getAttribute('dir')?.toLowerCase();
     const dir: TextDirection = dirAttr === 'ltr' ? 'ltr' : 'rtl';
 
-    const runs: TextRun[] = [];
+    const runs: InlineNode[] = [];
     const walk = (node: Node, currentMarks: TextMark[]) => {
       if (node.nodeType === Node.TEXT_NODE) {
         const txt = node.textContent || '';
@@ -120,6 +133,15 @@ export function tiptapHtmlToCanonical(
       } else if (node.nodeType === Node.ELEMENT_NODE) {
         const el = node as HTMLElement;
         const tag = el.tagName.toLowerCase();
+
+        // Explicit break atom (RePageBreak extension): a leaf — its
+        // rendered label is CSS-only, so nothing inside is story text.
+        const breakAttr = el.getAttribute('data-repage-break');
+        if (breakAttr === 'page' || breakAttr === 'column') {
+          runs.push({ type: 'break', breakType: breakAttr });
+          return;
+        }
+
         const nextMarks = [...currentMarks];
 
         if (tag === 'strong' || tag === 'b') {
@@ -169,6 +191,8 @@ export function tiptapHtmlToCanonical(
         type: 'paragraph' as const,
         direction: dir,
         alignment: 'start' as const,
+        pageBreakBefore:
+          pEl.getAttribute('data-page-break-before') === 'true' ? true : undefined,
         content: runs.length > 0 ? runs : [],
       },
     };

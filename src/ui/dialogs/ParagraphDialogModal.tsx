@@ -12,6 +12,8 @@ export interface ParagraphProps {
   indentLevel: number;
   firstLineIndent: number;
   backgroundColor?: string | undefined;
+  /** Paragraph starts at the top of the next page (canonical pageBreakBefore). */
+  pageBreakBefore?: boolean | undefined;
 }
 
 export interface ParagraphDialogModalProps {
@@ -39,6 +41,15 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
   const [firstLineIndent, setFirstLineIndent] = useState<number>(currentProps.firstLineIndent || 0);
   const [widowOrphanControl, setWidowOrphanControl] = useState<boolean>(true);
   const [keepWithNext, setKeepWithNext] = useState<boolean>(false);
+  const [pageBreakBefore, setPageBreakBefore] = useState<boolean>(
+    currentProps.pageBreakBefore ?? false,
+  );
+
+  // The dialog stays mounted while closed; re-read the flag from the
+  // current paragraph each time it opens.
+  React.useEffect(() => {
+    if (isOpen) setPageBreakBefore(currentProps.pageBreakBefore ?? false);
+  }, [isOpen, currentProps.pageBreakBefore]);
 
   if (!isOpen) return null;
 
@@ -51,6 +62,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
       spaceAfter,
       indentLevel,
       firstLineIndent,
+      pageBreakBefore,
     });
     onClose();
   };
@@ -241,6 +253,14 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                   onChange={(e) => setKeepWithNext(e.target.checked)}
                 />
                 {t.dlgParaKeepWithNext}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#cbd5e1' }}>
+                <input
+                  type="checkbox"
+                  checked={pageBreakBefore}
+                  onChange={(e) => setPageBreakBefore(e.target.checked)}
+                />
+                {t.dlgParaPageBreakBefore}
               </label>
             </div>
           </div>

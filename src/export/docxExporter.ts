@@ -323,6 +323,7 @@ function paragraphXml(node: ParagraphNode, defaults: FrameDefaults, ctx: Ctx): s
   let pPr = '';
   if (docxStyle && docxStyle !== 'Normal') pPr += `<w:pStyle w:val="${docxStyle}"/>`;
   if (docxStyle && HEADING_DOCX_STYLES.has(docxStyle)) ctx.report.headingCount += 1;
+  if (node.pageBreakBefore) pPr += '<w:pageBreakBefore/>';
 
   const bg = hexColor(node.backgroundColor);
   if (bg) pPr += `<w:shd w:val="clear" w:color="auto" w:fill="${bg}"/>`;
@@ -361,6 +362,9 @@ function paragraphXml(node: ParagraphNode, defaults: FrameDefaults, ctx: Ctx): s
   for (const inline of node.content as InlineNode[]) {
     if (inline.type === 'hardBreak') {
       runs += '<w:r><w:br/></w:r>';
+    } else if (inline.type === 'break') {
+      // Explicit page/column break: OOXML carries it as a typed break run.
+      runs += `<w:r><w:br w:type="${inline.breakType}"/></w:r>`;
     } else {
       runs += runXml(inline, defaults);
     }

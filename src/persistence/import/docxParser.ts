@@ -363,9 +363,17 @@ function parseRun(r: Element, ctx: Ctx, acc: RunAcc): void {
         break;
       }
       case 'br':
-      case 'cr':
-        acc.inlines.push({ type: 'hardBreak' });
+      case 'cr': {
+        // <w:br w:type="page|column"/> is an explicit layout break;
+        // untyped breaks (and w:type="textWrapping") are line breaks.
+        const brType = child.localName === 'br' ? attr(child, 'type') : undefined;
+        if (brType === 'page' || brType === 'column') {
+          acc.inlines.push({ type: 'break', breakType: brType });
+        } else {
+          acc.inlines.push({ type: 'hardBreak' });
+        }
         break;
+      }
       case 'tab':
         // Tabs have no reliable canvas metric; four spaces is the honest, visible mapping.
         acc.inlines.push({ type: 'text', text: '    ', marks: marks.length > 0 ? marks : undefined });
@@ -564,8 +572,11 @@ export function parseParagraph(
   let backgroundColor: string | undefined;
   let listMarker: string | undefined;
   let isHeading = false;
+  let pageBreakBefore = false;
 
   if (pPr) {
+    if (kid(pPr, 'pageBreakBefore')) pageBreakBefore = true;
+
     const explicitRtl = !!kid(pPr, 'bidi');
     if (explicitRtl) direction = 'rtl';
     else direction = detectTextDirection(text, 'rtl');
@@ -662,6 +673,7 @@ export function parseParagraph(
       spaceBefore,
       spaceAfter,
       backgroundColor,
+      pageBreakBefore: pageBreakBefore ? true : undefined,
       content: inlines,
     },
     imageRelIds,

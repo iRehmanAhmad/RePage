@@ -1,10 +1,13 @@
 import React from 'react';
 import type { PageId, RePageDocument } from '../../domain/document/types';
 import type { RichTextDocument } from '../../domain/rich-text/types';
-import { getSectionForPage } from '../../domain/layout/sectionEngine';
+import { getParityBlankBefore, getSectionForPage } from '../../domain/layout/sectionEngine';
 import { computeColumnSeparatorGuides } from '../../domain/layout/columnEngine';
 import { resolvePageCompositeObjects } from '../../domain/layout/masterPageEngine';
-import { getSectionPageNumberString } from '../../domain/unicode/pageNumbering';
+import {
+  getParityBlankPageNumberString,
+  getSectionPageNumberString,
+} from '../../domain/unicode/pageNumbering';
 import { repaginateDocument, getPrintableHeight } from '../../domain/layout/paginationEngine';
 import { computeChainTextSlices, getTextFrameChain } from '../../domain/document/textFlow';
 import { createCanvasTextMeasurer } from '../../editor/canvas/canvasTextMeasurer';
@@ -292,7 +295,82 @@ export function PaginatedPrintLayout({
           effectiveRightMargin += gutterWidth;
         }
 
-        return (
+        // Parity blank sheet (odd/even section break): a read-only blank
+        // sheet shown before this page, carrying the PREVIOUS section's
+        // header/footer. It is a layout artifact only — not selectable,
+        // not a document page.
+        const parityBlank = getParityBlankBefore(document, pageId);
+        const prevPageId = pageIndex > 0 ? document.pageOrder[pageIndex - 1] : undefined;
+        const prevPage = prevPageId ? document.pages[prevPageId] : undefined;
+        let parityBlankSheet: React.ReactNode = null;
+        if (parityBlank && prevPage && prevPageId) {
+          const prevSection = getSectionForPage(document, prevPageId);
+          const prevHeaderStory = prevSection.headerStoryId
+            ? document.stories[prevSection.headerStoryId]
+            : null;
+          const prevFooterStory = prevSection.footerStoryId
+            ? document.stories[prevSection.footerStoryId]
+            : null;
+          const prevHeaderText =
+            extractStoryText(prevHeaderStory) || prevHeaderStory?.name || document.metadata.title || 'RePage Document';
+          const prevFooterText =
+            extractStoryText(prevFooterStory) || prevFooterStory?.name || 'RePage Studio';
+          const blankNumber = getParityBlankPageNumberString(document, pageId);
+          parityBlankSheet = (
+            <div
+              key={`${pageId}-parity-blank`}
+              data-testid="parity-blank-page"
+              className="canvas-paper-frame parity-blank-frame"
+              style={{
+                width: `${prevPage.width}pt`,
+                height: `${prevPage.height}pt`,
+                transform: `scale(${zoomLevel / 100})`,
+                transformOrigin: 'top center',
+                position: 'relative',
+                backgroundColor: prevPage.background || '#ffffff',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                borderRadius: '2px',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: `${Math.max(8, prevPage.margins.top / 2)}pt`,
+                  left: `${prevPage.margins.left}pt`,
+                  right: `${prevPage.margins.right}pt`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '10px',
+                  color: '#64748b',
+                  userSelect: 'none',
+                }}
+              >
+                <span>{prevHeaderText}</span>
+                <span>{blankNumber}</span>
+              </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: `${Math.max(8, prevPage.margins.bottom / 2)}pt`,
+                  left: `${prevPage.margins.left}pt`,
+                  right: `${prevPage.margins.right}pt`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '10px',
+                  color: '#64748b',
+                  userSelect: 'none',
+                }}
+              >
+                <span style={{ fontSize: '9px' }}>{prevFooterText}</span>
+                <span>{blankNumber}</span>
+              </div>
+            </div>
+          );
+        }
+
+        const pageSheet = (
           <div
             key={pageId}
             onClick={() => onSelectPage(pageId)}
@@ -335,7 +413,7 @@ export function PaginatedPrintLayout({
                 }}
               >
                 <span>
-                  <AppIcon name="cut" size={14} /> {document.metadata.locale === 'ur-PK' ? 'سیکشن بریک' : 'Section Break'} ({section.breakType === 'next-page' ? (document.metadata.locale === 'ur-PK' ? 'نیا صفحہ' : 'Next Page') : (document.metadata.locale === 'ur-PK' ? 'جاری' : 'Continuous')})
+                  <AppIcon name="cut" size={14} /> {document.metadata.locale === 'ur-PK' ? 'سیکشن بریک' : 'Section Break'} ({section.breakType === 'next-page' ? (document.metadata.locale === 'ur-PK' ? 'نیا صفحہ' : 'Next Page') : section.breakType === 'continuous' ? (document.metadata.locale === 'ur-PK' ? 'جاری' : 'Continuous') : section.breakType === 'odd-page' ? (document.metadata.locale === 'ur-PK' ? 'طاق صفحہ' : 'Odd Page') : (document.metadata.locale === 'ur-PK' ? 'جفت صفحہ' : 'Even Page')})
                 </span>
                 <span style={{ fontSize: '9px', opacity: 0.85 }}>
                   {document.metadata.locale === 'ur-PK'
@@ -855,6 +933,7 @@ export function PaginatedPrintLayout({
             </div>
           </div>
         );
+        return parityBlankSheet ? [parityBlankSheet, pageSheet] : pageSheet;
       })}
     </div>
   );

@@ -198,7 +198,16 @@ export interface AssetReference {
 
 export type ViewMode = 'print' | 'web' | 'draft';
 
-export type SectionBreakType = 'next-page' | 'continuous';
+/**
+ * How the section that carries this breakType begins:
+ * - 'next-page': on the next page.
+ * - 'continuous': on the same page (no page advance).
+ * - 'odd-page' / 'even-page': on the next page whose PHYSICAL page number
+ *   has the named parity; layout inserts one implicit blank page when the
+ *   parity requires it (see sectionEngine.computeParityBlanks). The blank
+ *   is a layout artifact only — never a user page in the document model.
+ */
+export type SectionBreakType = 'next-page' | 'continuous' | 'odd-page' | 'even-page';
 
 export interface PageNumberingSettings {
   style: 'urdu' | 'western' | 'abjad';

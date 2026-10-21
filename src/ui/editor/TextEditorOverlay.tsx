@@ -16,6 +16,7 @@ import { SmartDeletePreview } from './smartDeletePreview';
 import { BidiVisualCursor } from './bidiVisualCursor';
 import { Spellcheck } from './spellcheckExtension';
 import { SpellcheckMenu } from './SpellcheckMenu';
+import { RepageBreak } from './repageBreakExtension';
 
 import type { KeyboardMode } from '../../domain/unicode/keyboardLayouts';
 import { mapKeyToUrduCharacter } from '../../domain/unicode/keyboardLayouts';
@@ -79,6 +80,7 @@ export function TextEditorOverlay({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      RepageBreak,
       Underline,
       Subscript,
       Superscript,
@@ -96,6 +98,23 @@ export function TextEditorOverlay({
       handleKeyDown: (view, event) => {
         const mode = keyboardModeRef.current;
         const numSys = numeralSystemRef.current;
+        // Explicit breaks: Ctrl+Enter = page break, Ctrl+Shift+Enter =
+        // column break (same interception as the body editor).
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key === 'Enter') {
+          const breakNodeType = view.state.schema.nodes.repageBreak;
+          if (breakNodeType) {
+            event.preventDefault();
+            const { from, to } = view.state.selection;
+            view.dispatch(
+              view.state.tr.replaceWith(
+                from,
+                to,
+                breakNodeType.create({ breakType: event.shiftKey ? 'column' : 'page' }),
+              ),
+            );
+            return true;
+          }
+        }
         if (
           !event.ctrlKey &&
           !event.altKey &&

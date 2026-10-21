@@ -144,7 +144,11 @@ export function insertSectionBreak(
   const docWithSections = ensureDocumentSections(doc);
   const sections = docWithSections.sections || [];
 
-  if (type === 'next-page') {
+  if (type === 'next-page' || type === 'odd-page' || type === 'even-page') {
+    // Odd/even breaks create their section's first page exactly like a
+    // next-page break. The parity blank page (when one is needed) is NOT
+    // created here: it is a layout artifact computed by
+    // computeParityBlanks, never a user page in the document model.
     const newPage = createBlankPage(`Section ${sections.length + 1}`);
     const currentPageIndex = targetPageId ? docWithSections.pageOrder.indexOf(targetPageId) : docWithSections.pageOrder.length - 1;
     const insertIndex = currentPageIndex >= 0 ? currentPageIndex + 1 : docWithSections.pageOrder.length;
@@ -155,7 +159,7 @@ export function insertSectionBreak(
     // Inherit section properties from current section
     const currentSection = targetPageId ? getSectionForPage(docWithSections, targetPageId) : sections[sections.length - 1];
     const sectionOptions: Partial<DocumentSection> = {
-      breakType: 'next-page',
+      breakType: type,
       columns: currentSection?.columns ?? 1,
       columnGap: currentSection?.columnGap ?? 18,
       rtlColumnOrder: currentSection?.rtlColumnOrder ?? true,
@@ -194,6 +198,89 @@ export function insertSectionBreak(
     ...docWithSections,
     sections: [...sections, newSection],
   };
+}
+
+/**
+ * An implicit blank page required by an odd-page / even-page section break.
+ *
+ * The blank is a LAYOUT ARTIFACT: it exists only in the printed/rendered
+ * page sequence, never as a user page in the document model (pageOrder and
+ * pages are untouched). It prints as a genuinely blank page; its
+ * headers/footers follow the PREVIOUS section (the section that precedes
+ * the break), and page numbering continues across it — the blank consumes
+ * a physical page number.
+ */
+export interface ParityBlank {
+  /** The user page immediately after the blank (the parity section's first page). */
+  beforePageId: PageId;
+  /** The section whose odd/even break required the blank. */
+  sectionId: string;
+  /** 0-based physical index of the blank in the full printed page sequence. */
+  physicalIndex: number;
+}
+
+/**
+ * Computes the parity blanks for a document by walking the user pages in
+ * order and tracking the physical (printed) page counter. A section whose
+ * breakType is 'odd-page' must start on an odd physical page number
+ * (1-based); when the next physical page would be even, one blank is
+ * inserted before it ('even-page' mirrored). Consecutive parity breaks
+ * compose: each is evaluated against the counter after earlier blanks.
+ * The document's first page is physical page 1 by definition — no blank
+ * can precede it.
+ */
+export function computeParityBlanks(doc: RePageDocument): ParityBlank[] {
+  const docWithSections = ensureDocumentSections(doc);
+  const sections = docWithSections.sections || [];
+
+  const parityStart = new Map<PageId, DocumentSection>();
+  for (const section of sections) {
+    if (
+      (section.breakType === 'odd-page' || section.breakType === 'even-page') &&
+      !parityStart.has(section.startPageId)
+    ) {
+      parityStart.set(section.startPageId, section);
+    }
+  }
+  if (parityStart.size === 0) return [];
+
+  const blanks: ParityBlank[] = [];
+  let physical = 0; // number of physical pages emitted so far
+  docWithSections.pageOrder.forEach((pageId, userIndex) => {
+    const section = parityStart.get(pageId);
+    if (section && userIndex > 0) {
+      const nextPhysicalNumber = physical + 1; // 1-based number of the next physical page
+      const wantsOdd = section.breakType === 'odd-page';
+      const isOdd = nextPhysicalNumber % 2 === 1;
+      if (wantsOdd !== isOdd) {
+        blanks.push({ beforePageId: pageId, sectionId: section.id, physicalIndex: physical });
+        physical += 1;
+      }
+    }
+    physical += 1;
+  });
+  return blanks;
+}
+
+/** Returns the parity blank inserted immediately before a page, if any. */
+export function getParityBlankBefore(doc: RePageDocument, pageId: PageId): ParityBlank | undefined {
+  return computeParityBlanks(doc).find((blank) => blank.beforePageId === pageId);
+}
+
+/**
+ * 0-based physical index of a user page in the printed sequence, counting
+ * any parity blanks that precede it. Returns -1 for an unknown page.
+ * Without parity sections this equals the pageOrder index.
+ */
+export function getPhysicalPageIndex(doc: RePageDocument, pageId: PageId): number {
+  const userIndex = doc.pageOrder.indexOf(pageId);
+  if (userIndex === -1) return -1;
+  let physical = userIndex;
+  for (const blank of computeParityBlanks(doc)) {
+    const blankUserIndex = doc.pageOrder.indexOf(blank.beforePageId);
+    if (blankUserIndex !== -1 && blankUserIndex <= userIndex) physical += 1;
+  }
+  return physical;
 }
 
 /**

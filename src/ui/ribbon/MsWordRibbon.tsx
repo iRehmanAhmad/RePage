@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import type { UiLanguage, Translations } from '../i18n/menuTranslation';
-import type { ShapeKind, TextWrapMode, ViewMode } from '../../domain/document/types';
+import type { SectionBreakType, ShapeKind, TextWrapMode, ViewMode } from '../../domain/document/types';
 import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
 import { BUNDLED_URDU_FONTS, URDU_FONTS_LIST, WINDOWS_STANDARD_FONTS } from '../../domain/unicode/fontRegistry';
 import { CustomFontDropdown } from './CustomFontDropdown';
@@ -87,7 +87,8 @@ export interface MsWordRibbonProps {
   onViewModeChange?: (mode: ViewMode) => void;
   onToggleOrientation?: () => void;
   onSetOrientation?: (orientation: 'portrait' | 'landscape') => void;
-  onInsertSectionBreak?: (type: 'next-page' | 'continuous') => void;
+  onInsertSectionBreak?: (type: SectionBreakType) => void;
+  onInsertStoryBreak?: (breakType: 'page' | 'column') => void;
   onOpenPageSetupModal?: () => void;
   onOpenHeaderFooterModal?: () => void;
   onOpenExportDialog?: () => void;
@@ -279,6 +280,7 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
   onToggleOrientation: _onToggleOrientation,
   onSetOrientation,
   onInsertSectionBreak,
+  onInsertStoryBreak,
   onOpenPageSetupModal,
   onOpenHeaderFooterModal,
   onOpenExportDialog,
@@ -2949,9 +2951,31 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
               <div className="ribbon-chunk" style={{ display: 'flex', gap: '4px' }}>
                 <button
                   type="button"
-                  onClick={() => onInsertSectionBreak && onInsertSectionBreak('next-page')}
+                  onClick={() => onInsertStoryBreak && onInsertStoryBreak('page')}
                   className="ribbon-action-btn primary"
+                  title={t.pageBreakTooltip}
+                >
+                  <AppIcon name="document-add" />
+                  <span>{t.pageBreak}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInsertStoryBreak && onInsertStoryBreak('column')}
+                  className="ribbon-action-btn"
+                  title={t.columnBreakTooltip}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
+                >
+                  <AppIcon name="cut" />
+                  <span>{t.columnBreak}</span>
+                </button>
+              </div>
+              <div className="ribbon-chunk" style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => onInsertSectionBreak && onInsertSectionBreak('next-page')}
+                  className="ribbon-action-btn"
                   title={lang === 'ur' ? 'نیا سیکشن صفحہ درج کریں' : 'Insert Next Page Section Break'}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
                 >
                   <AppIcon name="document-add" />
                   <span>{lang === 'ur' ? 'نیا سیکشن' : 'Section Break'}</span>
@@ -2965,6 +2989,26 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                 >
                   <AppIcon name="cut" />
                   <span>{lang === 'ur' ? 'جاری سیکشن' : 'Continuous'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInsertSectionBreak && onInsertSectionBreak('odd-page')}
+                  className="ribbon-action-btn"
+                  title={t.sectionBreakOddPageTooltip}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
+                >
+                  <AppIcon name="document-add" />
+                  <span>{t.sectionBreakOddPage}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInsertSectionBreak && onInsertSectionBreak('even-page')}
+                  className="ribbon-action-btn"
+                  title={t.sectionBreakEvenPageTooltip}
+                  style={{ padding: '2px 6px', fontSize: '10px' }}
+                >
+                  <AppIcon name="document-add" />
+                  <span>{t.sectionBreakEvenPage}</span>
                 </button>
               </div>
               <div className="ribbon-group-caption">{t.grpBreaks}</div>

@@ -46,6 +46,73 @@ export function getTextFrameChain(doc: RePageDocument, frameId: ObjectId): TextF
   return chain;
 }
 
+export interface StoryBreak {
+  /** Offset in getStoryPlainText coordinates (text chars before the break). */
+  offset: number;
+  breakType: 'page' | 'column';
+}
+
+/**
+ * Locates every explicit break node in a story, in document order, using
+ * the same plain-text coordinates as getStoryPlainText (text runs count
+ * their characters; zero-width nodes — hard breaks and breaks — count 0;
+ * paragraphs are joined by one '\n').
+ */
+export function getStoryBreaks(story: TextStory | undefined): StoryBreak[] {
+  if (!story?.content?.content) return [];
+  const breaks: StoryBreak[] = [];
+  let offset = 0;
+  story.content.content.forEach((para, paraIndex) => {
+    if (paraIndex > 0) offset += 1; // '\n' separator
+    for (const node of para.content) {
+      if (node.type === 'text') offset += node.text.length;
+      else if (node.type === 'break') breaks.push({ offset, breakType: node.breakType });
+    }
+  });
+  return breaks;
+}
+
+type FlowItem =
+  | { kind: 'token'; text: string }
+  | { kind: 'break'; breakType: 'page' | 'column' };
+
+/**
+ * Builds the token/break item stream for a text blob: the text is chunked
+ * at each break offset and every chunk is tokenized with the given regex,
+ * so a break can split even a single word token in two. Break offsets are
+ * relative to `text`. Concatenating all token items reproduces `text`.
+ */
+function buildFlowItems(
+  text: string,
+  breaks: StoryBreak[],
+  tokenize: (chunk: string) => string[],
+): FlowItem[] {
+  const items: FlowItem[] = [];
+  let cursor = 0;
+  for (const b of breaks) {
+    const at = Math.max(cursor, Math.min(b.offset, text.length));
+    for (const tokenText of tokenize(text.slice(cursor, at))) {
+      items.push({ kind: 'token', text: tokenText });
+    }
+    items.push({ kind: 'break', breakType: b.breakType });
+    cursor = at;
+  }
+  for (const tokenText of tokenize(text.slice(cursor))) {
+    items.push({ kind: 'token', text: tokenText });
+  }
+  return items;
+}
+
+/** Concatenates the token items from `fromIndex` onward (breaks carry no text). */
+function joinFlowTokens(items: FlowItem[], fromIndex: number): string {
+  let out = '';
+  for (let i = fromIndex; i < items.length; i++) {
+    const item = items[i]!;
+    if (item.kind === 'token') out += item.text;
+  }
+  return out;
+}
+
 export interface ChainTextSlices {
   /** frameId -> visible text slice, in chain order */
   slices: Record<ObjectId, string>;
@@ -124,30 +191,95 @@ export function computeChainTextSlices(
     return { slices, overflowBeyondLast: false, overflowText: '' };
   }
 
-  if (measurer) return layoutMeasuredChain(chain, fullText, measurer, slices);
-  return layoutHeuristicChain(chain, fullText, slices);
+  const breaks = getStoryBreaks(doc.stories[storyId]);
+  // Physical order of each frame's page, for page-break jumps: a page
+  // break moves following text to the next frame that sits on a LATER page.
+  const pagePosition = new Map(doc.pageOrder.map((id, index) => [id, index]));
+  const framePagePosition = (frame: TextFrameObject): number =>
+    pagePosition.get(frame.pageId) ?? 0;
+
+  if (measurer) return layoutMeasuredChain(chain, fullText, breaks, framePagePosition, measurer, slices);
+  return layoutHeuristicChain(chain, fullText, breaks, framePagePosition, slices);
+}
+
+/**
+ * Resolves a break to a target frame index in the chain.
+ * - 'column': the next frame in the chain (the next column slot).
+ * - 'page': the first later frame that sits on a later page than the
+ *   current frame (frames on the same page in between receive nothing).
+ * Returns -1 when the chain has no such frame — the caller overflows.
+ */
+function resolveBreakTarget(
+  chain: TextFrameObject[],
+  framePagePosition: (frame: TextFrameObject) => number,
+  currentFrameIndex: number,
+  breakType: 'page' | 'column',
+): number {
+  if (breakType === 'column') {
+    return currentFrameIndex + 1 < chain.length ? currentFrameIndex + 1 : -1;
+  }
+  const currentPosition = framePagePosition(chain[currentFrameIndex]!);
+  for (let j = currentFrameIndex + 1; j < chain.length; j++) {
+    if (framePagePosition(chain[j]!) > currentPosition) return j;
+  }
+  return -1;
 }
 
 /**
  * Deterministic heuristic layout: average glyph width, no live measurement.
- * Unchanged behavior — the reference implementation every headless path relies on.
+ * The reference implementation every headless path relies on. Explicit
+ * break nodes in the story are honored (see resolveBreakTarget): text
+ * after a break starts in the target frame, or overflows when the chain
+ * has no such frame — it is never silently dropped.
  */
 function layoutHeuristicChain(
   chain: TextFrameObject[],
   fullText: string,
+  breaks: StoryBreak[],
+  framePagePosition: (frame: TextFrameObject) => number,
   slices: Record<ObjectId, string>,
 ): ChainTextSlices {
   const capacities = chain.map((frame) => estimateFrameCharCapacity(frame));
-  const tokens = fullText.match(/[^\s]+|\s+/g) ?? [];
+  const items = buildFlowItems(fullText, breaks, (chunk) => chunk.match(/[^\s]+|\s+/g) ?? []);
 
   let frameIndex = 0;
   let fill = 0;
   let overflowBeyondLast = false;
-  let overflowAt = -1;
+  let overflowText = '';
   const buffers: string[] = chain.map(() => '');
 
-  for (let t = 0; t < tokens.length; t++) {
-    const token = tokens[t]!;
+  // Whitespace immediately after a break is the separator of the text
+  // BEFORE the break: it is appended to the pre-break frame so the
+  // post-break frame does not open with an invisible empty line. Slice
+  // concatenation still reproduces the story text exactly.
+  let afterBreak = false;
+  let preBreakFrame = -1;
+
+  for (let t = 0; t < items.length; t++) {
+    const item = items[t]!;
+
+    if (item.kind === 'break') {
+      if (!afterBreak) preBreakFrame = frameIndex;
+      const target = resolveBreakTarget(chain, framePagePosition, frameIndex, item.breakType);
+      if (target === -1) {
+        overflowBeyondLast = true;
+        overflowText = joinFlowTokens(items, t + 1);
+        break;
+      }
+      frameIndex = target;
+      fill = 0;
+      afterBreak = true;
+      continue;
+    }
+
+    const token = item.text;
+    if (afterBreak && /^\s+$/.test(token) && preBreakFrame >= 0) {
+      buffers[preBreakFrame] += token;
+      afterBreak = false;
+      continue;
+    }
+    afterBreak = false;
+
     // Advance past exhausted frames.
     while (frameIndex < chain.length && fill >= capacities[frameIndex]!) {
       frameIndex++;
@@ -155,7 +287,7 @@ function layoutHeuristicChain(
     }
     if (frameIndex >= chain.length) {
       overflowBeyondLast = true;
-      overflowAt = t;
+      overflowText = joinFlowTokens(items, t);
       break;
     }
 
@@ -171,7 +303,7 @@ function layoutHeuristicChain(
         }
         if (frameIndex >= chain.length) {
           overflowBeyondLast = true;
-          overflowAt = t;
+          overflowText = joinFlowTokens(items, t);
           break;
         }
       }
@@ -188,7 +320,7 @@ function layoutHeuristicChain(
   return {
     slices,
     overflowBeyondLast,
-    overflowText: overflowAt >= 0 ? tokens.slice(overflowAt).join('') : '',
+    overflowText,
   };
 }
 
@@ -196,10 +328,15 @@ function layoutHeuristicChain(
  * Measured layout: greedy word wrap with real advance widths.
  * Paragraph breaks (`\n`) force line breaks; original inter-word whitespace is
  * preserved inside slices so words are never lost or duplicated.
+ * Explicit break nodes are honored with the same targeting rules as the
+ * heuristic layout (see resolveBreakTarget); following text overflows
+ * when the chain has no target frame.
  */
 function layoutMeasuredChain(
   chain: TextFrameObject[],
   fullText: string,
+  breaks: StoryBreak[],
+  framePagePosition: (frame: TextFrameObject) => number,
   measurer: ChainTextMeasurer,
   slices: Record<ObjectId, string>,
 ): ChainTextSlices {
@@ -225,6 +362,12 @@ function layoutMeasuredChain(
   let overflowBeyondLast = false;
   let overflowText = '';
 
+  // Break bookkeeping, mirroring the heuristic layout: whitespace right
+  // after a break (including a paragraph separator) attaches to the frame
+  // that held the pre-break text, so the target frame opens cleanly.
+  let lastWasBreak = false;
+  let preBreakFrame = -1;
+
   const endLine = () => {
     linesUsed++;
     lineWidthPx = 0;
@@ -242,34 +385,104 @@ function layoutMeasuredChain(
     return frameIndex < chain.length;
   };
 
+  /** Applies a break; false when the chain has no target frame for it. */
+  const applyBreak = (breakType: 'page' | 'column'): boolean => {
+    const target = resolveBreakTarget(chain, framePagePosition, frameIndex, breakType);
+    if (target === -1) return false;
+    if (!lastWasBreak) preBreakFrame = frameIndex;
+    frameIndex = target;
+    linesUsed = 0;
+    lineWidthPx = 0;
+    atLineStart = true;
+    lastWasBreak = true;
+    return true;
+  };
+
   const paragraphs = fullText.split('\n');
-  for (let p = 0; p < paragraphs.length; p++) {
-    if (p > 0) {
-      if (!ensureFrame()) {
-        overflowBeyondLast = true;
-        overflowText = '\n' + paragraphs.slice(p).join('\n');
-        break;
-      }
-      buffers[frameIndex] += '\n';
-      endLine();
+  // Global start offset of each paragraph in fullText coordinates.
+  const paragraphStarts: number[] = [];
+  {
+    let acc = 0;
+    for (const para of paragraphs) {
+      paragraphStarts.push(acc);
+      acc += para.length + 1;
     }
+  }
+  const restAfter = (p: number): string =>
+    p + 1 < paragraphs.length ? '\n' + paragraphs.slice(p + 1).join('\n') : '';
+
+  for (let p = 0; p < paragraphs.length; p++) {
+    const paraText = paragraphs[p]!;
+    const paraStart = paragraphStarts[p]!;
+    const relBreaks = breaks
+      .filter((b) => b.offset >= paraStart && b.offset <= paraStart + paraText.length)
+      .map((b) => ({ offset: b.offset - paraStart, breakType: b.breakType }));
     // Word tokens keep their trailing whitespace; a leading-whitespace token
-    // can only match at the paragraph start.
-    const tokens = paragraphs[p]!.match(/^\s+|[^\s]+(\s+|$)/g) ?? [];
-    for (let t = 0; t < tokens.length; t++) {
+    // can only match at a chunk start. Chunks are split at break offsets, so
+    // a break can divide a word across frames.
+    let items = buildFlowItems(
+      paraText,
+      relBreaks,
+      (chunk) => chunk.match(/^\s+|[^\s]+(\s+|$)/g) ?? [],
+    );
+
+    if (p > 0) {
+      // Leading breaks of this paragraph resolve BEFORE the paragraph
+      // separator: the separator belongs to the pre-break text.
+      let lead = 0;
+      while (lead < items.length && items[lead]!.kind === 'break') {
+        const breakItem = items[lead]!;
+        if (breakItem.kind === 'break' && !applyBreak(breakItem.breakType)) {
+          overflowBeyondLast = true;
+          overflowText = '\n' + joinFlowTokens(items, lead + 1) + restAfter(p);
+          break;
+        }
+        lead++;
+      }
+      if (overflowBeyondLast) break;
+      items = items.slice(lead);
+
+      if (lastWasBreak) {
+        if (preBreakFrame >= 0) buffers[preBreakFrame] += '\n';
+      } else {
+        if (!ensureFrame()) {
+          overflowBeyondLast = true;
+          overflowText = '\n' + paragraphs.slice(p).join('\n');
+          break;
+        }
+        buffers[frameIndex] += '\n';
+        endLine();
+      }
+    }
+
+    for (let t = 0; t < items.length; t++) {
+      const item = items[t]!;
+
+      if (item.kind === 'break') {
+        if (!applyBreak(item.breakType)) {
+          overflowBeyondLast = true;
+          overflowText = joinFlowTokens(items, t + 1) + restAfter(p);
+          break;
+        }
+        continue;
+      }
+
       if (!ensureFrame()) {
         overflowBeyondLast = true;
-        overflowText = tokens.slice(t).join('') + (p + 1 < paragraphs.length ? '\n' + paragraphs.slice(p + 1).join('\n') : '');
+        overflowText = joinFlowTokens(items, t) + restAfter(p);
         break;
       }
       const frame = chain[frameIndex]!;
-      const token = tokens[t]!;
-      const tokenPx = measurer.measureTokenPx(token, frame);
+      const token = item.text;
       if (/^\s+$/.test(token)) {
-        // Paragraph-leading whitespace: invisible, kept for exactness.
-        buffers[frameIndex] += token;
+        // Whitespace: invisible, kept for exactness. Right after a break
+        // it attaches to the pre-break frame (see note above).
+        if (lastWasBreak && preBreakFrame >= 0) buffers[preBreakFrame] += token;
+        else buffers[frameIndex] += token;
         continue;
       }
+      lastWasBreak = false;
+      const tokenPx = measurer.measureTokenPx(token, frame);
       if (atLineStart) {
         // Placed even when wider than the line (anti-stall, mirrors heuristic).
         buffers[frameIndex] += token;
@@ -282,7 +495,7 @@ function layoutMeasuredChain(
         endLine();
         if (!ensureFrame()) {
           overflowBeyondLast = true;
-          overflowText = tokens.slice(t).join('') + (p + 1 < paragraphs.length ? '\n' + paragraphs.slice(p + 1).join('\n') : '');
+          overflowText = joinFlowTokens(items, t) + restAfter(p);
           break;
         }
         buffers[frameIndex] += token;

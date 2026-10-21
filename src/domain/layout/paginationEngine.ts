@@ -77,6 +77,37 @@ function splitParagraphAtOffset(
   ];
 }
 
+interface ParagraphSegment {
+  paragraph: ParagraphNode;
+  /** The break that follows this segment, if any. */
+  breakAfter: 'page' | 'column' | null;
+}
+
+/**
+ * Splits a paragraph at its explicit break nodes. The break node itself is
+ * consumed into `breakAfter` (the repaginated fragments are layout
+ * artifacts; the canonical story keeps the node). A paragraph without
+ * breaks yields exactly one segment, so break-free documents paginate
+ * exactly as before.
+ */
+function splitParagraphAtBreaks(paragraph: ParagraphNode): ParagraphSegment[] {
+  if (!paragraph.content.some((node) => node.type === 'break')) {
+    return [{ paragraph, breakAfter: null }];
+  }
+  const segments: ParagraphSegment[] = [];
+  let current: InlineNode[] = [];
+  for (const node of paragraph.content) {
+    if (node.type === 'break') {
+      segments.push({ paragraph: { ...paragraph, content: current }, breakAfter: node.breakType });
+      current = [];
+    } else {
+      current.push(node);
+    }
+  }
+  segments.push({ paragraph: { ...paragraph, content: current }, breakAfter: null });
+  return segments;
+}
+
 function getSafeSplitOffset(text: string, targetOffset: number): number {
   if (text.length < 2) return 0;
 
@@ -91,6 +122,8 @@ function getSafeSplitOffset(text: string, targetOffset: number): number {
 /**
  * Calculates required pages and repaginates document by adding or removing pages as necessary.
  * Dynamically splits paragraphs at line/word boundaries to prevent text overflowing or sliced lines across pages.
+ * Explicit break nodes (page/column) and paragraph pageBreakBefore are honored:
+ * content after a break always starts on a fresh page here (single-column model).
  */
 export function repaginateDocument(
   doc: RePageDocument,
@@ -119,43 +152,62 @@ export function repaginateDocument(
   const repaginatedParagraphs: any[] = [];
 
   for (const sourceParagraph of story.content.content) {
-    let remainingParagraph = sourceParagraph;
-
-    // A pasted paragraph can be far larger than a page. Keep splitting until
-    // its remainder fits; the previous implementation split it only once,
-    // which made text overflow from the second page onward.
-    while (true) {
-      const text = getParagraphText(remainingParagraph);
-      const totalLines = Math.max(1, Math.ceil(text.length / charsPerLine));
-      const paraHeight = totalLines * lineHeightPx + 14;
-      const remainingHeight = printableHeight - currentY;
-      const fitsOnCurrentPage = currentY === 0 || currentY + paraHeight <= printableHeight;
-
-      if (fitsOnCurrentPage && paraHeight <= printableHeight) {
-        currentY += paraHeight;
-        paragraphPageMap.push(pageIndex);
-        repaginatedParagraphs.push(remainingParagraph);
-        break;
-      }
-
-      const availableHeight = currentY === 0 ? printableHeight : remainingHeight;
-      const fitLines = Math.floor((availableHeight - 14) / lineHeightPx);
-      const splitOffset = getSafeSplitOffset(text, fitLines * charsPerLine);
-
-      if (fitLines >= 1 && splitOffset > 0) {
-        const [pagePart, nextPart] = splitParagraphAtOffset(remainingParagraph, splitOffset);
-        paragraphPageMap.push(pageIndex);
-        repaginatedParagraphs.push(pagePart);
-        pageIndex++;
-        currentY = 0;
-        remainingParagraph = nextPart;
-        continue;
-      }
-
-      // There is not even one full line left on this page. Start the same
-      // paragraph at the top of the next page instead of forcing it to spill.
+    // Page-break-before: this paragraph starts at the top of the next
+    // page. Already at a fresh page top (currentY === 0) it is a no-op —
+    // the flag must never manufacture a blank page.
+    if (sourceParagraph.pageBreakBefore && currentY > 0) {
       pageIndex++;
       currentY = 0;
+    }
+
+    for (const segment of splitParagraphAtBreaks(sourceParagraph)) {
+      let remainingParagraph = segment.paragraph;
+
+      // A pasted paragraph can be far larger than a page. Keep splitting until
+      // its remainder fits; the previous implementation split it only once,
+      // which made text overflow from the second page onward.
+      while (true) {
+        const text = getParagraphText(remainingParagraph);
+        const totalLines = Math.max(1, Math.ceil(text.length / charsPerLine));
+        const paraHeight = totalLines * lineHeightPx + 14;
+        const remainingHeight = printableHeight - currentY;
+        const fitsOnCurrentPage = currentY === 0 || currentY + paraHeight <= printableHeight;
+
+        if (fitsOnCurrentPage && paraHeight <= printableHeight) {
+          currentY += paraHeight;
+          paragraphPageMap.push(pageIndex);
+          repaginatedParagraphs.push(remainingParagraph);
+          break;
+        }
+
+        const availableHeight = currentY === 0 ? printableHeight : remainingHeight;
+        const fitLines = Math.floor((availableHeight - 14) / lineHeightPx);
+        const splitOffset = getSafeSplitOffset(text, fitLines * charsPerLine);
+
+        if (fitLines >= 1 && splitOffset > 0) {
+          const [pagePart, nextPart] = splitParagraphAtOffset(remainingParagraph, splitOffset);
+          paragraphPageMap.push(pageIndex);
+          repaginatedParagraphs.push(pagePart);
+          pageIndex++;
+          currentY = 0;
+          remainingParagraph = nextPart;
+          continue;
+        }
+
+        // There is not even one full line left on this page. Start the same
+        // paragraph at the top of the next page instead of forcing it to spill.
+        pageIndex++;
+        currentY = 0;
+      }
+
+      // An explicit break after this segment forces the following content
+      // onto a fresh page. This estimator models one column per page, so a
+      // column break — which in the last (here: only) column behaves as a
+      // page break — advances the page exactly like a page break.
+      if (segment.breakAfter) {
+        pageIndex++;
+        currentY = 0;
+      }
     }
   }
 
