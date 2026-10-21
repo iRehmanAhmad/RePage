@@ -463,9 +463,24 @@ function alignmentFromJc(val: string | undefined): TextAlignment {
       return 'left';
     case 'both':
     case 'distribute':
+    case 'mediumKashida':
+    case 'highKashida':
+    case 'lowKashida':
       return 'justify';
     default:
       return 'start';
+  }
+}
+
+/** Word's kashida justification values map back to the kashida mode. */
+function justificationModeFromJc(val: string | undefined): 'kashida' | undefined {
+  switch (val) {
+    case 'mediumKashida':
+    case 'highKashida':
+    case 'lowKashida':
+      return 'kashida';
+    default:
+      return undefined;
   }
 }
 
@@ -573,6 +588,7 @@ export function parseParagraph(
   let listMarker: string | undefined;
   let isHeading = false;
   let pageBreakBefore = false;
+  let justificationMode: 'kashida' | undefined;
 
   if (pPr) {
     if (kid(pPr, 'pageBreakBefore')) pageBreakBefore = true;
@@ -582,7 +598,9 @@ export function parseParagraph(
     else direction = detectTextDirection(text, 'rtl');
 
     const jc = kid(pPr, 'jc');
-    alignment = alignmentFromJc(jc ? attr(jc, 'val') : undefined);
+    const jcVal = jc ? attr(jc, 'val') : undefined;
+    alignment = alignmentFromJc(jcVal);
+    justificationMode = justificationModeFromJc(jcVal);
 
     const pStyle = kid(pPr, 'pStyle');
     const styleVal = pStyle ? attr(pStyle, 'val') : undefined;
@@ -674,6 +692,7 @@ export function parseParagraph(
       spaceAfter,
       backgroundColor,
       pageBreakBefore: pageBreakBefore ? true : undefined,
+      justificationMode,
       content: inlines,
     },
     imageRelIds,

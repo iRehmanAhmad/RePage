@@ -60,6 +60,17 @@ const CustomParagraph = Paragraph.extend({
           return { 'data-page-break-before': 'true' };
         },
       },
+      justificationMode: {
+        default: null,
+        parseHTML: (element) => {
+          const mode = element.getAttribute('data-justification-mode');
+          return mode === 'kashida' || mode === 'space' ? mode : null;
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.justificationMode) return {};
+          return { 'data-justification-mode': attributes.justificationMode };
+        },
+      },
     };
   },
 });

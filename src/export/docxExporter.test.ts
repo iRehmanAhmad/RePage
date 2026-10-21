@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { exportDocumentToDocx, getDefaultDocxFileName } from './docxExporter';
 import { createDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { addImageFrame } from '../editor/commands/documentCommands';
-import { addImportedTable, setImageCropCommand } from '../editor/commands/objectCommands';
+import {
+  addImportedTable,
+  setImageAdjustmentsCommand,
+  setImageCropCommand,
+} from '../editor/commands/objectCommands';
 import { parseDocxFile, type DocxBlock } from '../persistence/import/docxParser';
 import { importDocxFile } from '../persistence/import/docxImporter';
 import type { ParagraphNode } from '../domain/rich-text/types';
@@ -311,5 +315,100 @@ describe('exportDocumentToDocx image crop', () => {
     const zip = await JSZip.loadAsync(bytes);
     const xml = await zip.file('word/document.xml')!.async('string');
     expect(xml).not.toContain('srcRect');
+  });
+});
+
+describe('exportDocumentToDocx batch 11 (kashida + image adjustments)', () => {
+  function docWithJustifiedParagraph(mode?: 'space' | 'kashida'): RePageDocument {
+    const doc = createDocument('Kashida Test');
+    const paragraphs: ParagraphNode[] = [
+      {
+        type: 'paragraph',
+        direction: 'rtl',
+        alignment: 'justify',
+        ...(mode ? { justificationMode: mode } : {}),
+        content: [{ type: 'text', text: 'محمد احمد خان' }],
+      },
+    ];
+    return {
+      ...doc,
+      stories: {
+        ...doc.stories,
+        [PRIMARY_STORY_ID]: {
+          id: PRIMARY_STORY_ID,
+          name: 'Primary Document Story',
+          content: { type: 'doc', content: paragraphs },
+        },
+      },
+    };
+  }
+
+  it('exports kashida justification as Word native mediumKashida, text untouched', async () => {
+    const { bytes } = await exportDocumentToDocx(docWithJustifiedParagraph('kashida'));
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file('word/document.xml')!.async('string');
+    expect(xml).toContain('<w:jc w:val="mediumKashida"/>');
+    // No tatweel is ever baked into exported text.
+    expect(xml).not.toContain('\u0640');
+    expect(xml).toContain('محمد احمد خان');
+  });
+
+  it('defaults justified RTL paragraphs to kashida and honors explicit space mode', async () => {
+    const def = await exportDocumentToDocx(docWithJustifiedParagraph(undefined));
+    const defXml = await (await JSZip.loadAsync(def.bytes))
+      .file('word/document.xml')!
+      .async('string');
+    expect(defXml).toContain('<w:jc w:val="mediumKashida"/>');
+
+    const space = await exportDocumentToDocx(docWithJustifiedParagraph('space'));
+    const spaceXml = await (await JSZip.loadAsync(space.bytes))
+      .file('word/document.xml')!
+      .async('string');
+    expect(spaceXml).toContain('<w:jc w:val="both"/>');
+    expect(spaceXml).not.toContain('Kashida');
+  });
+
+  it('round-trips the kashida mode through the DOCX parser', async () => {
+    const { bytes } = await exportDocumentToDocx(docWithJustifiedParagraph('kashida'));
+    const parsed = await parseDocxFile(bytes);
+    const paras = paragraphBlocks(parsed.blocks);
+    expect(paras).toHaveLength(1);
+    expect(paras[0]!.alignment).toBe('justify');
+    expect(paras[0]!.justificationMode).toBe('kashida');
+  });
+
+  function docWithAdjustedImage(): RePageDocument {
+    const doc = createDocument('Adjustments Test');
+    const pageId = doc.pageOrder[0]!;
+    const imgRes = addImageFrame(doc, pageId, 'pixel.png', PNG_DATA_URL, 120, 90);
+    return setImageAdjustmentsCommand(imgRes.document, imgRes.objectId, {
+      brightness: 130,
+      contrast: 100,
+      flipH: true,
+      flipV: true,
+    });
+  }
+
+  it('exports mirroring as DrawingML flip flags and reports tone adjustments honestly', async () => {
+    const { bytes, report } = await exportDocumentToDocx(docWithAdjustedImage());
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file('word/document.xml')!.async('string');
+    expect(xml).toContain('flipH="1"');
+    expect(xml).toContain('flipV="1"');
+    expect(
+      report.notes.some((n) => n.includes('brightness/contrast adjustments that were not exported')),
+    ).toBe(true);
+  });
+
+  it('exports no flip flags and no tone note for an unadjusted image', async () => {
+    const doc = createDocument('Plain Image Test');
+    const pageId = doc.pageOrder[0]!;
+    const imgRes = addImageFrame(doc, pageId, 'pixel.png', PNG_DATA_URL, 120, 90);
+    const { bytes, report } = await exportDocumentToDocx(imgRes.document);
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file('word/document.xml')!.async('string');
+    expect(xml).not.toContain('flipH');
+    expect(xml).not.toContain('flipV');
+    expect(report.notes.some((n) => n.includes('brightness/contrast'))).toBe(false);
   });
 });

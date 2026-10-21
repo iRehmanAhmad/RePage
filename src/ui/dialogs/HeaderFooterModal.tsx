@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppIcon } from '../icons/AppIcon';
 import type { RePageDocument } from '../../domain/document/types';
 import { getSectionForPage } from '../../domain/layout/sectionEngine';
+import type { PageNumberStyle } from '../../domain/unicode/pageNumbering';
 import { createId } from '../../domain/document/ids';
 
 interface HeaderFooterModalProps {
@@ -43,7 +44,7 @@ export const HeaderFooterModal: React.FC<HeaderFooterModalProps> = ({
 
   const [headerText, setHeaderText] = useState(() => getStoryText(currentHeaderStory));
   const [footerText, setFooterText] = useState(() => getStoryText(currentFooterStory));
-  const [numberingStyle, setNumberingStyle] = useState<'urdu' | 'western' | 'abjad'>(
+  const [numberingStyle, setNumberingStyle] = useState<PageNumberStyle>(
     section.pageNumbering?.style || 'urdu',
   );
   const [restartAtSection, setRestartAtSection] = useState(section.pageNumbering?.restartAtSection || false);
@@ -234,6 +235,9 @@ export const HeaderFooterModal: React.FC<HeaderFooterModalProps> = ({
               >
                 <option value="urdu">اردو (۰، ۱، ۲)</option>
                 <option value="abjad">ابجد (ا، ب، ج)</option>
+                <option value="urdu-letters">{isUr ? 'اردو حروف (ا، ب، پ)' : 'Urdu Letters (ا، ب، پ)'}</option>
+                <option value="roman">{isUr ? 'رومن چھوٹے (i, ii, iii)' : 'Roman Lowercase (i, ii, iii)'}</option>
+                <option value="roman-upper">{isUr ? 'رومن بڑے (I, II, III)' : 'Roman Uppercase (I, II, III)'}</option>
                 <option value="western">{isUr ? 'مغربی (1, 2, 3)' : 'Western (1, 2, 3)'}</option>
               </select>
             </div>

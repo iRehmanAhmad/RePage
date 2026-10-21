@@ -9,10 +9,12 @@ import type {
 } from '../domain/document/types';
 import type {
   InlineNode,
+  JustificationMode,
   ParagraphNode,
   TextAlignment,
   TextMark,
 } from '../domain/rich-text/types';
+import { resolveJustificationMode } from '../domain/layout/kashida';
 import { BUILTIN_URDU_PARAGRAPH_STYLES } from '../domain/rich-text/styles';
 import { PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { cropSrcRectValues } from '../domain/geometry/imageCrop';
@@ -152,6 +154,8 @@ interface Ctx {
   shapesSkipped: number;
   listParagraphsFlattened: number;
   borderedParagraphs: number;
+  /** Images whose brightness/contrast could not be carried into DOCX. */
+  imagesWithToneAdjustments: number;
 }
 
 interface FrameDefaults {
@@ -295,12 +299,21 @@ function runXml(run: { text: string; marks?: TextMark[] | undefined }, defaults:
 // Paragraphs
 // ---------------------------------------------------------------------------
 
-function jcValue(alignment: TextAlignment | undefined, direction: 'rtl' | 'ltr'): string | undefined {
+function jcValue(
+  alignment: TextAlignment | undefined,
+  direction: 'rtl' | 'ltr',
+  justificationMode?: JustificationMode,
+): string | undefined {
   switch (alignment) {
     case 'center':
       return 'center';
     case 'justify':
-      return 'both';
+      // Kashida-justified paragraphs map to Word's NATIVE kashida
+      // justification — Word stretches the letters itself, so the
+      // exported text stays byte-identical (no tatweels baked in).
+      return resolveJustificationMode(justificationMode, direction) === 'kashida'
+        ? 'mediumKashida'
+        : 'both';
     case 'left':
       return 'left';
     case 'right':
@@ -355,7 +368,7 @@ function paragraphXml(node: ParagraphNode, defaults: FrameDefaults, ctx: Ctx): s
   }
   if (ind) pPr += `<w:ind${ind}/>`;
 
-  const jc = jcValue(node.alignment, direction);
+  const jc = jcValue(node.alignment, direction, node.justificationMode);
   if (jc) pPr += `<w:jc w:val="${jc}"/>`;
 
   let runs = '';
@@ -538,6 +551,18 @@ function imageParagraphXml(obj: ImageFrameObject, doc: RePageDocument, ctx: Ctx)
     ? `<a:srcRect l="${srcRect.l}" t="${srcRect.t}" r="${srcRect.r}" b="${srcRect.b}"/>`
     : '';
 
+  // Non-destructive adjustments: mirroring maps to the DrawingML flip
+  // flags on the picture transform (applied to the cropped picture, the
+  // same composition as canvas/print). Brightness/contrast percentages
+  // have no reliable DOCX equivalent, so they are counted for the report
+  // note instead of being silently dropped.
+  const adj = obj.adjustments;
+  const flipAttrs =
+    (adj?.flipH ? ' flipH="1"' : '') + (adj?.flipV ? ' flipV="1"' : '');
+  if (adj && (adj.brightness !== 100 || adj.contrast !== 100)) {
+    ctx.imagesWithToneAdjustments += 1;
+  }
+
   return (
     '<w:p><w:r><w:drawing>' +
     `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
@@ -550,7 +575,7 @@ function imageParagraphXml(obj: ImageFrameObject, doc: RePageDocument, ctx: Ctx)
     '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
     `<pic:nvPicPr><pic:cNvPr id="${id}" name="${name}"/><pic:cNvPicPr/></pic:nvPicPr>` +
     `<pic:blipFill><a:blip r:embed="${relId}"/>${srcRectXml}<a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
-    `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>` +
+    `<pic:spPr><a:xfrm${flipAttrs}><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>` +
     '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
     '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>'
   );
@@ -685,6 +710,7 @@ export async function exportDocumentToDocx(
     nextRelId: 2, // rId1 is reserved for styles.xml
     nextDrawingId: 1,
     emittedStories: new Set(),
+    imagesWithToneAdjustments: 0,
     chainsFlattened: 0,
     shapesSkipped: 0,
     listParagraphsFlattened: 0,
@@ -798,6 +824,11 @@ export async function exportDocumentToDocx(
   if (ctx.borderedParagraphs > 0) {
     ctx.report.notes.push(
       `${ctx.borderedParagraphs} paragraph border(s) not exported (paragraph borders are not generated).`,
+    );
+  }
+  if (ctx.imagesWithToneAdjustments > 0) {
+    ctx.report.notes.push(
+      `${ctx.imagesWithToneAdjustments} image(s) had brightness/contrast adjustments that were not exported (DOCX has no direct equivalent); mirroring was exported.`,
     );
   }
   if (doc.masterPages && Object.keys(doc.masterPages).length > 0) {

@@ -1,6 +1,13 @@
 import * as fabric from 'fabric';
 import type { PageObject, Rect } from '../../domain/document/types';
 import { cropSourceRectPx } from '../../domain/geometry/imageCrop';
+import {
+  imageFabricFilterOffsets,
+  imageFlipScale,
+} from '../../domain/geometry/imageAdjustments';
+import { layoutCircleText } from '../../domain/geometry/circleText';
+import { buildKashidaDisplayText } from '../../domain/layout/kashida';
+import { extractPlainText } from '../../domain/rich-text/types';
 import { getFontDefinition } from '../../domain/unicode/fontRegistry';
 
 export interface AdapterCallbacks {
@@ -331,8 +338,31 @@ export class FabricCanvasAdapter {
         if (flowSlice !== undefined) {
           displayContent = flowSlice;
         } else if (!isEditing && stories && stories[obj.storyId]?.content?.content) {
+          // Kashida justification: justified kashida paragraphs are
+          // pre-wrapped here with tatweels inserted into a RENDER copy —
+          // the stored story text never changes. Linked-frame slices are
+          // plain strings without paragraph context, so they keep the
+          // space-justified rendering (documented limit).
+          const kashidaMeasureCtx = document.createElement('canvas').getContext('2d');
+          const kashidaMeasure = (segment: string): number => {
+            if (kashidaMeasureCtx) {
+              kashidaMeasureCtx.font = `${obj.fontSize}px "${fontDef.family}"`;
+              return kashidaMeasureCtx.measureText(segment).width;
+            }
+            return segment.length * obj.fontSize * 0.5;
+          };
           displayContent = stories[obj.storyId]!.content.content
-            .map((p) => p.content.map((run) => (run.type === 'text' ? run.text : '')).join(''))
+            .map((p) => {
+              const kashidaText = buildKashidaDisplayText(
+                p,
+                Math.max(10, obj.frame.width - 8),
+                kashidaMeasure,
+              );
+              return (
+                kashidaText ??
+                p.content.map((run) => (run.type === 'text' ? run.text : '')).join('')
+              );
+            })
             .join('\n');
         }
 
@@ -349,8 +379,72 @@ export class FabricCanvasAdapter {
           originY: 'top',
         });
 
+        // Text on a circle (stamps/logos): the frame's story is laid out
+        // along the inscribed circle by the shared geometry helper — the
+        // same layout the print exporter produces. While the frame is
+        // being edited the normal editor overlay owns the text, so the
+        // ring is only rendered in display mode.
+        let circleGroup: fabric.Group | null = null;
+        if (obj.textOnPath && !isEditing && stories && stories[obj.storyId]) {
+          const story = stories[obj.storyId]!;
+          const ringText = extractPlainText(story.content).replace(/\s*\n\s*/g, ' ').trim();
+          if (ringText) {
+            const padX = (obj.padding.left + obj.padding.right) / 2;
+            const radius = Math.max(
+              1,
+              Math.min(obj.frame.width, obj.frame.height) / 2 - padX,
+            );
+            const measureCtx = document.createElement('canvas').getContext('2d');
+            const layout = layoutCircleText(ringText, {
+              cx: obj.frame.width / 2,
+              cy: obj.frame.height / 2,
+              radius,
+              startAngleDeg: obj.textOnPath.startAngleDeg,
+              flip: obj.textOnPath.flip,
+              rtl: story.content.content[0]?.direction !== 'ltr',
+              measure: (segment) => {
+                if (measureCtx) {
+                  measureCtx.font = `${obj.fontSize}px "${fontDef.family}"`;
+                  return measureCtx.measureText(segment).width;
+                }
+                return segment.length * obj.fontSize * 0.5;
+              },
+            });
+            const glyphObjects: fabric.FabricObject[] = [frameRect];
+            for (const seg of layout.segments) {
+              glyphObjects.push(
+                new fabric.Text(seg.text, {
+                  left: seg.x,
+                  top: seg.y,
+                  fontSize: obj.fontSize,
+                  fontFamily: fontDef.family,
+                  fill: obj.color,
+                  angle: seg.rotationDeg,
+                  originX: 'center',
+                  originY: 'center',
+                  selectable: false,
+                  evented: false,
+                }),
+              );
+            }
+            circleGroup = new fabric.Group(glyphObjects, {
+              left: obj.frame.x,
+              top: obj.frame.y,
+              width: obj.frame.width,
+              height: obj.frame.height,
+              angle: obj.frame.rotation,
+              opacity: obj.opacity,
+              selectable: !obj.locked,
+              originX: 'left',
+              originY: 'top',
+            });
+          }
+        }
+
         const fullText = `${displayContent}${isEditing ? '' : seqBadge}${isEditing ? '' : overflowText}`;
-        if (fullText.trim()) {
+        if (circleGroup) {
+          fabricObj = circleGroup;
+        } else if (fullText.trim()) {
           const textObj = new fabric.Textbox(fullText, {
             left: 4,
             top: 4,
@@ -412,6 +506,23 @@ export class FabricCanvasAdapter {
           const initialWidth = imgElement.naturalWidth || obj.frame.width || 100;
           const initialHeight = imgElement.naturalHeight || obj.frame.height || 100;
 
+          // Non-destructive adjustments: flips mirror the (cropped)
+          // rendered image; brightness/contrast map to Fabric's standard
+          // filters with the same transfer functions CSS uses in print.
+          const flips = imageFlipScale(obj.adjustments);
+          const filterOffsets = imageFabricFilterOffsets(obj.adjustments);
+          const adjustmentFilters: fabric.filters.BaseFilter<string>[] = [];
+          if (filterOffsets.brightness !== 0) {
+            adjustmentFilters.push(
+              new fabric.filters.Brightness({ brightness: filterOffsets.brightness }),
+            );
+          }
+          if (filterOffsets.contrast !== 0) {
+            adjustmentFilters.push(
+              new fabric.filters.Contrast({ contrast: filterOffsets.contrast }),
+            );
+          }
+
           const fabricImg = new fabric.Image(imgElement, {
             left: obj.frame.x,
             top: obj.frame.y,
@@ -421,11 +532,22 @@ export class FabricCanvasAdapter {
             selectable: !obj.locked,
             originX: 'left',
             originY: 'top',
+            flipX: flips.scaleX === -1,
+            flipY: flips.scaleY === -1,
           });
+          if (adjustmentFilters.length > 0) {
+            fabricImg.filters = adjustmentFilters;
+            // Filter application needs the decoded pixels; when the image
+            // is already complete (cache) apply now, otherwise onload does.
+            if (imgElement.complete && imgElement.naturalWidth) {
+              fabricImg.applyFilters();
+            }
+          }
 
           imgElement.onload = () => {
             if (this.canvas && fabricImg && imgElement.naturalWidth) {
               fabricImg.set(cropGeometry(imgElement.naturalWidth, imgElement.naturalHeight));
+              if (adjustmentFilters.length > 0) fabricImg.applyFilters();
               this.canvas.renderAll();
             }
           };

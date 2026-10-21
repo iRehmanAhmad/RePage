@@ -43,6 +43,9 @@ export function canonicalToTiptapHtml(doc: RichTextDocument): string {
       const dirAttr = para.direction ? ` dir="${para.direction}"` : ' dir="rtl"';
       const alignAttr = para.alignment ? ` style="text-align: ${para.alignment};"` : '';
       const breakBeforeAttr = para.pageBreakBefore ? ' data-page-break-before="true"' : '';
+      const justModeAttr = para.justificationMode
+        ? ` data-justification-mode="${para.justificationMode}"`
+        : '';
 
       const inlineHtml = para.content
         .map((inline) => {
@@ -81,7 +84,7 @@ export function canonicalToTiptapHtml(doc: RichTextDocument): string {
         })
         .join('');
 
-      return `<p${dirAttr}${alignAttr}${breakBeforeAttr}>${inlineHtml}</p>`;
+      return `<p${dirAttr}${alignAttr}${breakBeforeAttr}${justModeAttr}>${inlineHtml}</p>`;
     })
     .join('');
 }
@@ -193,6 +196,10 @@ export function tiptapHtmlToCanonical(
         alignment: 'start' as const,
         pageBreakBefore:
           pEl.getAttribute('data-page-break-before') === 'true' ? true : undefined,
+        justificationMode: ((): 'space' | 'kashida' | undefined => {
+          const mode = pEl.getAttribute('data-justification-mode');
+          return mode === 'kashida' || mode === 'space' ? mode : undefined;
+        })(),
         content: runs.length > 0 ? runs : [],
       },
     };

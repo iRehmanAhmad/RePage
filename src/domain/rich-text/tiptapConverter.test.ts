@@ -53,6 +53,43 @@ describe('Tiptap HTML & Canonical Converter (Phase UX-2)', () => {
     expect(roundtripDoc.content[1]!.direction).toBe('ltr');
   });
 
+  it('round-trips the paragraph justification mode through the editor HTML', () => {
+    const originalDoc: RichTextDocument = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          direction: 'rtl',
+          alignment: 'justify',
+          justificationMode: 'kashida',
+          content: [{ type: 'text', text: 'کشیدہ پیراگراف' }],
+        },
+        {
+          type: 'paragraph',
+          direction: 'rtl',
+          alignment: 'justify',
+          justificationMode: 'space',
+          content: [{ type: 'text', text: 'فاصلہ پیراگراف' }],
+        },
+        {
+          type: 'paragraph',
+          direction: 'rtl',
+          alignment: 'start',
+          content: [{ type: 'text', text: 'عام پیراگراف' }],
+        },
+      ],
+    };
+
+    const html = canonicalToTiptapHtml(originalDoc);
+    expect(html).toContain('data-justification-mode="kashida"');
+    expect(html).toContain('data-justification-mode="space"');
+
+    const roundtripDoc = tiptapHtmlToCanonical(html);
+    expect(roundtripDoc.content[0]!.justificationMode).toBe('kashida');
+    expect(roundtripDoc.content[1]!.justificationMode).toBe('space');
+    expect(roundtripDoc.content[2]!.justificationMode).toBeUndefined();
+  });
+
   it('reassembles a paragraph split between visual page containers without adding a paragraph break', () => {
     const pagedHtml = [
       '<section data-repage-page="true"><p dir="rtl" data-repage-fragment="start">First half </p></section>',

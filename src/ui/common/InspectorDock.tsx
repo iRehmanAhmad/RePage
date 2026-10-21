@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
-import type { ImageCropInsets, PageObject, RePageDocument } from '../../domain/document/types';
+import type { ImageAdjustments, ImageCropInsets, PageObject, RePageDocument, TextOnPathConfig } from '../../domain/document/types';
 import { MAX_IMAGE_CROP_INSET } from '../../domain/geometry/imageCrop';
+import { NEUTRAL_IMAGE_ADJUSTMENTS } from '../../domain/geometry/imageAdjustments';
 import { pointsToMillimetres } from '../../domain/geometry/units';
 import type { Translations } from '../i18n/menuTranslation';
 import { AppIcon } from '../icons/AppIcon';
@@ -19,6 +20,10 @@ export interface InspectorDockProps {
   ) => void;
   /** Sets (or clears, with null) the non-destructive crop of an image frame. */
   onUpdateImageCrop?: (objectId: string, crop: ImageCropInsets | null) => void;
+  /** Sets (or clears, with null) the brightness/contrast/mirror of an image frame. */
+  onUpdateImageAdjustments?: (objectId: string, adjustments: ImageAdjustments | null) => void;
+  /** Sets (or clears, with null) a text frame's text-on-a-circle configuration. */
+  onUpdateTextOnPath?: (objectId: string, config: TextOnPathConfig | null) => void;
   isOpen?: boolean | undefined;
   onClose?: (() => void) | undefined;
   width?: number | undefined;
@@ -32,6 +37,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   onUpdateGeometry,
   onUpdateShapeStyle,
   onUpdateImageCrop,
+  onUpdateImageAdjustments,
+  onUpdateTextOnPath,
   isOpen = true,
   onClose,
   width = 260,
@@ -329,6 +336,162 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {/* Image Adjustments (brightness / contrast / mirror, non-destructive) */}
+            {selectedObject.type === 'image-frame' && onUpdateImageAdjustments && (
+              <div className="space-y-card" style={{ marginTop: '12px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+                <div className="flex-between mb-2">
+                  <span className="field-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
+                    {t.inspImageAdjustments}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateImageAdjustments(selectedObject.id, null)}
+                    style={{
+                      padding: '2px 8px',
+                      fontSize: '11px',
+                      backgroundColor: '#1e293b',
+                      border: '1px solid #334155',
+                      borderRadius: '4px',
+                      color: '#e2e8f0',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.adjReset}
+                  </button>
+                </div>
+                {(
+                  [
+                    ['brightness', t.adjBrightness],
+                    ['contrast', t.adjContrast],
+                  ] as const
+                ).map(([key, label]) => {
+                  const adj = selectedObject.adjustments ?? NEUTRAL_IMAGE_ADJUSTMENTS;
+                  return (
+                    <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                      <div className="flex-between">
+                        <label style={{ fontSize: '11px', color: '#94a3b8' }}>{label}</label>
+                        <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{adj[key]}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={200}
+                        value={adj[key]}
+                        onChange={(e) =>
+                          onUpdateImageAdjustments(selectedObject.id, {
+                            ...adj,
+                            [key]: Number(e.target.value),
+                          })
+                        }
+                        className="range-slider"
+                      />
+                    </div>
+                  );
+                })}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                  {(
+                    [
+                      ['flipH', t.adjMirrorH],
+                      ['flipV', t.adjMirrorV],
+                    ] as const
+                  ).map(([key, label]) => {
+                    const adj = selectedObject.adjustments ?? NEUTRAL_IMAGE_ADJUSTMENTS;
+                    const active = adj[key];
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() =>
+                          onUpdateImageAdjustments(selectedObject.id, {
+                            ...adj,
+                            [key]: !adj[key],
+                          })
+                        }
+                        style={{
+                          flex: 1,
+                          padding: '4px 6px',
+                          fontSize: '11px',
+                          backgroundColor: active ? '#0369a1' : '#1e293b',
+                          border: '1px solid #334155',
+                          borderRadius: '4px',
+                          color: '#e2e8f0',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {/* Text on a Circle (stamps / logos, for Text Frames) */}
+            {selectedObject.type === 'text-frame' && onUpdateTextOnPath && (
+              <div className="space-y-card" style={{ marginTop: '12px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+                <span className="field-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
+                  {t.inspTextOnCircle}
+                </span>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginTop: '8px', fontSize: '11px', color: '#cbd5e1' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!selectedObject.textOnPath}
+                    onChange={(e) =>
+                      onUpdateTextOnPath(
+                        selectedObject.id,
+                        e.target.checked
+                          ? {
+                              kind: 'circle',
+                              startAngleDeg: selectedObject.textOnPath?.startAngleDeg ?? 0,
+                              flip: selectedObject.textOnPath?.flip ?? false,
+                            }
+                          : null,
+                      )
+                    }
+                    style={{ accentColor: '#38bdf8' }}
+                  />
+                  <span>{t.circleTextEnable}</span>
+                </label>
+                {selectedObject.textOnPath && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                      <div className="flex-between">
+                        <label style={{ fontSize: '11px', color: '#94a3b8' }}>{t.circleTextStartAngle}</label>
+                        <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>
+                          {Math.round(selectedObject.textOnPath.startAngleDeg)}°
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={359}
+                        value={Math.round(selectedObject.textOnPath.startAngleDeg)}
+                        onChange={(e) =>
+                          onUpdateTextOnPath(selectedObject.id, {
+                            ...selectedObject.textOnPath!,
+                            startAngleDeg: Number(e.target.value),
+                          })
+                        }
+                        className="range-slider"
+                      />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginTop: '8px', fontSize: '11px', color: '#cbd5e1' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedObject.textOnPath.flip}
+                        onChange={(e) =>
+                          onUpdateTextOnPath(selectedObject.id, {
+                            ...selectedObject.textOnPath!,
+                            flip: e.target.checked,
+                          })
+                        }
+                        style={{ accentColor: '#38bdf8' }}
+                      />
+                      <span>{t.circleTextFlip}</span>
+                    </label>
+                  </>
+                )}
               </div>
             )}
           </div>

@@ -135,8 +135,21 @@ export interface ParagraphNode {
    * documents written before this field existed stay valid unchanged.
    */
   pageBreakBefore?: boolean | undefined;
+  /**
+   * Justification strategy when `alignment` is 'justify': 'space' widens
+   * the word gaps (the Latin/Word default); 'kashida' stretches joinable
+   * Arabic letters with tatweel at render time (the InPage behavior).
+   * Absent = default ('kashida' for RTL paragraphs, 'space' for LTR).
+   * Rendering-only — the stored text is never stretched with tatweels;
+   * DOCX export maps it to Word's native kashida justification (w:jc).
+   * See domain/layout/kashida.ts.
+   */
+  justificationMode?: JustificationMode | undefined;
   content: InlineNode[];
 }
+
+/** Justification strategy of a justified paragraph. See ParagraphNode. */
+export type JustificationMode = 'space' | 'kashida';
 
 export interface RichTextDocument {
   type: 'doc';
@@ -210,6 +223,7 @@ export const paragraphNodeSchema = z.object({
   backgroundColor: z.string().optional(),
   border: paragraphBorderSchema.optional(),
   pageBreakBefore: z.boolean().optional(),
+  justificationMode: z.enum(['space', 'kashida']).optional(),
   content: z.array(inlineNodeSchema),
 });
 

@@ -169,6 +169,30 @@ commandRegistry.register({
 });
 
 commandRegistry.register({
+  id: 'layout.setParagraphJustificationMode',
+  label: 'Paragraph Justification Mode (Space / Kashida)',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'format.setImageAdjustments',
+  label: 'Image Adjustments (Brightness / Contrast / Mirror)',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
+  id: 'format.setTextOnPath',
+  label: 'Text on a Circle',
+  category: 'format',
+  isUndoable: true,
+  execute: () => {},
+});
+
+commandRegistry.register({
   id: 'layout.updateSectionColumns',
   label: 'Section Columns',
   category: 'format',

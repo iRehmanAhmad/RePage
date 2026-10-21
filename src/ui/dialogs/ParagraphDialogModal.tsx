@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppIcon } from '../icons/AppIcon';
-import type { TextAlignment, TextDirection } from '../../domain/rich-text/types';
+import type { JustificationMode, TextAlignment, TextDirection } from '../../domain/rich-text/types';
 import type { Translations } from '../i18n/menuTranslation';
 
 export interface ParagraphProps {
@@ -14,6 +14,8 @@ export interface ParagraphProps {
   backgroundColor?: string | undefined;
   /** Paragraph starts at the top of the next page (canonical pageBreakBefore). */
   pageBreakBefore?: boolean | undefined;
+  /** Justification strategy for justified paragraphs (canonical justificationMode). */
+  justificationMode?: JustificationMode | undefined;
 }
 
 export interface ParagraphDialogModalProps {
@@ -44,12 +46,18 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
   const [pageBreakBefore, setPageBreakBefore] = useState<boolean>(
     currentProps.pageBreakBefore ?? false,
   );
+  const [justificationMode, setJustificationMode] = useState<JustificationMode>(
+    currentProps.justificationMode ?? 'kashida',
+  );
 
-  // The dialog stays mounted while closed; re-read the flag from the
+  // The dialog stays mounted while closed; re-read the flags from the
   // current paragraph each time it opens.
   React.useEffect(() => {
-    if (isOpen) setPageBreakBefore(currentProps.pageBreakBefore ?? false);
-  }, [isOpen, currentProps.pageBreakBefore]);
+    if (isOpen) {
+      setPageBreakBefore(currentProps.pageBreakBefore ?? false);
+      setJustificationMode(currentProps.justificationMode ?? 'kashida');
+    }
+  }, [isOpen, currentProps.pageBreakBefore, currentProps.justificationMode]);
 
   if (!isOpen) return null;
 
@@ -63,6 +71,7 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
       indentLevel,
       firstLineIndent,
       pageBreakBefore,
+      justificationMode,
     });
     onClose();
   };
@@ -159,6 +168,18 @@ export const ParagraphDialogModal: React.FC<ParagraphDialogModalProps> = ({
                 >
                   <option value="rtl" style={optionStyle}>{t.dlgParaRtl}</option>
                   <option value="ltr" style={optionStyle}>{t.dlgParaLtr}</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#cbd5e1' }}>{t.dlgParaJustification}</label>
+                <select
+                  value={justificationMode}
+                  onChange={(e) => setJustificationMode(e.target.value as JustificationMode)}
+                  disabled={alignment !== 'justify'}
+                  style={fieldInputStyle}
+                >
+                  <option value="kashida" style={optionStyle}>{t.dlgParaJustKashida}</option>
+                  <option value="space" style={optionStyle}>{t.dlgParaJustSpace}</option>
                 </select>
               </div>
             </div>

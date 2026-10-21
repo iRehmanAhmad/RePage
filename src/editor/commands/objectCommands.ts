@@ -1,6 +1,7 @@
 import type { RichTextDocument } from '../../domain/rich-text/types';
-import type { ImageCropInsets, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextWrapMode, AssetReference } from '../../domain/document/types';
+import type { ImageAdjustments, ImageCropInsets, PageId, PageObject, RePageDocument, TableCell, TableObject, TableRow, TextOnPathConfig, TextWrapMode, AssetReference } from '../../domain/document/types';
 import { clampImageCropInsets, isImageCropEmpty } from '../../domain/geometry/imageCrop';
+import { clampImageAdjustments, isImageAdjustmentsNeutral } from '../../domain/geometry/imageAdjustments';
 import { createId } from '../../domain/document/ids';
 import { paragraph } from '../../domain/rich-text/types';
 import type { OcrPageResult } from '../../domain/ocr/ocrEngine';
@@ -160,6 +161,80 @@ export function setImageCropCommand(
       [objectId]: {
         ...obj,
         crop: nextCrop,
+      },
+    },
+  };
+}
+
+/**
+ * Sets (or clears, with null / all-neutral values) the non-destructive
+ * image adjustments of an image frame: brightness/contrast percentages
+ * and horizontal/vertical mirroring. Percentages are clamped to the
+ * schema range (0–200). Neutral adjustments remove the field entirely so
+ * saved documents stay minimal; asset bytes are never touched.
+ */
+export function setImageAdjustmentsCommand(
+  doc: RePageDocument,
+  objectId: string,
+  adjustments: ImageAdjustments | null,
+): RePageDocument {
+  const obj = doc.objects[objectId];
+  if (!obj || obj.type !== 'image-frame') return doc;
+
+  const next =
+    adjustments && !isImageAdjustmentsNeutral(adjustments)
+      ? clampImageAdjustments(adjustments)
+      : undefined;
+  if (next === obj.adjustments) return doc;
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [objectId]: {
+        ...obj,
+        adjustments: next,
+      },
+    },
+  };
+}
+
+/**
+ * Sets (or clears, with null) a text frame's text-on-a-circle
+ * configuration. The start angle is normalized into [0, 360). The story
+ * text itself is untouched — the ring is a rendering mode of the frame,
+ * so editing stays the normal story editing.
+ */
+export function setTextOnPathCommand(
+  doc: RePageDocument,
+  objectId: string,
+  config: TextOnPathConfig | null,
+): RePageDocument {
+  const obj = doc.objects[objectId];
+  if (!obj || obj.type !== 'text-frame') return doc;
+
+  const next: TextOnPathConfig | undefined = config
+    ? {
+        kind: 'circle',
+        startAngleDeg: ((config.startAngleDeg % 360) + 360) % 360,
+        flip: config.flip === true,
+      }
+    : undefined;
+  if (
+    next?.startAngleDeg === obj.textOnPath?.startAngleDeg &&
+    next?.flip === obj.textOnPath?.flip &&
+    (next === undefined) === (obj.textOnPath === undefined)
+  ) {
+    return doc;
+  }
+
+  return {
+    ...doc,
+    objects: {
+      ...doc.objects,
+      [objectId]: {
+        ...obj,
+        textOnPath: next,
       },
     },
   };

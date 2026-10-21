@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppIcon } from '../ui/icons/AppIcon';
 import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import { createId } from '../domain/document/ids';
-import type { AssetReference, ImageCropInsets, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, TextFrameObject, ViewMode } from '../domain/document/types';
+import type { AssetReference, ImageAdjustments, ImageCropInsets, ImageFrameObject, Insets, Page, PageObject, RePageDocument, ShapeKind, TextFrameObject, TextOnPathConfig, ViewMode } from '../domain/document/types';
 import type { TextAlignment, TextDirection } from '../domain/rich-text/types';
 import { paragraph } from '../domain/rich-text/types';
 import { isSpellcheckEnabled, setDocumentIgnoredWords, setSpellcheckEnabled } from '../domain/language/spellcheckSettings';
@@ -26,8 +26,10 @@ import {
   insertTableColumn,
   insertTableRow,
   reorderPageObject,
+  setImageAdjustmentsCommand,
   setImageCropCommand,
   setObjectWrapping,
+  setTextOnPathCommand,
   updateTableCell,
 } from '../editor/commands/objectCommands';
 import {
@@ -122,6 +124,7 @@ import { AccessibilitySettingsModal } from '../ui/dialogs/AccessibilitySettingsM
 import { loadAccessibilitySettings, type AccessibilitySettings } from '../domain/diagnostics/accessibilitySettings';
 import type { EditMode } from '../domain/document/trackChangesEngine';
 import { addBookmarkCommand, insertTocCommand, addFootnoteCommand, addEndnoteCommand } from '../editor/commands/longDocumentCommands';
+import { setParagraphJustificationModeCommand } from '../editor/commands/storyBreakCommands';
 import { addCaptionToObject } from '../domain/document/captionEngine';
 import { buildIndexRichTextDocument, generateSubjectIndex } from '../domain/document/indexEngine';
 import {
@@ -654,6 +657,28 @@ export function App() {
       const next = setImageCropCommand(document, objectId, crop);
       if (next !== document) {
         updateDocument(next, crop ? 'Crop image' : 'Reset image crop');
+      }
+    },
+    [document, updateDocument],
+  );
+
+  // --- Image adjustments (non-destructive; mutation only via the command) ---
+  const handleUpdateImageAdjustments = React.useCallback(
+    (objectId: string, adjustments: ImageAdjustments | null) => {
+      const next = setImageAdjustmentsCommand(document, objectId, adjustments);
+      if (next !== document) {
+        updateDocument(next, adjustments ? 'Adjust image' : 'Reset image adjustments');
+      }
+    },
+    [document, updateDocument],
+  );
+
+  // --- Text on a circle (rendering mode; mutation only via the command) -----
+  const handleUpdateTextOnPath = React.useCallback(
+    (objectId: string, config: TextOnPathConfig | null) => {
+      const next = setTextOnPathCommand(document, objectId, config);
+      if (next !== document) {
+        updateDocument(next, config ? 'Text on a circle' : 'Remove circle text');
       }
     },
     [document, updateDocument],
@@ -1314,6 +1339,37 @@ export function App() {
     [document, getTargetStoryId, updateDocument],
   );
 
+  /**
+   * Kashida toggle (ribbon): switches the justification MODE of the
+   * target story's paragraphs between 'kashida' (stretch letters) and
+   * 'space' (widen word gaps). Rendering-only — stored text never
+   * changes. Persisted through the command; the live editor paragraph
+   * attribute is updated in step so the paged view re-renders.
+   */
+  const handleToggleKashida = React.useCallback(() => {
+    const nextEnabled = !isKashidaEnabled;
+    setIsKashidaEnabled(nextEnabled);
+    const mode = nextEnabled ? ('kashida' as const) : ('space' as const);
+    if (activeEditorRef.current) {
+      activeEditorRef.current
+        .chain()
+        .focus()
+        .updateAttributes('paragraph', { justificationMode: mode })
+        .run();
+    }
+    const storyId = getTargetStoryId();
+    const story = document.stories[storyId];
+    if (story) {
+      let nextDoc = document;
+      story.content.content.forEach((_, index) => {
+        nextDoc = setParagraphJustificationModeCommand(nextDoc, storyId, index, mode);
+      });
+      if (nextDoc !== document) {
+        updateDocument(nextDoc, `Set justification mode to ${mode}`);
+      }
+    }
+  }, [isKashidaEnabled, document, getTargetStoryId, updateDocument]);
+
   const handleChangeCase = React.useCallback(
     (mode: 'sentence' | 'lowercase' | 'uppercase' | 'capitalize' | 'toggle') => {
       setMessage(`Changed case to ${mode}`);
@@ -1344,6 +1400,7 @@ export function App() {
   const [paragraphShading, setParagraphShading] = useState<string | null>(null);
   const [showParagraphDialog, setShowParagraphDialog] = useState(false);
   const [paragraphPageBreakBefore, setParagraphPageBreakBefore] = useState(false);
+  const [paragraphJustificationMode, setParagraphJustificationMode] = useState<'space' | 'kashida'>('kashida');
 
   const handleToggleBulletList = React.useCallback(() => {
     if (activeEditorRef.current) {
@@ -1980,7 +2037,7 @@ export function App() {
           onClearFormatting={handleClearFormatting}
           onOpenFontDialog={() => setShowFontDialog(true)}
           isKashidaEnabled={isKashidaEnabled}
-          onToggleKashida={() => setIsKashidaEnabled(!isKashidaEnabled)}
+          onToggleKashida={handleToggleKashida}
           activeAlignment={activeAlignment}
           onAlignmentChange={handleAlignmentChange}
           activeDirection={activeDirection}
@@ -2008,6 +2065,9 @@ export function App() {
             // with the current value.
             const attrs = activeEditorRef.current?.getAttributes('paragraph');
             setParagraphPageBreakBefore(attrs?.pageBreakBefore === true);
+            setParagraphJustificationMode(
+              attrs?.justificationMode === 'space' ? 'space' : 'kashida',
+            );
             setShowParagraphDialog(true);
           }}
           activeStyleId={activeStyleId}
@@ -2525,6 +2585,8 @@ export function App() {
             onUpdateGeometry={(objectId, coords) => handleObjectModified(objectId, coords)}
             onUpdateShapeStyle={handleUpdateShapeStyle}
             onUpdateImageCrop={handleUpdateImageCrop}
+            onUpdateImageAdjustments={handleUpdateImageAdjustments}
+            onUpdateTextOnPath={handleUpdateTextOnPath}
             isOpen={isInspectorOpen}
             onClose={() => setIsInspectorOpen(false)}
             width={inspectorWidth}
@@ -3059,12 +3121,14 @@ export function App() {
             firstLineIndent: 0,
             backgroundColor: paragraphShading || undefined,
             pageBreakBefore: paragraphPageBreakBefore,
+            justificationMode: paragraphJustificationMode,
           }}
           onApply={(props) => {
             setActiveAlignment(props.alignment);
             setActiveDirection(props.direction);
             setLineHeight(props.lineHeight);
             setParagraphPageBreakBefore(props.pageBreakBefore ?? false);
+            setParagraphJustificationMode(props.justificationMode ?? 'kashida');
             if (activeEditorRef.current) {
               const editor = activeEditorRef.current;
               const attrs: Record<string, any> = {
@@ -3079,6 +3143,7 @@ export function App() {
                 .updateAttributes('paragraph', {
                   ...attrs,
                   pageBreakBefore: props.pageBreakBefore ? true : null,
+                  justificationMode: props.justificationMode ?? null,
                 })
                 .run();
               editor.chain().focus().updateAttributes('heading', attrs).run();

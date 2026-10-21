@@ -1832,14 +1832,14 @@ export const MsWordRibbon: React.FC<MsWordRibbonProps & { activeTab?: RibbonTab;
                         }}
                       >
                         <button
-                          onClick={() => { onAlignmentChange?.('justify'); setShowJustifyMenu(false); }}
+                          onClick={() => { onAlignmentChange?.('justify'); if (isKashidaEnabled) onToggleKashida?.(); setShowJustifyMenu(false); }}
                           className="ribbon-menu-item"
                           style={{ width: '100%', padding: '6px 12px', border: 'none', background: activeAlignment === 'justify' && !isKashidaEnabled ? 'rgba(16, 185, 129, 0.15)' : 'transparent', color: activeAlignment === 'justify' && !isKashidaEnabled ? 'var(--emerald-accent)' : 'var(--text-main)', cursor: 'pointer', textAlign: 'left' }}
                         >
                           {t.standardJustify}
                         </button>
                         <button
-                          onClick={() => { onAlignmentChange?.('justify'); onToggleKashida?.(); setShowJustifyMenu(false); }}
+                          onClick={() => { onAlignmentChange?.('justify'); if (!isKashidaEnabled) onToggleKashida?.(); setShowJustifyMenu(false); }}
                           className="ribbon-menu-item"
                           disabled={activeDirection !== 'rtl'}
                           title={activeDirection !== 'rtl' ? 'Kashida is available for Urdu/Arabic (RTL) text' : 'Toggle Urdu Kashida cursive justification'}

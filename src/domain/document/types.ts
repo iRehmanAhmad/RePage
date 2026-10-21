@@ -91,6 +91,20 @@ export interface ImageCropInsets {
   bottom: number;
 }
 
+/**
+ * Non-destructive image adjustments for an image frame: brightness and
+ * contrast as percentages (100 = untouched, range 0–200) and horizontal /
+ * vertical mirroring. Like crop, this is a display transform stored on
+ * the frame — the stored asset bytes are never altered. Absent (or all
+ * values at their defaults) = untouched.
+ */
+export interface ImageAdjustments {
+  brightness: number;
+  contrast: number;
+  flipH: boolean;
+  flipV: boolean;
+}
+
 interface BasePageObject {
   id: ObjectId;
   pageId: PageId;
@@ -106,9 +120,24 @@ interface BasePageObject {
   rotation?: number | undefined;
 }
 
+/**
+ * Text-on-a-path configuration for a text frame. Scope: a single
+ * circular ring (stamps, seals, logos, badges). The frame's size sets
+ * the circle (inscribed in the frame, minus padding); `startAngleDeg`
+ * rotates the ring clockwise from its anchor (top, or bottom when
+ * `flip` is set); `flip` selects the bottom-arc badge style where glyph
+ * "up" points toward the center so the text is not upside down.
+ */
+export interface TextOnPathConfig {
+  kind: 'circle';
+  startAngleDeg: number;
+  flip: boolean;
+}
+
 export interface TextFrameObject extends BasePageObject {
   type: 'text-frame';
   storyId: StoryId;
+  textOnPath?: TextOnPathConfig | undefined;
   fontFamily: string;
   fontSize: number;
   color: string;
@@ -155,6 +184,7 @@ export interface ImageFrameObject extends BasePageObject {
   assetId: AssetId | null;
   fit: 'contain' | 'cover' | 'stretch';
   crop?: ImageCropInsets | undefined;
+  adjustments?: ImageAdjustments | undefined;
 }
 
 export interface TableCell {
@@ -210,7 +240,7 @@ export type ViewMode = 'print' | 'web' | 'draft';
 export type SectionBreakType = 'next-page' | 'continuous' | 'odd-page' | 'even-page';
 
 export interface PageNumberingSettings {
-  style: 'urdu' | 'western' | 'abjad';
+  style: 'urdu' | 'western' | 'abjad' | 'roman' | 'roman-upper' | 'urdu-letters';
   startAt: number;
   restartAtSection: boolean;
   prefix: string;

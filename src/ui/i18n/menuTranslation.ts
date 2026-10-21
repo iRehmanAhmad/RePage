@@ -139,6 +139,18 @@ export interface Translations {
   cropInsetBottom: string;
   cropReset: string;
 
+  // Image adjustments + circle text (inspector)
+  inspImageAdjustments: string;
+  adjBrightness: string;
+  adjContrast: string;
+  adjMirrorH: string;
+  adjMirrorV: string;
+  adjReset: string;
+  inspTextOnCircle: string;
+  circleTextEnable: string;
+  circleTextStartAngle: string;
+  circleTextFlip: string;
+
   // Print page range (Export dialog + backstage)
   printRangeAll: string;
   printRangeCurrent: string;
@@ -246,6 +258,12 @@ export interface Translations {
   dlgParaWidowOrphan: string;
   dlgParaKeepWithNext: string;
   dlgParaPageBreakBefore: string;
+  /** Paragraph dialog: justification-mode select label. */
+  dlgParaJustification: string;
+  /** Paragraph dialog: kashida justification option. */
+  dlgParaJustKashida: string;
+  /** Paragraph dialog: space justification option. */
+  dlgParaJustSpace: string;
 
   // Borders menu
   mnuBorderBottom: string;
@@ -501,6 +519,17 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     cropInsetBottom: 'نیچے سے',
     cropReset: 'تراش ختم کریں',
 
+    inspImageAdjustments: 'تصویر کی روشنی و آئینہ',
+    adjBrightness: 'روشنی',
+    adjContrast: 'کنٹراسٹ',
+    adjMirrorH: 'افقی آئینہ',
+    adjMirrorV: 'عمودی آئینہ',
+    adjReset: 'ایڈجسٹمنٹ ختم کریں',
+    inspTextOnCircle: 'دایرے پر متن',
+    circleTextEnable: 'متن دایرے پر لکھیں',
+    circleTextStartAngle: 'ابتدائی زاویہ',
+    circleTextFlip: 'نچلے حصے کی سمت الٹیں',
+
     printRangeAll: 'تمام صفحات',
     printRangeCurrent: 'موجودہ صفحہ',
     printRangeCustom: 'حسب ضرورت دائرہ',
@@ -602,6 +631,9 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     dlgParaWidowOrphan: 'اکیلی سطر کا کنٹرول',
     dlgParaKeepWithNext: 'اگلے پیراگراف کے ساتھ رکھیں',
     dlgParaPageBreakBefore: 'اس پیراگراف سے پہلے صفحہ بریک',
+    dlgParaJustification: 'جسٹیفکیشن کا طریقہ',
+    dlgParaJustKashida: 'کشیدہ (حروف کو کھینچنا)',
+    dlgParaJustSpace: 'فاصلہ (لفظوں کے درمیان جگہ)',
 
     mnuBorderBottom: 'نچلا کنارہ',
     mnuBorderTop: 'اوپری کنارہ',
@@ -848,6 +880,17 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     cropInsetBottom: 'Bottom Edge',
     cropReset: 'Reset Crop',
 
+    inspImageAdjustments: 'Image Adjustments',
+    adjBrightness: 'Brightness',
+    adjContrast: 'Contrast',
+    adjMirrorH: 'Mirror Horizontal',
+    adjMirrorV: 'Mirror Vertical',
+    adjReset: 'Reset Adjustments',
+    inspTextOnCircle: 'Text on Circle',
+    circleTextEnable: 'Put text on a circle',
+    circleTextStartAngle: 'Start Angle',
+    circleTextFlip: 'Flip to bottom arc',
+
     printRangeAll: 'All Pages',
     printRangeCurrent: 'Current Page',
     printRangeCustom: 'Custom Range',
@@ -949,6 +992,9 @@ export const DICTIONARY: Record<UiLanguage, Translations> = {
     dlgParaWidowOrphan: 'Widow/Orphan control',
     dlgParaKeepWithNext: 'Keep with next paragraph',
     dlgParaPageBreakBefore: 'Page break before',
+    dlgParaJustification: 'Justification mode',
+    dlgParaJustKashida: 'Kashida (stretch letters)',
+    dlgParaJustSpace: 'Space (widen word gaps)',
 
     mnuBorderBottom: 'Bottom Border',
     mnuBorderTop: 'Top Border',

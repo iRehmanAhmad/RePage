@@ -33,6 +33,15 @@ import {
   getSectionPageNumberString,
 } from '../domain/unicode/pageNumbering';
 import { cropFrameLayout, isImageCropEmpty } from '../domain/geometry/imageCrop';
+import { imageCssFilter, imageFlipScale } from '../domain/geometry/imageAdjustments';
+import { layoutCircleText } from '../domain/geometry/circleText';
+import {
+  layoutKashidaLines,
+  paragraphPlainText,
+  paragraphUsesKashida,
+} from '../domain/layout/kashida';
+import type { ParagraphNode } from '../domain/rich-text/types';
+import type { TextFrameObject } from '../domain/document/types';
 import type { ExportPageRange } from './types';
 
 export const PRINT_ROOT_CLASS = 'repage-print-root';
@@ -162,6 +171,116 @@ function paragraphText(para: PrintParagraph): string {
 
 function fontStackFor(doc: RePageDocument): string {
   return doc.metadata.locale === 'ur-PK' ? URDU_FONT_STACK : LATIN_FONT_STACK;
+}
+
+/**
+ * Text-width measurer for print layout math, returning widths in
+ * POINTS to match the print geometry (the print DOM is laid out in pt).
+ * The 2D canvas is configured with the font size in pt; measureText
+ * reports CSS px, which convert back to pt at 72/96. Without a canvas
+ * (headless runs/tests) a deterministic average-glyph heuristic is used
+ * so results stay reproducible.
+ */
+export function createPrintTextMeasurer(
+  fontFamily: string,
+  fontSizePt: number,
+): (text: string) => number {
+  let ctx: CanvasRenderingContext2D | null = null;
+  try {
+    ctx = document.createElement('canvas').getContext('2d');
+  } catch {
+    ctx = null;
+  }
+  if (ctx) ctx.font = `${fontSizePt}pt ${fontFamily}`;
+  const cache = new Map<string, number>();
+  return (text: string): number => {
+    const cached = cache.get(text);
+    if (cached !== undefined) return cached;
+    const width = ctx
+      ? ctx.measureText(text).width * (72 / 96)
+      : text.length * fontSizePt * 0.45;
+    cache.set(text, width);
+    return width;
+  };
+}
+
+/**
+ * Renders one kashida-justified paragraph as pre-wrapped line divs
+ * (tatweels inserted into RENDER text only — the canonical paragraph
+ * is never modified). Returns false when the paragraph does not use
+ * kashida, so the caller keeps its normal rendering.
+ */
+function appendKashidaParagraph(
+  parent: HTMLElement,
+  paragraph: ParagraphNode,
+  maxWidthPt: number,
+  measure: (text: string) => number,
+  marginBottomPt: number,
+): boolean {
+  if (!paragraphUsesKashida(paragraph)) return false;
+  const text = paragraphPlainText(paragraph);
+  if (!text.trim()) return false;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'repage-kashida-paragraph';
+  wrapper.style.margin = `0 0 ${marginBottomPt}pt 0`;
+  for (const line of layoutKashidaLines(text, maxWidthPt, measure)) {
+    const lineEl = document.createElement('div');
+    lineEl.className = 'repage-kashida-line';
+    lineEl.textContent = line.renderText;
+    if (line.wordSpacing > 0.01) {
+      lineEl.style.wordSpacing = `${line.wordSpacing.toFixed(2)}pt`;
+    }
+    wrapper.appendChild(lineEl);
+  }
+  parent.appendChild(wrapper);
+  return true;
+}
+
+/**
+ * Renders a text frame's story as glyphs on a circle (stamps/logos)
+ * into the given frame element, using the same shared geometry helper
+ * as the canvas renderer. Returns true when the ring was rendered.
+ */
+function renderCircleTextIntoFrame(
+  frameEl: HTMLElement,
+  obj: TextFrameObject,
+  story: TextStory,
+  fontStack: string,
+): boolean {
+  if (!obj.textOnPath) return false;
+  const ringText = (story.content?.content || [])
+    .map((p) => (p.content || []).map((n) => (n.type === 'text' ? n.text || '' : '')).join(''))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!ringText) return false;
+
+  const padX = (obj.padding.left + obj.padding.right) / 2;
+  const radius = Math.max(1, Math.min(obj.frame.width, obj.frame.height) / 2 - padX);
+  const measure = createPrintTextMeasurer(obj.fontFamily || fontStack, obj.fontSize);
+  const layout = layoutCircleText(ringText, {
+    cx: obj.frame.width / 2,
+    cy: obj.frame.height / 2,
+    radius,
+    startAngleDeg: obj.textOnPath.startAngleDeg,
+    flip: obj.textOnPath.flip,
+    rtl: story.content?.content?.[0]?.direction !== 'ltr',
+    measure,
+  });
+
+  frameEl.setAttribute('data-circle-text', 'true');
+  for (const seg of layout.segments) {
+    const span = document.createElement('span');
+    span.className = 'repage-circle-glyph';
+    span.style.position = 'absolute';
+    span.style.left = `${seg.x}pt`;
+    span.style.top = `${seg.y}pt`;
+    span.style.transform = `translate(-50%, -50%) rotate(${seg.rotationDeg}deg)`;
+    span.style.whiteSpace = 'pre';
+    span.textContent = seg.text;
+    frameEl.appendChild(span);
+  }
+  return true;
 }
 
 /**
@@ -331,7 +450,22 @@ export function renderPrintPages(
     );
     const paragraphsToRender =
       pageParagraphs.length > 0 ? pageParagraphs : pageIndex === firstSelectedIndex ? storyParagraphs : [];
+    const bodyMeasure = createPrintTextMeasurer(fontStack, 14);
+    const bodyTextWidthPt = page.width - margins.left - margins.right;
     for (const para of paragraphsToRender) {
+      // Kashida-justified paragraphs render as pre-wrapped line divs
+      // (render text only); everything else keeps the flowing <p>.
+      if (
+        appendKashidaParagraph(
+          bodyEl,
+          para as unknown as ParagraphNode,
+          bodyTextWidthPt,
+          bodyMeasure,
+          12,
+        )
+      ) {
+        continue;
+      }
       const p = document.createElement('p');
       p.style.margin = '0 0 12pt 0';
       p.textContent = paragraphText(para);
@@ -364,12 +498,32 @@ export function renderPrintPages(
         frameEl.style.lineHeight = String(obj.lineHeight);
         frameEl.style.direction = isRtl ? 'rtl' : 'ltr';
         frameEl.style.textAlign = isRtl ? 'right' : 'left';
-        const storyParas = (story?.content?.content as PrintParagraph[] | undefined) || [];
-        for (const para of storyParas) {
-          const p = document.createElement('p');
-          p.style.margin = '0 0 8pt 0';
-          p.textContent = paragraphText(para);
-          frameEl.appendChild(p);
+        const renderedRing =
+          story !== undefined && renderCircleTextIntoFrame(frameEl, obj, story, fontStack);
+        if (!renderedRing) {
+          const storyParas = (story?.content?.content as PrintParagraph[] | undefined) || [];
+          const frameMeasure = createPrintTextMeasurer(obj.fontFamily || fontStack, obj.fontSize);
+          const frameTextWidthPt = Math.max(
+            10,
+            obj.frame.width - obj.padding.left - obj.padding.right,
+          );
+          for (const para of storyParas) {
+            if (
+              appendKashidaParagraph(
+                frameEl,
+                para as unknown as ParagraphNode,
+                frameTextWidthPt,
+                frameMeasure,
+                8,
+              )
+            ) {
+              continue;
+            }
+            const p = document.createElement('p');
+            p.style.margin = '0 0 8pt 0';
+            p.textContent = paragraphText(para);
+            frameEl.appendChild(p);
+          }
         }
         objectsEl.appendChild(frameEl);
       } else if (obj.type === 'rectangle') {
@@ -386,6 +540,12 @@ export function renderPrintPages(
       } else if (obj.type === 'image-frame') {
         const asset = obj.assetId ? doc.assets[obj.assetId] : undefined;
         if (asset?.dataUrl) {
+          // Non-destructive adjustments: CSS filter for brightness /
+          // contrast, and mirroring that flips the visible (cropped)
+          // result — the same composition the canvas and DOCX produce.
+          const cssFilter = imageCssFilter(obj.adjustments);
+          const flips = imageFlipScale(obj.adjustments);
+          const hasFlip = flips.scaleX === -1 || flips.scaleY === -1;
           if (!isImageCropEmpty(obj.crop)) {
             // Cropped: clip to the frame and scale the full image so the
             // visible region (source minus insets) exactly fills it — the
@@ -406,8 +566,25 @@ export function renderPrintPages(
             img.style.height = `${layout.imageHeight}pt`;
             img.style.maxWidth = 'none';
             img.style.objectFit = 'fill';
+            if (cssFilter) img.style.filter = cssFilter;
             img.setAttribute('src', asset.dataUrl);
-            clip.appendChild(img);
+            if (hasFlip) {
+              // Mirror the frame's whole visible region: the transform
+              // lives on a frame-sized wrapper so the laid-out (offset,
+              // scaled) image flips inside the frame box, not around its
+              // own larger center.
+              const flipWrap = document.createElement('div');
+              flipWrap.style.position = 'absolute';
+              flipWrap.style.left = '0';
+              flipWrap.style.top = '0';
+              flipWrap.style.width = `${obj.frame.width}pt`;
+              flipWrap.style.height = `${obj.frame.height}pt`;
+              flipWrap.style.transform = `scale(${flips.scaleX}, ${flips.scaleY})`;
+              flipWrap.appendChild(img);
+              clip.appendChild(flipWrap);
+            } else {
+              clip.appendChild(img);
+            }
             objectsEl.appendChild(clip);
           } else {
             const img = document.createElement('img');
@@ -417,6 +594,8 @@ export function renderPrintPages(
             img.style.width = `${obj.frame.width}pt`;
             img.style.height = `${obj.frame.height}pt`;
             img.style.objectFit = obj.fit === 'stretch' ? 'fill' : obj.fit;
+            if (cssFilter) img.style.filter = cssFilter;
+            if (hasFlip) img.style.transform = `scale(${flips.scaleX}, ${flips.scaleY})`;
             img.setAttribute('src', asset.dataUrl);
             objectsEl.appendChild(img);
           }

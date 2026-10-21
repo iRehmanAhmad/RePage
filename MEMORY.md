@@ -59,6 +59,7 @@ Build a modern, easy-to-use, offline-first, cross-platform Urdu desktop-publishi
 - Visual Keyboard: 3-row QWERTY layout, CRULP/Navees/English/Native/Custom modes, Shift toggle, special marks (ZWNJ, ZWJ, RLM, LRM, ﷺ, ؒ, ؓ), centered spacebar, minimize/expand toggle.
 - 109 test files (~306 test cases by grep count; a live vitest run is needed to confirm the exact total — node_modules is not installed in this checkout), strict UTF-8 scanner, and oxlint linter are enforced in `npm run check`.
 - **Break model (Phase 4 batch 10)**: story-level page/column breaks are a zero-width inline atom (`{ type: 'break', breakType }`, sibling of `hardBreak`) honored by pagination, frame-chain flow, the paged editor, print and DOCX; paragraphs support `pageBreakBefore`; sections additionally accept `odd-page`/`even-page` break types whose parity blank is a computed layout artifact (never a stored page), numbered and header/footer-carrying per the previous section.
+- **Batch 11 rendering model**: kashida is a paragraph property (`justificationMode`) but a RENDERING effect only — stored text never gains tatweels; renderers stretch from `domain/layout/kashida.ts` (linked-frame slices excluded). Image `adjustments` and text-frame `textOnPath` (circle) are optional non-destructive records rendered consistently by canvas/print/DOCX from shared helpers in `domain/geometry/`; page-number `abjad` is the true additive system, not digit substitution.
 
 ## Open decisions
 

@@ -5,7 +5,13 @@ import {
   getSectionForPage,
 } from '../layout/sectionEngine';
 
-export type PageNumberStyle = 'urdu' | 'western' | 'abjad';
+export type PageNumberStyle =
+  | 'urdu'
+  | 'western'
+  | 'abjad'
+  | 'roman'
+  | 'roman-upper'
+  | 'urdu-letters';
 
 export interface PageNumberingOptions {
   style?: PageNumberStyle | undefined;
@@ -17,8 +23,6 @@ export interface PageNumberingOptions {
 
 const URDU_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 
-const ABJAD_SYMBOLS = ['ا', 'ب', 'ج', 'د', 'ہ', 'و', 'ز', 'ح', 'ط', 'ی'];
-
 /**
  * Converts ASCII digits (0-9) to Urdu / Eastern Arabic digits (۰-۹).
  */
@@ -27,13 +31,128 @@ export function toUrduNumerals(num: number | string): string {
   return str.replace(/[0-9]/g, (digit) => URDU_DIGITS[parseInt(digit, 10)] ?? digit);
 }
 
+// ---------------------------------------------------------------------------
+// Abjad numerals (حساب الجمل): the traditional additive system used for
+// preface pagination in Urdu/Arabic books. Each letter carries a fixed
+// value; a number is written largest-first (in logical order) as the sum
+// of its letters: 11 = یا (10+1), 25 = کہ (20+5), 365 = شسہ (300+60+5),
+// 2024 = بغکد (2000 + 20 + 4, thousands written as coefficient + غ).
+// ---------------------------------------------------------------------------
+const ABJAD_ONES = ['', 'ا', 'ب', 'ج', 'د', 'ہ', 'و', 'ز', 'ح', 'ط'];
+const ABJAD_TENS = ['', 'ی', 'ک', 'ل', 'م', 'ن', 'س', 'ع', 'ف', 'ص'];
+const ABJAD_HUNDREDS = ['', 'ق', 'ر', 'ش', 'ت', 'ث', 'خ', 'ذ', 'ض', 'ظ'];
+const ABJAD_THOUSAND = 'غ';
+
 /**
- * Converts integer index to Abjad numeral string (1=ا, 2=ب, etc.).
+ * Converts a positive integer to an Abjad numeral string using the
+ * standard additive system (NOT a positional/cyclic letter list).
+ * Values below 1 yield 'ا' (page numbers never go there; this preserves
+ * the historic guard). Values ≥ 1,000,000 fall back to western digits —
+ * the classical system has no agreed million sign and no real book's
+ * pagination reaches it.
  */
 export function toAbjadNumerals(num: number): string {
   if (num <= 0) return 'ا';
-  const index = (num - 1) % ABJAD_SYMBOLS.length;
-  return ABJAD_SYMBOLS[index] ?? 'ا';
+  if (!Number.isFinite(num) || num >= 1_000_000) return String(Math.floor(num));
+
+  let n = Math.floor(num);
+  let out = '';
+
+  const thousands = Math.floor(n / 1000);
+  if (thousands > 0) {
+    // Coefficient letters for 2..9 thousands reuse the ones table
+    // (بغ = 2000); 1000 itself is a bare غ.
+    out += (thousands > 1 ? (ABJAD_ONES[thousands] ?? '') : '') + ABJAD_THOUSAND;
+    n %= 1000;
+  }
+  out += ABJAD_HUNDREDS[Math.floor(n / 100)] ?? '';
+  out += ABJAD_TENS[Math.floor((n % 100) / 10)] ?? '';
+  out += ABJAD_ONES[n % 10] ?? '';
+  return out;
+}
+
+const ROMAN_TABLE: Array<[number, string]> = [
+  [1000, 'm'],
+  [900, 'cm'],
+  [500, 'd'],
+  [400, 'cd'],
+  [100, 'c'],
+  [90, 'xc'],
+  [50, 'l'],
+  [40, 'xl'],
+  [10, 'x'],
+  [9, 'ix'],
+  [5, 'v'],
+  [4, 'iv'],
+  [1, 'i'],
+];
+
+/**
+ * Converts a positive integer (1–3999) to a Roman numeral, lowercase by
+ * default (book-preface convention), uppercase when `upper` is set.
+ * Out-of-range values fall back to western digits.
+ */
+export function toRomanNumerals(num: number, upper = false): string {
+  if (!Number.isFinite(num) || num < 1 || num > 3999) return String(Math.floor(num));
+  let n = Math.floor(num);
+  let out = '';
+  for (const [value, glyph] of ROMAN_TABLE) {
+    while (n >= value) {
+      out += glyph;
+      n -= value;
+    }
+  }
+  return upper ? out.toUpperCase() : out;
+}
+
+/**
+ * The Urdu alphabetical sequence (حروفِ تہجی) used for letter-numbered
+ * front matter: ا ب پ ت ٹ ث … ے (38 letters). Composition past the end
+ * of the list is spreadsheet-style (bijective base-38): 38 = ے (the last
+ * single letter), 39 = اا, 40 = اب — the same convention word
+ * processors use for lettered series, applied to the Urdu alphabet.
+ */
+export const URDU_LETTER_SEQUENCE = [
+  'ا', 'ب', 'پ', 'ت', 'ٹ', 'ث', 'ج', 'چ', 'ح', 'خ',
+  'د', 'ڈ', 'ذ', 'ر', 'ڑ', 'ز', 'ژ', 'س', 'ش', 'ص',
+  'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل',
+  'م', 'ن', 'و', 'ہ', 'ھ', 'ء', 'ی', 'ے',
+];
+
+/**
+ * Converts a positive integer to the Urdu letter sequence:
+ * 1=ا, 2=ب, …, 38=ے, 39=اا, 40=اب (bijective composition, see above).
+ */
+export function toUrduLetterSequence(num: number): string {
+  if (!Number.isFinite(num) || num < 1) return 'ا';
+  let n = Math.floor(num);
+  const base = URDU_LETTER_SEQUENCE.length;
+  let out = '';
+  while (n > 0) {
+    n -= 1;
+    out = (URDU_LETTER_SEQUENCE[n % base] ?? 'ا') + out;
+    n = Math.floor(n / base);
+  }
+  return out;
+}
+
+/** Formats an already-resolved (1-based) number in the given style. */
+export function formatRawPageNumber(style: PageNumberStyle, rawNumber: number): string {
+  switch (style) {
+    case 'urdu':
+      return toUrduNumerals(rawNumber);
+    case 'abjad':
+      return toAbjadNumerals(rawNumber);
+    case 'roman':
+      return toRomanNumerals(rawNumber, false);
+    case 'roman-upper':
+      return toRomanNumerals(rawNumber, true);
+    case 'urdu-letters':
+      return toUrduLetterSequence(rawNumber);
+    case 'western':
+    default:
+      return String(rawNumber);
+  }
 }
 
 /**
@@ -53,16 +172,7 @@ export function formatPageNumber(
 
   const rawNumber = pageIndex + startNumber + sectionOffset;
 
-  let formattedNumber = '';
-  if (style === 'urdu') {
-    formattedNumber = toUrduNumerals(rawNumber);
-  } else if (style === 'abjad') {
-    formattedNumber = toAbjadNumerals(rawNumber);
-  } else {
-    formattedNumber = String(rawNumber);
-  }
-
-  return `${prefix}${formattedNumber}${suffix}`;
+  return `${prefix}${formatRawPageNumber(style, rawNumber)}${suffix}`;
 }
 
 /**
@@ -75,7 +185,7 @@ export function resolvePageNumberTokens(
   options: PageNumberingOptions = {},
 ): string {
   const pageNumStr = formatPageNumber(pageIndex, options);
-  const totalPagesStr = options.style === 'urdu' ? toUrduNumerals(totalPages) : String(totalPages);
+  const totalPagesStr = formatRawPageNumber(options.style ?? 'urdu', totalPages);
 
   return template
     .replace(/\{\{\s*pageNumber\s*\}\}/g, pageNumStr)

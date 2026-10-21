@@ -40,6 +40,14 @@ const baseObjectSchema = z.object({
 const textFrameSchema = baseObjectSchema.extend({
   type: z.literal('text-frame'),
   storyId: z.string().min(1),
+  // Text on a circular path (stamps/logos); absent = normal frame text.
+  textOnPath: z
+    .object({
+      kind: z.literal('circle'),
+      startAngleDeg: finiteNumber,
+      flip: z.boolean(),
+    })
+    .optional(),
   fontFamily: z.string().min(1),
   fontSize: positiveNumber,
   color: z.string().min(1),
@@ -76,6 +84,15 @@ const imageFrameSchema = baseObjectSchema.extend({
       bottom: finiteNumber.min(0).max(0.45),
     })
     .optional(),
+  // Non-destructive brightness/contrast (percent, 100 = untouched) + flips.
+  adjustments: z
+    .object({
+      brightness: finiteNumber.min(0).max(200),
+      contrast: finiteNumber.min(0).max(200),
+      flipH: z.boolean(),
+      flipV: z.boolean(),
+    })
+    .optional(),
 });
 
 const tableCellSchema = z.object({
@@ -100,7 +117,7 @@ const tableSchema = baseObjectSchema.extend({
 });
 
 const pageNumberingSchema = z.object({
-  style: z.enum(['urdu', 'western', 'abjad']),
+  style: z.enum(['urdu', 'western', 'abjad', 'roman', 'roman-upper', 'urdu-letters']),
   startAt: z.number().int().positive(),
   restartAtSection: z.boolean(),
   prefix: z.string(),

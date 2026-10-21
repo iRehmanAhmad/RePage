@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createStarterDocument } from '../domain/document/createDocument';
+import { createStarterDocument, PRIMARY_STORY_ID } from '../domain/document/createDocument';
 import type { RePageDocument } from '../domain/document/types';
-import { addImageFrame, addPage } from '../editor/commands/documentCommands';
-import { setImageCropCommand } from '../editor/commands/objectCommands';
+import { addImageFrame, addPage, addTextBox } from '../editor/commands/documentCommands';
+import {
+  setImageAdjustmentsCommand,
+  setImageCropCommand,
+  setTextOnPathCommand,
+} from '../editor/commands/objectCommands';
 import {
   PRINT_PAGE_CLASS,
   PRINT_ROOT_CLASS,
@@ -211,4 +215,134 @@ describe('pdfPrintExporter image crop', () => {
     expect(img!.style.left).toBe('-40pt');
     expect(img!.style.height).toBe('90pt');
   });
+});
+
+describe('pdfPrintExporter image adjustments (batch 11)', () => {
+  const PNG_DATA_URL =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+  function docWithAdjustedImage(): RePageDocument {
+    const doc = createStarterDocument();
+    const pageId = doc.pageOrder[0]!;
+    const res = addImageFrame(doc, pageId, 'pixel.png', PNG_DATA_URL, 120, 90);
+    return setImageAdjustmentsCommand(res.document, res.objectId, {
+      brightness: 120,
+      contrast: 100,
+      flipH: true,
+      flipV: false,
+    });
+  }
+
+  it('renders brightness as a CSS filter and mirroring as a scale transform', () => {
+    const root = renderPrintPages(docWithAdjustedImage());
+    const img = root.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img!.style.filter).toContain('brightness(1.2)');
+    expect(img!.style.transform).toBe('scale(-1, 1)');
+  });
+
+  it('renders no filter/transform for an unadjusted image', () => {
+    const doc = createStarterDocument();
+    const pageId = doc.pageOrder[0]!;
+    const res = addImageFrame(doc, pageId, 'pixel.png', PNG_DATA_URL, 120, 90);
+    const root = renderPrintPages(res.document);
+    const img = root.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img!.style.filter).toBe('');
+    expect(img!.style.transform).toBe('');
+  });
+});
+
+describe('pdfPrintExporter circle text (batch 11)', () => {
+  it('renders one positioned glyph span per ring segment', () => {
+    const doc = createStarterDocument();
+    const pageId = doc.pageOrder[0]!;
+    const res = addTextBox(doc, pageId);
+    const storyId = (res.document.objects[res.objectId] as { storyId: string }).storyId;
+    const withText: RePageDocument = {
+      ...res.document,
+      stories: {
+        ...res.document.stories,
+        [storyId]: {
+          ...res.document.stories[storyId]!,
+          content: {
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                direction: 'ltr',
+                content: [{ type: 'text', text: 'SCHOOL' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const circled = setTextOnPathCommand(withText, res.objectId, {
+      kind: 'circle',
+      startAngleDeg: 0,
+      flip: false,
+    });
+    const root = renderPrintPages(circled);
+    const glyphs = root.querySelectorAll('.repage-circle-glyph');
+    expect(glyphs.length).toBe(6); // S C H O O L
+    expect(root.querySelector('[data-circle-text="true"]')).not.toBeNull();
+    expect(Array.from(glyphs).map((g) => g.textContent).join('')).toBe('SCHOOL');
+  });
+});
+
+describe('pdfPrintExporter kashida (batch 11)', () => {
+  it('renders justified RTL paragraphs as kashida lines without touching stored text', () => {
+    // Force the deterministic fallback measurer (no 2D canvas) so the
+    // line-breaking arithmetic is reproducible: A4 text width is
+    // 595.28 - 2*42.52 = ~510pt; a 4-letter word measures 25.2pt and a
+    // tatweel 6.3pt, so each full line of 16 words leaves slack for
+    // exactly one tatweel.
+    const getContextSpy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockReturnValue(null);
+    try {
+      renderKashidaAndAssert();
+    } finally {
+      getContextSpy.mockRestore();
+    }
+  });
+
+  function renderKashidaAndAssert() {
+    const base = createStarterDocument();
+    const longText = Array.from({ length: 40 }, () => 'محمد').join(' ');
+    const doc: RePageDocument = {
+      ...base,
+      stories: {
+        ...base.stories,
+        [PRIMARY_STORY_ID]: {
+          ...base.stories[PRIMARY_STORY_ID]!,
+          content: {
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                direction: 'rtl',
+                alignment: 'justify',
+                content: [{ type: 'text', text: longText }],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const root = renderPrintPages(doc);
+    const kashidaPara = root.querySelector('.repage-kashida-paragraph');
+    expect(kashidaPara).not.toBeNull();
+    const lines = kashidaPara!.querySelectorAll('.repage-kashida-line');
+    expect(lines.length).toBeGreaterThan(1);
+    // At least one non-final line carries tatweels in its RENDER text.
+    const rendered = Array.from(lines).map((l) => l.textContent || '').join('');
+    expect(rendered).toContain('\u0640');
+    // The canonical document text is untouched (no tatweel stored).
+    const stored =
+      doc.stories[PRIMARY_STORY_ID]!.content.content[0]!.content[0]!;
+    expect(stored.type === 'text' ? stored.text : '').toBe(longText);
+    expect(longText).not.toContain('\u0640');
+  }
 });

@@ -1,5 +1,5 @@
 import type { RePageDocument, StoryId } from '../../domain/document/types';
-import type { InlineNode, ParagraphNode } from '../../domain/rich-text/types';
+import type { InlineNode, JustificationMode, ParagraphNode } from '../../domain/rich-text/types';
 
 function touch(doc: RePageDocument): RePageDocument {
   return {
@@ -86,6 +86,45 @@ export function insertStoryBreakCommand(
 
   const paragraphs = [...story.content.content];
   paragraphs[paragraphIndex] = { ...paragraph, content };
+
+  return touch({
+    ...doc,
+    stories: {
+      ...doc.stories,
+      [storyId]: {
+        ...story,
+        content: { ...story.content, content: paragraphs },
+      },
+    },
+  });
+}
+
+/**
+ * Sets (or clears, with null) a paragraph's justification mode
+ * ('space' | 'kashida'). Rendering-only property: it never alters the
+ * paragraph's text. No-op when the mode already matches.
+ */
+export function setParagraphJustificationModeCommand(
+  doc: RePageDocument,
+  storyId: StoryId,
+  paragraphIndex: number,
+  mode: JustificationMode | null,
+): RePageDocument {
+  const story = doc.stories[storyId];
+  if (!story || paragraphIndex < 0 || paragraphIndex >= story.content.content.length) {
+    return doc;
+  }
+
+  const paragraph = story.content.content[paragraphIndex]!;
+  if ((paragraph.justificationMode ?? null) === mode) return doc;
+
+  const paragraphs = [...story.content.content];
+  if (mode) {
+    paragraphs[paragraphIndex] = { ...paragraph, justificationMode: mode };
+  } else {
+    const { justificationMode: _removed, ...rest } = paragraph;
+    paragraphs[paragraphIndex] = rest;
+  }
 
   return touch({
     ...doc,
